@@ -26,20 +26,20 @@ class ListingResource:
     def get_listings_by_shop(
         self,
         shop_id: int,
-        state: Optional[State] = State.ACTIVE,
+        state: State = State.ACTIVE,
         limit: Optional[int] = 25,
         offset: Optional[int] = 0,
-        sort_on: Optional[SortOn] = SortOn.CREATED,
-        sort_order: Optional[SortOrder] = SortOrder.DESC,
+        sort_on: SortOn = SortOn.CREATED,
+        sort_order: SortOrder = SortOrder.DESC,
         includes: Optional[List[Includes]] = None,
     ) -> Union[Response, RequestException]:
         uri = f"/shops/{shop_id}/listings"
         kwargs: Dict[str, Any] = {
-            "state": state.value if state is not None else None,
+            "state": state.value,
             "limit": limit,
             "offset": offset,
-            "sort_on": sort_on.value if sort_on is not None else None,
-            "sort_order": sort_order.value if sort_order is not None else None,
+            "sort_on": sort_on.value,
+            "sort_order": sort_order.value,
             "includes": ",".join(list(map(lambda inc: inc.value, includes)))
             if includes is not None
             else None,
@@ -70,8 +70,8 @@ class ListingResource:
         limit: int = 25,
         offset: int = 0,
         keywords: Optional[str] = None,
-        sort_on: Optional[SortOn] = SortOn.CREATED,
-        sort_order: Optional[SortOrder] = SortOrder.DESC,
+        sort_on: SortOn = SortOn.CREATED,
+        sort_order: SortOrder = SortOrder.DESC,
         min_price: Optional[float] = None,
         max_price: Optional[float] = None,
         taxonomy_id: Optional[int] = None,
@@ -82,8 +82,8 @@ class ListingResource:
             "limit": limit,
             "offset": offset,
             "keywords": keywords,
-            "sort_on": sort_on.value if sort_on is not None else None,
-            "sort_order": sort_order.value if sort_order is not None else None,
+            "sort_on": sort_on.value,
+            "sort_order": sort_order.value,
             "min_price": min_price,
             "max_price": max_price,
             "taxonomy_id": taxonomy_id,
@@ -95,16 +95,16 @@ class ListingResource:
         self,
         shop_id: int,
         limit: Optional[int] = 25,
-        sort_on: Optional[SortOn] = SortOn.CREATED,
-        sort_order: Optional[SortOrder] = SortOrder.DESC,
+        sort_on: SortOn = SortOn.CREATED,
+        sort_order: SortOrder = SortOrder.DESC,
         offset: Optional[int] = 0,
         keywords: Optional[str] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/listings/active"
         kwargs: Dict[str, Any] = {
             "limit": limit,
-            "sort_on": sort_on.value if sort_on is not None else None,
-            "sort_order": sort_order.value if sort_order is not None else None,
+            "sort_on": sort_on.value,
+            "sort_order": sort_order.value,
             "offset": offset,
             "keywords": keywords,
         }
@@ -115,7 +115,7 @@ class ListingResource:
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/batch"
         kwargs: Dict[str, Any] = {
-            "listing_ids": ",".join(list(map(lambda lid: str(lid), listing_ids))),
+            "listing_ids": ",".join(list(map(str, listing_ids))),
             "includes": ",".join(list(map(lambda inc: inc.value, includes)))
             if includes is not None
             else None,
@@ -181,19 +181,17 @@ class ListingResource:
         shop_section_ids: Optional[List[int]] = None,
         limit: int = 25,
         offset: int = 0,
-        sort_on: Optional[SortOn] = SortOn.CREATED,
-        sort_order: Optional[SortOrder] = SortOrder.DESC,
+        sort_on: SortOn = SortOn.CREATED,
+        sort_order: SortOrder = SortOrder.DESC,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/shop-sections/listings"
         kwargs: Dict[str, Any] = {
-            "shop_section_ids": ",".join(
-                list(map(lambda ssi: str(ssi), shop_section_ids))
-            )
+            "shop_section_ids": ",".join(list(map(str, shop_section_ids)))
             if shop_section_ids is not None
             else None,
             "limit": limit,
             "offset": offset,
-            "sort_on": sort_on.value if sort_on is not None else None,
-            "sort_order": sort_order.value if sort_order is not None else None,
+            "sort_on": sort_on.value,
+            "sort_order": sort_order.value,
         }
         return self.session.make_request(endpoint, **kwargs)
