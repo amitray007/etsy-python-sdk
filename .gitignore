@@ -1,0 +1,3 @@
+# Custom Ignores
+venv/
+.mypy_cache
