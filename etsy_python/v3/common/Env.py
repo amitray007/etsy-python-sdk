@@ -1,13 +1,16 @@
 from os import environ as os_environ
 
 
-class Production(object):
+class BaseEnvironment(object):
     authorization_url = "https://www.etsy.com/oauth/connect"
-    token_url = "https://api.etsy.com/v3/public/oauth/token"
-    request_url = "https://openapi.etsy.com/v3/application"
+    base_token_url = "https://api.etsy.com"
+    base_request_url = "https://openapi.etsy.com"
+
+
+class Production(BaseEnvironment):
+    token_url = f"{BaseEnvironment.base_token_url}/v3/public/oauth/token"
+    request_url = f"{BaseEnvironment.base_request_url}/v3/application"
 
 
 ENVIRONMENTS = dict(PROD=Production)
-
-
 environment = ENVIRONMENTS.get(os_environ.get("ETSY_ENV", "PROD"), Production)

@@ -84,3 +84,7 @@ class Includes(Enum):
     TRANSLATIONS = "Translations"
     INVENTORY = "Inventory"
     VIDEOS = "Videos"
+
+
+class InventoryIncludes(Enum):
+    LISTING = "Listing"
