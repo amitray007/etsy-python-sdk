@@ -376,7 +376,7 @@ class UpdateListingTranslationRequest(Request):
         )
 
 
-class UpdateListingVideoRequest(Request):
+class UpdateListingVideoRequest(FileRequest):
     nullable: List[str] = ["file"]
     mandatory: List[str] = []
 
@@ -385,7 +385,7 @@ class UpdateListingVideoRequest(Request):
         video_id: Optional[int] = None,
         video_bytes: Optional[bytes] = None,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         self.file = {"video": video_bytes}
         self.data = {"video_id": video_id, "name": name}
 
