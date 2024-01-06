@@ -1,6 +1,6 @@
 from typing import Optional, List, Any
 
-from v3.common.Utils import todict
+from etsy_python.v3.common.Utils import todict
 
 
 class Request:

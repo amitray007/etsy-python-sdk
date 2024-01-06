@@ -22,12 +22,8 @@
 > - [ Modules](#-modules)
 > - [ Getting Started](#-getting-started)
 >     - [ Installation](#-installation)
->     - [ Running etsy-python-sdk](#-running-etsy-python-sdk)
->     - [ Tests](#-tests)
-> - [ Project Roadmap](#-project-roadmap)
 > - [ Contributing](#-contributing)
 > - [ License](#-license)
-> - [ Acknowledgments](#-acknowledgments)
 
 ---
 

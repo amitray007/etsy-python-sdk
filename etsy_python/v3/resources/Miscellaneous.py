@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Union
 
-from v3.exceptions.RequestException import RequestException
-from v3.models.Miscellaneous import GetTokenScopes
-from v3.resources.Response import Response
-from v3.resources.Session import EtsyClient
-from v3.resources.enums.Request import Method
+from etsy_python.v3.exceptions.RequestException import RequestException
+from etsy_python.v3.models.Miscellaneous import GetTokenScopes
+from etsy_python.v3.resources.Response import Response
+from etsy_python.v3.resources.Session import EtsyClient
+from etsy_python.v3.resources.enums.Request import Method
 
 
 @dataclass()

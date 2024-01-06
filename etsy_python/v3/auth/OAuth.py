@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 
 from requests_oauthlib import OAuth2Session
 
-from v3.common.Env import environment
+from etsy_python.v3.common.Env import environment
 
 
 class EtsyOAuth:

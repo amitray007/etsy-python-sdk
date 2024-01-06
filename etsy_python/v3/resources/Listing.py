@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Union
 
-from v3.enums.Listing import Includes, State, SortOn, SortOrder
-from v3.exceptions.RequestException import RequestException
-from v3.models.Listing import (
+from etsy_python.v3.enums.Listing import Includes, State, SortOn, SortOrder
+from etsy_python.v3.exceptions.RequestException import RequestException
+from etsy_python.v3.models.Listing import (
     CreateDraftListingRequest,
     UpdateListingPropertyRequest,
     UpdateListingRequest,
 )
-from v3.resources.enums.Request import Method
-from v3.resources.Session import EtsyClient
-from v3.resources.Response import Response
+from etsy_python.v3.resources.enums.Request import Method
+from etsy_python.v3.resources.Session import EtsyClient
+from etsy_python.v3.resources.Response import Response
 
 
 @dataclass

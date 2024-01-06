@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Union, Dict, Any, List
 
-from v3.exceptions.RequestException import RequestException
-from v3.resources.Session import EtsyClient
-from v3.resources.Response import Response
+from etsy_python.v3.exceptions.RequestException import RequestException
+from etsy_python.v3.resources.Session import EtsyClient
+from etsy_python.v3.resources.Response import Response
 
 
 @dataclass

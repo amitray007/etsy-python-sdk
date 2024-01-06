@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any, Union
 
-from v3.exceptions.RequestException import RequestException
-from v3.enums.Listing import InventoryIncludes
-from v3.models.Listing import UpdateListingInventoryRequest
-from v3.resources.Session import EtsyClient
-from v3.resources.enums.Request import Method
-from v3.resources.Response import Response
+from etsy_python.v3.exceptions.RequestException import RequestException
+from etsy_python.v3.enums.Listing import InventoryIncludes
+from etsy_python.v3.models.Listing import UpdateListingInventoryRequest
+from etsy_python.v3.resources.Session import EtsyClient
+from etsy_python.v3.resources.enums.Request import Method
+from etsy_python.v3.resources.Response import Response
 
 
 @dataclass

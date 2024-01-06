@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Union
 
-from v3.exceptions.RequestException import RequestException
-from v3.resources.Response import Response
-from v3.resources.Session import EtsyClient
+from etsy_python.v3.exceptions.RequestException import RequestException
+from etsy_python.v3.resources.Response import Response
+from etsy_python.v3.resources.Session import EtsyClient
 
 
 @dataclass
-class BuyerTaxonomy:
+class BuyerTaxonomyResource:
     session: EtsyClient
 
     def get_buyer_taxonomy_nodes(self) -> Union[Response, RequestException]:
@@ -22,7 +22,7 @@ class BuyerTaxonomy:
 
 
 @dataclass
-class SellerTaxonomy:
+class SellerTaxonomyResource:
     session: EtsyClient
 
     def get_seller_taxonomy_nodes(self) -> Union[Response, RequestException]:

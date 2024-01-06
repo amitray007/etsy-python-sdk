@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from v3.exceptions.BaseAPIException import BaseAPIException
+from etsy_python.v3.exceptions.BaseAPIException import BaseAPIException
 
 
 @dataclass

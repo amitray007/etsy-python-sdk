@@ -1,19 +1,19 @@
 from dataclasses import dataclass
 from typing import Union
 
-from v3.exceptions.RequestException import RequestException
-from v3.models.ShopReturnPolicy import (
+from etsy_python.v3.exceptions.RequestException import RequestException
+from etsy_python.v3.models.ShopReturnPolicy import (
     ConsolidateShopReturnPoliciesRequest,
     CreateShopReturnPolicyRequest,
     UpdateShopReturnPolicyRequest,
 )
-from v3.resources.Response import Response
-from v3.resources.Session import EtsyClient
-from v3.resources.enums.Request import Method
+from etsy_python.v3.resources.Response import Response
+from etsy_python.v3.resources.Session import EtsyClient
+from etsy_python.v3.resources.enums.Request import Method
 
 
 @dataclass
-class ShopResource:
+class ShopReturnPolicyResource:
     session: EtsyClient
 
     def consolidate_shop_return_policies(

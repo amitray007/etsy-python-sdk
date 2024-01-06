@@ -3,15 +3,15 @@ from typing import Any, Callable, Dict, Optional
 
 from requests import Session
 
-from v3.common.Request import ERROR_CODES
-from v3.common.Env import environment
-from v3.common.Utils import generate_get_uri
-from v3.resources.enums.Request import Method
-from v3.resources.Response import Response
-from v3.exceptions.RequestException import RequestException
-from v3.models.Request import Request
-from v3.models.FileRequest import FileRequest
-from v3.resources.enums.RateLimit import RateLimit
+from etsy_python.v3.common.Request import ERROR_CODES
+from etsy_python.v3.common.Env import environment
+from etsy_python.v3.common.Utils import generate_get_uri
+from etsy_python.v3.resources.enums.Request import Method
+from etsy_python.v3.resources.Response import Response
+from etsy_python.v3.exceptions.RequestException import RequestException
+from etsy_python.v3.models.Request import Request
+from etsy_python.v3.models.FileRequest import FileRequest
+from etsy_python.v3.resources.enums.RateLimit import RateLimit
 
 
 class EtsyClient:

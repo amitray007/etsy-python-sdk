@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 
-from v3.enums.Listing import (
+from etsy_python.v3.enums.Listing import (
     WhoMade,
     WhenMade,
     ItemWeightUnit,
@@ -8,9 +8,9 @@ from v3.enums.Listing import (
     Type,
     State,
 )
-from v3.models.Product import Product
-from v3.models.Request import Request
-from v3.models.FileRequest import FileRequest
+from etsy_python.v3.models.Product import Product
+from etsy_python.v3.models.Request import Request
+from etsy_python.v3.models.FileRequest import FileRequest
 
 
 class CreateDraftListingRequest(Request):

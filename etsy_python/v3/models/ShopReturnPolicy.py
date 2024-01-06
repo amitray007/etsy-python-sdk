@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from v3.models.Request import Request
+from etsy_python.v3.models.Request import Request
 
 
 class ConsolidateShopReturnPoliciesRequest(Request):

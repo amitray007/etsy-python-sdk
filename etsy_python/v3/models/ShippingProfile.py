@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from v3.enums.ShippingProfile import DestinationRegion, ProcessingTimeUnit, Type
-from v3.models.Request import Request
+from etsy_python.v3.enums.ShippingProfile import DestinationRegion, ProcessingTimeUnit, Type
+from etsy_python.v3.models.Request import Request
 
 
 class CreateShopShippingProfileRequest(Request):
