@@ -7,7 +7,7 @@ from v3.resources.Session import EtsyClient
 
 
 @dataclass
-class User:
+class UserResource:
     session: EtsyClient
 
     def get_user(self, user_id: int) -> Union[Response, RequestException]:
