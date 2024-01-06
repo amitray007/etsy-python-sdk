@@ -1,6 +1,5 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
-from v3.enums.ShippingProfile import Providers
 from v3.models.Request import Request
 
 
@@ -11,7 +10,7 @@ class CreateReceiptShipmentRequest(Request):
     def __init__(
         self,
         tracking_code: Optional[str] = None,
-        carrier_name: Optional[Union[Providers, str]] = None,
+        carrier_name: Optional[str] = None,
         send_bcc: Optional[bool] = None,
         note_to_buyer: Optional[str] = None,
     ):
