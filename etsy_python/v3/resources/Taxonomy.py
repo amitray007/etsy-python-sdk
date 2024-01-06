@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Union
 
+from v3.exceptions.RequestException import RequestException
+from v3.resources.Response import Response
 from v3.resources.Session import EtsyClient
 
 
@@ -8,23 +10,27 @@ from v3.resources.Session import EtsyClient
 class BuyerTaxonomy:
     session: EtsyClient
 
-    def get_buyer_taxonomy_nodes(self) -> Any:
-        uri = "/buyer-taxonomy/nodes"
-        return self.session.make_request(uri)
+    def get_buyer_taxonomy_nodes(self) -> Union[Response, RequestException]:
+        endpoint = "/buyer-taxonomy/nodes"
+        return self.session.make_request(endpoint)
 
-    def get_properties_by_buyer_taxonomy_id(self, taxonomy_id: int) -> Any:
-        uri = f"/buyer-taxonomy/nodes/{taxonomy_id}/properties"
-        return self.session.make_request(uri)
+    def get_properties_by_buyer_taxonomy_id(
+        self, taxonomy_id: int
+    ) -> Union[Response, RequestException]:
+        endpoint = f"/buyer-taxonomy/nodes/{taxonomy_id}/properties"
+        return self.session.make_request(endpoint)
 
 
 @dataclass
 class SellerTaxonomy:
     session: EtsyClient
 
-    def get_seller_taxonomy_nodes(self) -> Any:
-        uri = "/seller-taxonomy/nodes"
-        return self.session.make_request(uri)
+    def get_seller_taxonomy_nodes(self) -> Union[Response, RequestException]:
+        endpoint = "/seller-taxonomy/nodes"
+        return self.session.make_request(endpoint)
 
-    def get_properties_by_taxonomy_id(self, taxonomy_id: int) -> Any:
-        uri = f"/seller-taxonomy/nodes/{taxonomy_id}/properties"
-        return self.session.make_request(uri)
+    def get_properties_by_taxonomy_id(
+        self, taxonomy_id: int
+    ) -> Union[Response, RequestException]:
+        endpoint = f"/seller-taxonomy/nodes/{taxonomy_id}/properties"
+        return self.session.make_request(endpoint)

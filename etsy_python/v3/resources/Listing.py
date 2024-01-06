@@ -20,8 +20,8 @@ class ListingResource:
     def create_draft_listing(
         self, shop_id: int, listing: CreateDraftListingRequest
     ) -> Union[Response, RequestException]:
-        uri = f"/shops/{shop_id}/listings"
-        return self.session.make_request(uri, method=Method.POST, payload=listing)
+        endpoint = f"/shops/{shop_id}/listings"
+        return self.session.make_request(endpoint, method=Method.POST, payload=listing)
 
     def get_listings_by_shop(
         self,
@@ -33,7 +33,7 @@ class ListingResource:
         sort_order: SortOrder = SortOrder.DESC,
         includes: Optional[List[Includes]] = None,
     ) -> Union[Response, RequestException]:
-        uri = f"/shops/{shop_id}/listings"
+        endpoint = f"/shops/{shop_id}/listings"
         kwargs: Dict[str, Any] = {
             "state": state.value,
             "limit": limit,
@@ -44,11 +44,11 @@ class ListingResource:
             if includes is not None
             else None,
         }
-        return self.session.make_request(uri, **kwargs)
+        return self.session.make_request(endpoint, **kwargs)
 
     def delete_listing(self, listing_id: int) -> Union[Response, RequestException]:
-        uri = f"/listings/{listing_id}"
-        return self.session.make_request(uri, method=Method.DELETE)
+        endpoint = f"/listings/{listing_id}"
+        return self.session.make_request(endpoint, method=Method.DELETE)
 
     def get_listing(
         self,
