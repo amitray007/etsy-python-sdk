@@ -9,4 +9,4 @@ class Response:
     rate_limits: Any = None
 
     def __str__(self) -> str:
-        return f"[EtsyResponse] code = {self.code} message = {self.message}"
+        return f"[EtsyResponse] [code = {self.code}] [message = {self.message}]"

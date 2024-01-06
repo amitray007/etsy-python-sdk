@@ -37,10 +37,13 @@ class EtsyClient:
     def update_token(self) -> tuple:
         refresh_json = self._get_refresh_json(self.keystring, self.refresh_token)
         response = self.session.post(environment.token_url, json=refresh_json)
-        response_json = response.json()
+        response_json = self._process_request(response).message
 
-        self.token = response_json["access_token"]
-        self.refresh_token = response_json["refresh_token"]
+        self.token = response_json.get("access_token")
+        self.refresh_token = response_json.get("refresh_token")
+        if not (self.token and self.refresh_token):
+            raise RequestException(code=401, error=response_json.get("error", "Something went wrong!"))
+
         updated_expiry = datetime.utcnow() + timedelta(
             seconds=response_json["expires_in"]
         )
@@ -123,12 +126,16 @@ class EtsyClient:
                 response.headers["X-Remaining-Today"],
             )
 
+        response_json = response.json()
         if is_error:
+            error_message = response_json.get("error")
+            error_description = response_json.get("error_description")
             raise RequestException(
                 response.status_code,
-                response.json().get("error"),
+                error_message,
+                error_description,
                 rate_limits=rate_limits,
             )
         return Response(
-            response.status_code, response.json() or "OK", rate_limits=rate_limits
+            response.status_code, response_json or "OK", rate_limits=rate_limits
         )
