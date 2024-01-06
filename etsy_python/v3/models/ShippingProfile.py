@@ -185,7 +185,7 @@ class CreateShopShippingProfileUpgradeRequest(Request):
         min_delivery_days: Optional[int] = None,
         max_delivery_days: Optional[int] = None,
     ) -> None:
-        self.type = profile_type.value if profile_type else None
+        self._type = profile_type.value if profile_type else None
         self.upgrade_name = upgrade_name
         self.price = price
         self.secondary_price = secondary_price
@@ -223,7 +223,7 @@ class UpdateShopShippingProfileUpgradeRequest(Request):
         max_delivery_days: Optional[int] = None,
     ) -> None:
         self.upgrade_name = upgrade_name
-        self.type = profile_type.value if profile_type else None
+        self._type = profile_type.value if profile_type else None
         self.price = price
         self.secondary_price = secondary_price
         self.shipping_carrier_id = shipping_carrier_id

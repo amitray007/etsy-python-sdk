@@ -31,7 +31,7 @@ def todict(
     elif hasattr(obj, "__dict__"):
         data = dict(
             [
-                (key if key != "listing_type" else "type", todict(value, classkey))
+                ("type" if key == "_type" else key, todict(value, classkey))
                 if key not in nullable and value not in [[], "" or 0]
                 else (key, None)
                 for key, value in obj.__dict__.items()

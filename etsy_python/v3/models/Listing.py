@@ -108,7 +108,7 @@ class CreateDraftListingRequest(Request):
         self.is_customizable = is_customizable
         self.should_auto_renew = should_auto_renew
         self.is_taxable = is_taxable
-        self.listing_type = listing_type
+        self._type = listing_type
         super().__init__(
             nullable=CreateDraftListingRequest.nullable,
             mandatory=CreateDraftListingRequest.mandatory,
@@ -190,7 +190,7 @@ class UpdateListingRequest(Request):
         self.state = state
         self.is_supply = is_supply
         self.production_partner_ids = production_partner_ids
-        self.listing_type = listing_type
+        self._type = listing_type
         super().__init__(nullable=UpdateListingRequest.nullable)
 
 
