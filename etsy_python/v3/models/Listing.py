@@ -194,7 +194,10 @@ class UpdateListingRequest(Request):
         self.is_supply = is_supply
         self.production_partner_ids = production_partner_ids
         self._type = listing_type
-        super().__init__(nullable=UpdateListingRequest.nullable)
+        super().__init__(
+            nullable=UpdateListingRequest.nullable,
+            mandatory=UpdateListingRequest.mandatory,
+        )
 
 
 class UpdateListingInventoryRequest(Request):

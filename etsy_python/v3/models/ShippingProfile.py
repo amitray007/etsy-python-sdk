@@ -1,6 +1,10 @@
 from typing import List, Optional
 
-from etsy_python.v3.enums.ShippingProfile import DestinationRegion, ProcessingTimeUnit, Type
+from etsy_python.v3.enums.ShippingProfile import (
+    DestinationRegion,
+    ProcessingTimeUnit,
+    Type,
+)
 from etsy_python.v3.models.Request import Request
 
 
@@ -156,8 +160,8 @@ class UpdateShopShippingProfileDestinationRequest(Request):
         self.max_delivery_days = max_delivery_days
 
         super().__init__(
-            nullable=CreateShopShippingProfileDestinationRequest.nullable,
-            mandatory=CreateShopShippingProfileDestinationRequest.mandatory,
+            nullable=UpdateShopShippingProfileDestinationRequest.nullable,
+            mandatory=UpdateShopShippingProfileDestinationRequest.mandatory,
         )
 
 
@@ -232,6 +236,6 @@ class UpdateShopShippingProfileUpgradeRequest(Request):
         self.max_delivery_days = max_delivery_days
 
         super().__init__(
-            nullable=CreateShopShippingProfileUpgradeRequest.nullable,
-            mandatory=CreateShopShippingProfileUpgradeRequest.mandatory,
+            nullable=UpdateShopShippingProfileUpgradeRequest.nullable,
+            mandatory=UpdateShopShippingProfileUpgradeRequest.mandatory,
         )
