@@ -39,18 +39,22 @@ class EtsyClient:
         response = self.session.post(environment.token_url, json=refresh_json)
         response_json = self._process_request(response).message
 
-        self.token = response_json.get("access_token")
+        self.access_token = response_json.get("access_token")
         self.refresh_token = response_json.get("refresh_token")
-        if not (self.token and self.refresh_token):
-            raise RequestException(code=401, error=response_json.get("error", "Something went wrong!"))
+        if not (self.access_token and self.refresh_token):
+            raise RequestException(
+                code=401, error=response_json.get("error", "Something went wrong!")
+            )
 
         updated_expiry = datetime.utcnow() + timedelta(
             seconds=response_json["expires_in"]
         )
         self.expiry = updated_expiry
 
-        self.session.headers.update(self._prepare_authorization_token(self.token))
-        updated_tuple = (self.token, self.refresh_token, self.expiry)
+        self.session.headers.update(
+            self._prepare_authorization_token(self.access_token)
+        )
+        updated_tuple = (self.access_token, self.refresh_token, self.expiry)
         if self.sync_refresh is not None:
             self.sync_refresh(*updated_tuple)
         return updated_tuple
