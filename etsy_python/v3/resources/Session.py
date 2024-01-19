@@ -35,6 +35,7 @@ class EtsyClient:
         self.session.headers = self._get_resource_headers(keystring, access_token)
 
     def update_token(self) -> tuple:
+        self._remove_authorization_header()
         refresh_json = self._get_refresh_json(self.keystring, self.refresh_token)
         response = self.session.post(environment.token_url, json=refresh_json)
         response_json = self._process_request(response).message
@@ -68,6 +69,9 @@ class EtsyClient:
     @staticmethod
     def _prepare_authorization_token(access_token: str) -> dict:
         return {"Authorization": f"Bearer {access_token}"}
+
+    def _remove_authorization_header(self) -> None:
+        self.session.headers.pop("Authorization", None)
 
     @staticmethod
     def _get_request_headers(keystring: str) -> dict:
