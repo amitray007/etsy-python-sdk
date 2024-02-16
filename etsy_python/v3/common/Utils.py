@@ -32,10 +32,13 @@ def todict(
         data = dict(
             [
                 ("type" if key == "_type" else key, todict(value, classkey))
-                if key not in nullable and value not in [[], "" or 0]
+                if key not in nullable
+                and (value not in [[], "" or 0] or isinstance(value, bool))
                 else (key, None)
                 for key, value in obj.__dict__.items()
-                if not callable(value) and not key.startswith("_") and value is not None
+                if not callable(value)
+                and (not key.startswith("_") or key == "_type")
+                and value is not None
             ]
         )
         if classkey is not None and hasattr(obj, "__class__"):
