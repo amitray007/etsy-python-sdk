@@ -5,7 +5,7 @@ from typing import Optional
 @dataclass
 class BaseAPIException(Exception):
     code: int
-    error: str
+    error: Optional[str] = None
     error_description: Optional[str] = None
     type: str = "ERROR"
 

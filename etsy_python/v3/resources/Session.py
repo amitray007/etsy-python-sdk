@@ -136,8 +136,13 @@ class EtsyClient:
 
         response_json = response.json()
         if is_error:
-            error_message = response_json.get("error")
-            error_description = response_json.get("error_description")
+            error_response = (
+                response_json
+                if isinstance(response_json, dict)
+                else dict(error=response_json)
+            )
+            error_message = error_response.get("error")
+            error_description = error_response.get("error_description")
             raise RequestException(
                 response.status_code,
                 error_message,
