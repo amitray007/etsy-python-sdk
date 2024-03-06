@@ -39,8 +39,7 @@ class CreateDraftListingRequest(Request):
         "price",
         "who_made",
         "when_made",
-        "taxonomy_id",
-        "is_supply"
+        "taxonomy_id"
     ]
 
     def __init__(
