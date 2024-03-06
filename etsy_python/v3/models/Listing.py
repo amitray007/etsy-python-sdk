@@ -40,6 +40,7 @@ class CreateDraftListingRequest(Request):
         "who_made",
         "when_made",
         "taxonomy_id",
+        "is_supply"
     ]
 
     def __init__(
