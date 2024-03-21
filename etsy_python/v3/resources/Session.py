@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Optional
 
 from requests import Session
 
-from etsy_python.v3.common.Request import ERROR_CODES
+from etsy_python.v3.common.Request import ERROR_CODES, NO_RESPONSE_CODES
 from etsy_python.v3.common.Env import environment
 from etsy_python.v3.common.Utils import generate_get_uri
 from etsy_python.v3.resources.enums.Request import Method
@@ -134,7 +134,9 @@ class EtsyClient:
                 response.headers["X-Remaining-Today"],
             )
 
-        response_json = response.json()
+        response_json = (
+            response.json() if response.status_code not in NO_RESPONSE_CODES else None
+        )
         if is_error:
             error_response = (
                 response_json
