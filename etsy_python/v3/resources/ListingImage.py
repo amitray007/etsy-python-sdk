@@ -31,7 +31,7 @@ class ListingImageResource:
     def upload_listing_image(
         self, shop_id: int, listing_id: int, listing_image: UploadListingImageRequest
     ) -> Union[Response, RequestException]:
-        endpoint = f"shops/{shop_id}/listings/{listing_id}/images"
+        endpoint = f"/shops/{shop_id}/listings/{listing_id}/images"
         return self.session.make_request(
             endpoint, method=Method.POST, payload=listing_image
         )
