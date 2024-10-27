@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, Optional
 
 from requests import Session
@@ -99,7 +99,7 @@ class EtsyClient:
         if method not in {Method.GET, Method.DELETE} and payload is None:
             raise ValueError(f"Improper payload for {method}")
 
-        if datetime.utcnow() >= self.expiry:
+        if datetime.now(tz=timezone.utc) >= self.expiry.replace(tzinfo=timezone.utc):
             self.update_token()
 
         uri_path = f"{environment.request_url}{uri_path}"
