@@ -88,6 +88,14 @@ class EtsyClient:
     @staticmethod
     def _get_user_id(access_token: str):
         return access_token.split(".")[0]
+    
+    @staticmethod
+    def ensure_utc(expiry_time: datetime):
+        if expiry_time.tzinfo is None:
+            expiry_time = expiry_time.replace(tzinfo=timezone.utc)
+        else:
+            expiry_time = expiry_time.astimezone(timezone.utc)
+        return expiry_time
 
     def make_request(
         self,
@@ -99,7 +107,8 @@ class EtsyClient:
         if method not in {Method.GET, Method.DELETE} and payload is None:
             raise ValueError(f"Improper payload for {method}")
 
-        if datetime.now(tz=timezone.utc) >= self.expiry.replace(tzinfo=timezone.utc):
+        is_token_expired = datetime.now(tz=timezone.utc) >= self.ensure_utc(self.expiry)
+        if is_token_expired:
             self.update_token()
 
         uri_path = f"{environment.request_url}{uri_path}"
