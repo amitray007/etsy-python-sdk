@@ -206,6 +206,8 @@ jobs:
     needs: [check-skip, version-bump]
     if: needs.check-skip.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
