@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-version-consistency
+        name: Check version consistency
+        entry: python scripts/check_version_consistency.py
+        language: python
+        pass_filenames: false
+        additional_dependencies: []

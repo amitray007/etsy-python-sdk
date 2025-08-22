@@ -1,50 +1,236 @@
-# GitHub CI build pipeline
-name: Etsy Package Build
+# GitHub CI build pipeline with automatic versioning
+name: Etsy Package Build and Publish
 
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+
 jobs:
+  check-skip:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.check.outputs.should_skip }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      
+      - name: Check for skip CI directive
+        id: check
+        run: |
+          # Get the commit message
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MSG"
+          
+          # Check for skip ci patterns (case insensitive)
+          if echo "$COMMIT_MSG" | grep -qiE '\[skip ci\]|\[ci skip\]|skip ci|ci skip|\[no ci\]|no ci'; then
+            echo "Found skip CI directive in commit message"
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "No skip CI directive found"
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
+
+  version-bump:
+    needs: check-skip
+    if: needs.check-skip.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Determine version bump type
+        id: determine_bump
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BUMP_TYPE="${{ github.event.inputs.version_bump }}"
+          else
+            # Auto-detect from commit message
+            COMMIT_MSG=$(git log -1 --pretty=%s)
+            echo "Latest commit: $COMMIT_MSG"
+            
+            if echo "$COMMIT_MSG" | grep -qiE "breaking[ -]change|^breaking:"; then
+              BUMP_TYPE="major"
+            elif echo "$COMMIT_MSG" | grep -qiE "^feat:|feature"; then
+              BUMP_TYPE="minor"
+            else
+              BUMP_TYPE="patch"
+            fi
+          fi
+          
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "Version bump type: $BUMP_TYPE"
+      
+      - name: Bump version
+        id: bump
+        run: |
+          # Run the bump version script
+          if [ "${{ steps.determine_bump.outputs.bump_type }}" == "auto" ]; then
+            python scripts/bump_version.py --type auto
+          else
+            python scripts/bump_version.py --type ${{ steps.determine_bump.outputs.bump_type }}
+          fi
+          
+          # Read the new version
+          NEW_VERSION=$(python -c "from etsy_python._version import __version__; print(__version__)")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+      
+      - name: Commit version bump
+        run: |
+          git add etsy_python/_version.py
+          # Always skip CI for version bump commits to prevent infinite loops
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }} [skip ci]"
+          
+      - name: Create version tag
+        run: |
+          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "Release version ${{ steps.bump.outputs.new_version }}"
+      
+      - name: Push changes
+        run: |
+          git push origin master --follow-tags
+
   build:
+    needs: [check-skip, version-bump]
+    if: needs.check-skip.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
         with:
-          python-version: 3.8
+          ref: master
+          fetch-depth: 0
+      
+      - name: Pull latest changes
+        run: |
+          git pull origin master
+      
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      
       - name: Install dependencies
         run: |
-          cd etsy_python
           python -m pip install --upgrade pip
-          if  [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - name: Run package creation
+          python -m pip install build wheel
+          if [ -f etsy_python/requirements.txt ]; then pip install -r etsy_python/requirements.txt; fi
+      
+      - name: Build package
         run: |
-          python -m pip install --user --upgrade build
           python -m build
+          echo "Built version ${{ needs.version-bump.outputs.new_version }}"
+      
       - name: Archive package
         uses: actions/upload-artifact@v3
         with:
-          name: etsy-python
+          name: etsy-python-dist
           path: ./dist/
+
   publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    needs:
-      - build
+    name: Publish Python 🐍 distribution 📦 to PyPI
+    needs: [check-skip, version-bump, build]
+    if: needs.check-skip.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/p/etsy-python
     permissions:
       id-token: write
-
     steps:
       - name: Download all the dists
         uses: actions/download-artifact@v3
         with:
-          name: etsy-python
+          name: etsy-python-dist
           path: ./dist/
+      
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+          skip-existing: true
+
+  create-release:
+    name: Create GitHub Release
+    needs: [check-skip, version-bump, publish-to-pypi]
+    if: needs.check-skip.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+          fetch-depth: 0
+      
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: etsy-python-dist
+          path: ./dist/
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s" --no-merges $LAST_TAG..HEAD)
+          fi
+          
+          # Create release notes
+          cat > release_notes.md << EOF
+          ## 🎉 Release v${{ needs.version-bump.outputs.new_version }}
+          
+          ### 📦 Installation
+          \`\`\`bash
+          pip install etsy-python==${{ needs.version-bump.outputs.new_version }}
+          \`\`\`
+          
+          ### 📝 Changes
+          $COMMITS
+          
+          ### 🔗 Links
+          - [PyPI Package](https://pypi.org/project/etsy-python/${{ needs.version-bump.outputs.new_version }}/)
+          - [Documentation](https://github.com/amitray007/etsy-python-sdk/blob/master/README.md)
+          EOF
+          
+          echo "Release notes generated"
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.version-bump.outputs.new_version }}
+          name: Release v${{ needs.version-bump.outputs.new_version }}
+          body_path: release_notes.md
+          files: dist/*
+          draft: false
+          prerelease: false

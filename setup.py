@@ -1,13 +1,24 @@
 from setuptools import setup, find_packages
 import codecs
 import os
+import re
 
 here = os.path.abspath(os.path.dirname(__file__))
+
+# Read version from _version.py
+def read_version():
+    version_file = os.path.join(here, "etsy_python", "_version.py")
+    with open(version_file, "r") as f:
+        version_content = f.read()
+    version_match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', version_content)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
 
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = "1.0.19"
+VERSION = read_version()
 DESCRIPTION = "Etsy API Client Library for Python"
 
 # Setting up
