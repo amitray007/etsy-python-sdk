@@ -38,7 +38,7 @@ jobs:
           echo "Commit message: $COMMIT_MSG"
           
           # Check for skip ci patterns (case insensitive)
-          if echo "$COMMIT_MSG" | grep -qiE '\[skip ci\]|\[ci skip\]|skip ci|ci skip|\[no ci\]|no ci'; then
+          if echo "$COMMIT_MSG" | grep -qiE '\[skip ci\]|\[ci skip\]|skip ci|ci skip|\[no ci\]|no ci|\[skip-ci\]|skip-ci'; then
             echo "Found skip CI directive in commit message"
             echo "should_skip=true" >> $GITHUB_OUTPUT
           else
