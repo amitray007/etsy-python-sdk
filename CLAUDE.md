@@ -52,9 +52,9 @@ pytest tests/ -m write -v             # Write tests only
 cp specs/latest.json specs/baseline.json
 
 # Claude Code skills (interactive)
-# /maintain:check   - Fetch + diff spec
-# /maintain:audit   - Audit SDK coverage
-# /maintain:test    - Run integration tests
+# /maintain-check   - Fetch + diff spec
+# /maintain-audit   - Audit SDK coverage
+# /maintain-test    - Run integration tests
 
 # GitHub Actions (see .github/workflows/)
 # maintenance-check.yml  - Weekly API change detection + SDK audit
