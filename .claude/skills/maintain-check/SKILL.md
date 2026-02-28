@@ -1,5 +1,5 @@
 ---
-name: check
+name: maintain-check
 description: Fetch the latest Etsy OAS spec and diff it against the baseline to detect API changes
 ---
 
@@ -28,5 +28,5 @@ description: Fetch the latest Etsy OAS spec and diff it against the baseline to 
 5. If no changes detected, report that the SDK is up to date with the spec.
 
 6. Suggest next steps:
-   - Run `/maintain:audit` to check how these changes affect SDK coverage
+   - Run `/maintain-audit` to check how these changes affect SDK coverage
    - Check https://github.com/etsy/open-api/releases for human-readable changelogs

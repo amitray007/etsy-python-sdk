@@ -1,5 +1,5 @@
 ---
-name: test
+name: maintain-test
 description: Run integration tests against the live Etsy API to validate SDK functionality
 ---
 
