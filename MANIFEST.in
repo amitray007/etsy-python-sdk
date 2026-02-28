@@ -1,0 +1,16 @@
+include LICENSE
+include README.md
+
+# Exclude maintenance and development files
+prune tests
+prune scripts
+prune specs
+prune docs
+prune .claude
+prune .github
+
+exclude .env.example
+exclude pytest.ini
+exclude requirements-dev.txt
+exclude .bumpversion.cfg
+exclude .pre-commit-config.yaml
