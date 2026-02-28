@@ -34,6 +34,29 @@ python scripts/check_version_consistency.py
 python -c "from etsy_python._version import __version__; print(__version__)"
 ```
 
+### Maintenance Workflow
+```bash
+# Check for Etsy API changes
+python scripts/fetch_spec.py          # Fetch latest OAS spec
+python scripts/diff_spec.py           # Diff against baseline
+
+# Audit SDK coverage
+python scripts/audit_sdk.py           # Compare spec vs SDK code
+
+# Run integration tests
+pytest tests/ -v                      # All tests
+pytest tests/ -m readonly -v          # Read-only tests only
+pytest tests/ -m write -v             # Write tests only
+
+# After applying changes, update baseline
+cp specs/latest.json specs/baseline.json
+
+# Claude Code skills (interactive)
+# /maintain:check   - Fetch + diff spec
+# /maintain:audit   - Audit SDK coverage
+# /maintain:test    - Run integration tests
+```
+
 ## Version Management
 
 **Single source of truth**: `etsy_python/_version.py`
