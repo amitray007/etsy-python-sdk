@@ -13,7 +13,7 @@ As a solo maintainer, keeping the Etsy Python SDK in sync with Etsy's evolving O
 1. **Detect API changes** — On-demand tooling to fetch the latest Etsy OAS spec and produce a structured diff report against a known baseline.
 2. **Audit SDK coverage** — Cross-reference the OAS spec against SDK resource/model/enum code to identify gaps, stale parameters, and missing endpoints — then verify findings against actual code and prepare actionable changes.
 3. **Test against live API** — Full CRUD integration test suite hitting a real Etsy test shop to validate the SDK works against the current API.
-4. **Claude Code integration** — Skills that orchestrate these tools conversationally via `/maintain-check` and `/maintain-audit`.
+4. **Claude Code integration** — Skills that orchestrate these tools conversationally via `/maintain-check`, `/maintain-release-check`, and `/maintain-audit`.
 
 ## Non-Goals
 
@@ -41,17 +41,23 @@ scripts/
   check_releases.py          # Fetches GitHub releases, compares against stored state
 
 tests/
-  conftest.py                # Shared fixtures: EtsyClient, credentials, markers
-  test_listing.py            # Listing CRUD
-  test_listing_image.py      # Image upload/delete
-  test_listing_file.py       # Digital file upload/delete
-  test_listing_inventory.py  # Inventory management
-  test_shop.py               # Shop read/update
-  test_shipping_profile.py   # Shipping CRUD
-  test_receipt.py            # Receipt/order operations
-  test_user.py               # User endpoints
-  test_taxonomy.py           # Taxonomy reads
-  test_misc.py               # Ping, token scopes
+  conftest.py                       # Shared fixtures, markers
+  fixtures/                         # Mock data for unit tests
+  test_session.py                   # EtsyClient session + auth
+  test_request_model.py             # Request base class validation
+  test_utils.py                     # Utility functions (todict, generate_get_uri)
+  test_listing_resource.py          # Listing resource methods
+  test_listing_models.py            # Listing request models
+  test_listing_image_resource.py    # Listing image upload resource
+  test_shop_resource.py             # Shop resource methods
+  test_shop_models.py               # Shop request models
+  test_receipt_resource.py          # Receipt resource methods
+  test_receipt_models.py            # Receipt request models
+  test_shipping_profile_resource.py # Shipping profile resource methods
+  test_shipping_profile_models.py   # Shipping profile request models
+  test_payment_resource.py          # Payment resource methods
+  test_user_resource.py             # User resource methods
+  test_remaining_resources.py       # Other resource methods
 
 .claude/skills/
   maintain-check/SKILL.md          # /maintain-check skill
@@ -89,13 +95,18 @@ Cross-references the OAS spec against SDK code. Auto-infers mappings using namin
 - OAS tags (e.g., `ShopListing`) -> match to resource file names
 - OAS request body schemas -> match to model class names by convention
 
-Reports:
+Report sections:
 
-- **Missing endpoints** — OAS operations with no SDK method
-- **Extra endpoints** — SDK methods with no OAS match (possibly removed)
-- **Parameter drift** — mismatches between OAS params and SDK method signatures/model fields
-- **Enum staleness** — OAS enum values not reflected in SDK enum classes
-- **Unmapped operations** — anything that couldn't be auto-matched (needs manual review)
+- **Coverage Summary** — overall mapped/unmapped/missing counts
+- **Missing Endpoints** — OAS operations with no SDK method
+- **Not Implemented Stubs** — SDK methods that exist but raise NotImplementedError
+- **Extra SDK Methods** — SDK methods with no OAS match (possibly removed)
+- **Missing Exports** — resource classes not exported from `__init__.py`
+- **Query/Path Parameter Drift** — mismatches between OAS params and SDK method signatures
+- **Request Body Drift** — mismatches between OAS request bodies and SDK model fields
+- **Enum Staleness** — OAS enum values not reflected in SDK enum classes
+- **Deprecation Notices** — operations marked deprecated in spec
+- **Code Issues** — static analysis findings (e.g., implicit string concatenation)
 
 Output goes to stdout and `specs/audit-report.md`.
 
@@ -109,38 +120,25 @@ Two modes:
 
 Exit codes: 0 = new releases found, 1 = up to date, 2 = error.
 
-### Integration Tests
+### Unit Tests
 
-#### Credentials
+Unit tests mock the HTTP layer and validate SDK behavior without hitting the Etsy API.
 
-Loaded from environment variables (or `.env` file, gitignored):
+#### Test Structure
 
-- `ETSY_API_KEY`
-- `ETSY_ACCESS_TOKEN`
-- `ETSY_REFRESH_TOKEN`
-- `ETSY_SHOP_ID`
-- `ETSY_TOKEN_EXPIRY`
+- **Resource tests** (`test_*_resource.py`) — verify resource methods build correct URLs, pass correct parameters, and handle responses
+- **Model tests** (`test_*_models.py`) — verify `mandatory`/`nullable` field validation, `get_dict()` serialization
+- **Session test** (`test_session.py`) — verify EtsyClient token refresh, header management, rate limit parsing
+- **Utility tests** (`test_utils.py`) — verify `todict()`, `generate_get_uri()`, `generate_bytes_from_file()`
 
-#### Test Pattern
+#### Running
 
-Write operations follow a create-read-update-delete lifecycle:
-
-1. Create a resource (draft listing, shipping profile, etc.)
-2. Read it back, assert fields match
-3. Update it, verify changes
-4. Delete/cleanup
-
-Read-only endpoints (taxonomy, reviews, user info) call and validate response shape.
-
-#### Markers
-
-- `@pytest.mark.readonly` — safe to run anytime
-- `@pytest.mark.write` — creates/modifies data on test shop
-- Run subsets: `pytest tests/ -m readonly`
-
-#### Response Validation
-
-Tests check response fields exist and have expected types, catching schema drift early (not just HTTP 200).
+```bash
+pytest                                               # All tests
+pytest -v                                            # Verbose
+pytest --cov=etsy_python --cov-report=term-missing   # Coverage
+pytest tests/test_session.py                         # Specific file
+```
 
 ### Claude Code Skills
 
@@ -161,19 +159,21 @@ Tests check response fields exist and have expected types, catching schema drift
 
 #### `/maintain-audit` (`.claude/skills/maintain-audit/SKILL.md`)
 
-The audit skill is a 4-phase pipeline that handles everything from detection through to implementation:
+The audit skill is a 4-phase pipeline that gathers fresh data, audits, reviews, and implements:
 
-**Phase 1 — Run audit script:**
-1. Runs `scripts/audit_sdk.py`
-2. Verifies `specs/audit-report.md` was generated successfully
-3. Reads the audit report into context
+**Phase 1 — Gather fresh data & run audit:**
+1. Fetches latest OAS spec (`scripts/fetch_spec.py`)
+2. Checks for new Etsy GitHub release notes (`scripts/check_releases.py`)
+3. Diffs spec against baseline (`scripts/diff_spec.py`)
+4. Runs `scripts/audit_sdk.py` against the latest spec
+5. Reads all generated reports (audit, diff, release notes) into context
 
-**Phase 2 — Verify & review findings:**
-Claude Code reads the audit report alongside the actual SDK code and OAS spec to catch what the script's pattern matching missed:
-- Loads OAS spec from `specs/latest.json` (fallback: `specs/baseline.json`) and `specs/diff-report.md` if available
-- Spot-checks "mapped" operations — focuses on those with diff-report changes, complex request bodies, or many parameters; reads actual resource files + model classes and compares against spec
-- Verifies "unmapped" operations — searches SDK resource files manually for naming mismatches the script missed
-- Verifies "extra" SDK methods — checks if they map to deprecated/removed/renamed endpoints
+**Phase 2 — AI-driven code review:**
+Claude Code reads the audit report alongside the actual SDK code, OAS spec, and release notes to catch what the script's pattern matching missed:
+- Prioritizes operations mentioned in release notes or diff report
+- Deep-reads flagged resource files + model classes and compares against spec
+- Checks serialization correctness, type mismatches, URL/method correctness
+- Verifies "unmapped" and "extra" operations
 - Deep-checks model `mandatory`/`nullable` lists against spec `required` arrays, with `file:line` references
 
 **Phase 3 — Prepare change list:**
@@ -189,7 +189,7 @@ Uses AskUserQuestion to ask the user:
 - **"Start implementing"** — Proceeds to implement all Must Fix and Should Fix items
 - **"Need changes to the audit tasks"** — Walks through items one at a time (or in groups), lets the user approve/reject/modify each, then implements only approved items
 
-After implementation, suggests running integration tests (if available locally) and updating the baseline spec.
+After implementation, suggests running tests (`pytest`), updating the baseline spec, and marking release notes as checked.
 
 ### Workflow
 
@@ -225,7 +225,7 @@ git add . && git commit -m "feat: sync SDK with Etsy OAS spec YYYY-MM-DD"
 
 ## Dependencies
 
-New dev dependencies for tests:
+Dev dependencies (in `requirements-dev.txt`):
 
-- `pytest`
-- `python-dotenv` (for loading `.env` credentials)
+- `pytest>=7.0.0`
+- `pytest-cov>=4.0.0`

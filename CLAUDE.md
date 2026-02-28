@@ -50,8 +50,9 @@ python scripts/audit_sdk.py           # Compare spec vs SDK code
 cp specs/latest.json specs/baseline.json
 
 # Claude Code skills (interactive)
-# /maintain-check   - Fetch + diff spec
-# /maintain-audit   - Audit SDK coverage
+# /maintain-check          - Fetch + diff spec
+# /maintain-release-check  - Check Etsy GitHub release notes
+# /maintain-audit          - Full pipeline: fetch spec + releases, audit, review, implement
 
 # GitHub Actions (see .github/workflows/)
 # maintenance-check.yml  - Weekly API change detection + SDK audit
@@ -168,3 +169,8 @@ Also supports manual workflow dispatch with version type selection.
 | `scripts/check_version_consistency.py` | Validates `_version.py` matches `.bumpversion.cfg` |
 | `scripts/release.py` | Manual release orchestration (`--no-push`, `--no-build`, `--no-tag`, `--force`) |
 | `scripts/generate_release_notes.py` | Generates changelog from git commits (used by CI) |
+| `scripts/fetch_spec.py` | Downloads latest Etsy OAS spec to `specs/latest.json` |
+| `scripts/diff_spec.py` | Diffs `specs/baseline.json` vs `specs/latest.json`, outputs `specs/diff-report.md` |
+| `scripts/audit_sdk.py` | Audits SDK coverage against OAS spec, outputs `specs/audit-report.md` |
+| `scripts/check_releases.py` | Checks Etsy GitHub releases for new changes, outputs `specs/release-notes.md` |
+| `scripts/format_pr_comment.py` | Formats audit report as a PR comment (used by CI) |
