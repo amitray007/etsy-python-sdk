@@ -4,7 +4,7 @@
 
 **Goal:** Build on-demand tooling (scripts + Claude Code skills) to detect Etsy API changes, audit SDK coverage, and run live integration tests.
 
-**Architecture:** Three Python scripts (`fetch_spec.py`, `diff_spec.py`, `audit_sdk.py`) provide the core logic. A pytest test suite covers live API integration. Three Claude Code skills (`/maintain:check`, `/maintain:audit`, `/maintain:test`) orchestrate these tools conversationally. A `specs/` directory stores baseline and latest OAS specs.
+**Architecture:** Three Python scripts (`fetch_spec.py`, `diff_spec.py`, `audit_sdk.py`) provide the core logic. A pytest test suite covers live API integration. Three Claude Code skills (`/maintain:check`, `/maintain:audit`, `/maintain:test`) orchestrate these tools conversationally. `/maintain:audit` is a full pipeline — it runs the audit script, then Claude Code verifies findings against actual code, prepares a categorized change list, and asks the user whether to implement directly or adjust items first. A `specs/` directory stores baseline and latest OAS specs.
 
 **Tech Stack:** Python 3.8+, requests (already a dependency), pytest, python-dotenv
 
@@ -1452,7 +1452,7 @@ git commit -m "feat: add shipping profile and receipt integration tests"
 
 ---
 
-### Task 9: Claude Code skills
+### Task 9: Claude Code skills (check, audit, test)
 
 **Files:**
 - Create: `.claude/skills/maintain/check.md`
@@ -1501,48 +1501,80 @@ description: Fetch the latest Etsy OAS spec and diff it against the baseline to 
 ```markdown
 ---
 name: audit
-description: Audit SDK coverage against the Etsy OAS spec to find gaps, drift, and stale enums
+description: Full audit pipeline - run script, verify against code, prepare changes, then implement with user approval
 ---
 
 # Audit SDK Coverage
 
-## Steps
+Full pipeline: run audit script -> verify findings against actual code -> prepare change list -> user decides -> implement.
+
+## Phase 1: Run Audit Script
 
 1. Run the audit script:
    ```bash
    python scripts/audit_sdk.py
    ```
 
-2. Read the audit report at `specs/audit-report.md` and present findings to the user.
+2. Verify `specs/audit-report.md` was generated. If not, report the error and stop.
 
-3. For each category of findings, provide actionable guidance:
+3. Read `specs/audit-report.md` to load the script's findings.
 
-   **Missing Endpoints:**
-   - Show the OAS operation details (method, path, parameters)
-   - Identify which resource file should contain the new method
-   - Offer to implement the missing method following existing patterns
+## Phase 2: Verify & Review Findings
 
-   **Extra SDK Methods:**
-   - Check if the method was removed from the spec or renamed
-   - Suggest deprecation or removal
+The audit script uses pattern matching (snake_case conversion, AST parsing) which can miss semantic issues. Now read the actual SDK code and OAS spec to verify.
 
-   **Parameter Drift:**
-   - Show what the spec expects vs what the SDK has
-   - Identify the specific file and line to modify
-   - Offer to update the method signature or model class
+4. Load the OAS spec from `specs/latest.json` (or `specs/baseline.json` if latest doesn't exist). Also load `specs/diff-report.md` if it exists.
 
-   **Enum Staleness:**
-   - Show missing/extra enum values
-   - Identify the enum file to update
-   - Offer to add missing values
+5. **Spot-check "mapped" operations** — focus on operations most likely to have issues:
+   - Operations whose endpoints had changes in the diff report
+   - Operations with complex request bodies (POST/PUT/PATCH)
+   - Operations with many parameters
 
-4. Suggest next steps:
-   - Implement the changes identified
-   - Run `/maintain:test` to validate changes work against the live API
-   - After all changes are applied, update the baseline:
-     ```bash
-     cp specs/latest.json specs/baseline.json
-     ```
+   For each spot-check, read the actual resource file and model class, then compare against the OAS spec entry:
+   - Does the model's `mandatory` list match the spec's `required` fields?
+   - Are there spec parameters not exposed in the SDK?
+   - Does the SDK use the right types (int vs str, Optional vs required)?
+   - Does the SDK enum cover all spec enum values?
+
+6. **Verify "unmapped" operations** — search SDK resource files manually for naming mismatches the script missed. Determine: truly missing, or just named differently?
+
+7. **Verify "extra" SDK methods** — check if they map to deprecated/removed/renamed endpoints.
+
+8. **Deep-check request models** — for each model class, compare `mandatory`/`nullable` lists against spec `required` arrays. Flag discrepancies with file:line references.
+
+## Phase 3: Prepare Change List
+
+9. Consolidate all findings (script-detected + review-detected) into a categorized list:
+
+   **Must Fix (Breaking/Correctness):**
+   - Mandatory fields that changed
+   - Removed parameters still in SDK
+   - Type mismatches that would cause API errors
+
+   **Should Fix (Completeness):**
+   - New optional parameters not yet in SDK
+   - New enum values not reflected
+   - Missing endpoints
+
+   **Informational:**
+   - Deprecation notices
+   - Response schema changes
+   - Naming inconsistencies
+
+   Each item includes: category, description, specific file:line, and what the change should be.
+
+10. Present the full change list to the user.
+
+## Phase 4: User Decision
+
+11. Use AskUserQuestion to ask the user:
+
+   - **"Start implementing"** — Proceed to implement all Must Fix and Should Fix items from the change list.
+   - **"Need changes to the audit tasks"** — Walk through the change list items. Show each item (or group related items) and ask the user to approve, reject, or modify. After walking through all items, prepare a final implementation plan from only the approved items, then implement.
+
+12. After implementation is complete, suggest:
+    - Run `/maintain:test` to validate changes work against the live API
+    - Update the baseline: `cp specs/latest.json specs/baseline.json`
 ```
 
 **Step 3: Create `.claude/skills/maintain/test.md`**
@@ -1630,7 +1662,7 @@ cp specs/latest.json specs/baseline.json
 
 # Claude Code skills (interactive)
 # /maintain:check   - Fetch + diff spec
-# /maintain:audit   - Audit SDK coverage
+# /maintain:audit   - Audit + verify + prepare changes + implement
 # /maintain:test    - Run integration tests
 ```
 ```
@@ -1655,9 +1687,25 @@ Task 1 (scaffolding)
     -> Task 6 (read-only tests)
     -> Task 7 (listing CRUD tests)
     -> Task 8 (shipping/receipt tests)
-  -> Task 9 (Claude Code skills) -- independent, can run in parallel
+  -> Task 9 (Claude Code skills: check, audit, test) -- independent, can run in parallel
 Task 10 (final validation) -- depends on all above
 ```
 
 Tasks 3, 4, and 9 can run in parallel after Task 2 completes.
 Tasks 6, 7, and 8 can run in parallel after Task 5 completes.
+
+## Maintenance Workflow (after implementation)
+
+```
+/maintain:check    → "Are there new Etsy API changes?"
+/maintain:audit    → Full pipeline:
+                     Phase 1: Run audit script
+                     Phase 2: Verify findings against actual code + spec
+                     Phase 3: Prepare categorized change list
+                     Phase 4: AskUserQuestion →
+                       "Start implementing" → execute all changes
+                       "Need changes" → walk through items, adjust, then implement
+/maintain:test     → "Does everything work against the live API?"
+                   → cp specs/latest.json specs/baseline.json
+                   → Commit
+```
