@@ -1,0 +1,3 @@
+# Require owner review for workflow and secret-adjacent changes
+.github/workflows/ @amitray007
+.github/CODEOWNERS @amitray007
