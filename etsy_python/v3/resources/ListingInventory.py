@@ -18,18 +18,22 @@ class ListingInventoryResource:
         listing_id: int,
         show_deleted: bool = False,
         includes: Optional[InventoryIncludes] = None,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/listings/{listing_id}/inventory"
-        kwargs: Dict[str, Any] = {
+        query_params: Dict[str, Any] = {
             "show_deleted": show_deleted,
             "includes": includes.value if includes is not None else None,
+            "legacy": legacy,
         }
-        return self.session.make_request(endpoint, **kwargs)
+        return self.session.make_request(endpoint, query_params=query_params)
 
     def update_listing_inventory(
-        self, listing_id: int, listing_inventory: UpdateListingInventoryRequest
+        self, listing_id: int, listing_inventory: UpdateListingInventoryRequest,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/listings/{listing_id}/inventory"
         return self.session.make_request(
-            endpoint, method=Method.PUT, payload=listing_inventory
+            endpoint, method=Method.PUT, payload=listing_inventory,
+            query_params={"legacy": legacy},
         )

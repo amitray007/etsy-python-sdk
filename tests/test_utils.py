@@ -4,30 +4,41 @@ from etsy_python.v3.common.Utils import generate_get_uri, todict
 
 
 class TestGenerateGetUri:
-    def test_no_kwargs(self):
+    def test_no_params(self):
         assert generate_get_uri("/shops/123") == "/shops/123"
 
-    def test_empty_kwargs(self):
-        assert generate_get_uri("/shops/123") == "/shops/123"
+    def test_none_params(self):
+        assert generate_get_uri("/shops/123", None) == "/shops/123"
 
-    def test_single_kwarg(self):
-        result = generate_get_uri("/shops/123", limit=25)
+    def test_empty_params(self):
+        assert generate_get_uri("/shops/123", {}) == "/shops/123"
+
+    def test_single_param(self):
+        result = generate_get_uri("/shops/123", {"limit": 25})
         assert result == "/shops/123?limit=25"
 
-    def test_multiple_kwargs(self):
-        result = generate_get_uri("/shops/123", limit=25, offset=0)
+    def test_multiple_params(self):
+        result = generate_get_uri("/shops/123", {"limit": 25, "offset": 0})
         assert "limit=25" in result
         assert "offset=0" in result
         assert result.startswith("/shops/123?")
 
     def test_none_values_filtered(self):
-        result = generate_get_uri("/shops/123", limit=25, keywords=None)
+        result = generate_get_uri("/shops/123", {"limit": 25, "keywords": None})
         assert result == "/shops/123?limit=25"
         assert "keywords" not in result
 
     def test_all_none_values(self):
-        result = generate_get_uri("/shops/123", limit=None, offset=None)
+        result = generate_get_uri("/shops/123", {"limit": None, "offset": None})
         assert result == "/shops/123"
+
+    def test_bool_true_lowercased(self):
+        result = generate_get_uri("/shops/123", {"legacy": True})
+        assert result == "/shops/123?legacy=true"
+
+    def test_bool_false_lowercased(self):
+        result = generate_get_uri("/shops/123", {"was_paid": False})
+        assert result == "/shops/123?was_paid=false"
 
 
 class SampleEnum(Enum):
@@ -140,3 +151,17 @@ class TestTodict:
 
         result = todict(ObjWithBool())
         assert result == {"flag": False}
+
+    def test_bool_false_in_nullable_not_nulled(self):
+        """Boolean False should stay False when not in the nulled list (get_nulled excludes bools)."""
+
+        class ObjWithNullableBool:
+            def __init__(self):
+                self.was_shipped = False
+                self.name = "test"
+
+        # Simulate the actual flow: get_nulled() won't include was_shipped=False
+        # in the nulled list, so todict receives an empty nullable list.
+        result = todict(ObjWithNullableBool(), nullable=[])
+        assert result["was_shipped"] is False
+        assert result["name"] == "test"

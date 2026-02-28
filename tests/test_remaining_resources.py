@@ -156,6 +156,7 @@ class TestListingInventoryResource:
             f"/listings/{MOCK_LISTING_ID}/inventory",
             method=Method.PUT,
             payload=payload,
+            query_params={"legacy": None},
         )
 
 
@@ -495,7 +496,8 @@ class TestReceiptTransactionsResource:
             MOCK_SHOP_ID, MOCK_RECEIPT_ID
         )
         mock_session.make_request.assert_called_once_with(
-            f"/shops/{MOCK_SHOP_ID}/receipts/{MOCK_RECEIPT_ID}/transactions"
+            f"/shops/{MOCK_SHOP_ID}/receipts/{MOCK_RECEIPT_ID}/transactions",
+            query_params={"legacy": None},
         )
 
     def test_get_shop_receipt_transaction(self, mock_session):
@@ -541,8 +543,9 @@ class TestPaymentLedgeEntryResource:
             call_args[0][0]
             == f"/shops/{MOCK_SHOP_ID}/payment-account/ledger-entries"
         )
-        assert call_args[1]["min_created"] == 1640000000
-        assert call_args[1]["max_created"] == 1641000000
+        qp = call_args[1]["query_params"]
+        assert qp["min_created"] == 1640000000
+        assert qp["max_created"] == 1641000000
 
 
 # --- ShopProductionPartner ---
@@ -619,7 +622,8 @@ class TestListingOfferingResource:
         resource = ListingOfferingResource(session=mock_session)
         resource.get_listing_offering(MOCK_LISTING_ID, MOCK_PRODUCT_ID, MOCK_OFFERING_ID)
         mock_session.make_request.assert_called_once_with(
-            f"/listings/{MOCK_LISTING_ID}/products/{MOCK_PRODUCT_ID}/offerings/{MOCK_OFFERING_ID}"
+            f"/listings/{MOCK_LISTING_ID}/products/{MOCK_PRODUCT_ID}/offerings/{MOCK_OFFERING_ID}",
+            query_params={"legacy": None},
         )
 
 
@@ -630,5 +634,6 @@ class TestListingProductResource:
         resource = ListingProductResource(session=mock_session)
         resource.get_listing_product(MOCK_LISTING_ID, MOCK_PRODUCT_ID)
         mock_session.make_request.assert_called_once_with(
-            f"/listings/{MOCK_LISTING_ID}/inventory/products/{MOCK_PRODUCT_ID}"
+            f"/listings/{MOCK_LISTING_ID}/inventory/products/{MOCK_PRODUCT_ID}",
+            query_params={"legacy": None},
         )

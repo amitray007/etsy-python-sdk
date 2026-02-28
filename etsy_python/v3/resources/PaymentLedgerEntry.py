@@ -25,10 +25,10 @@ class PaymentLedgeEntryResource:
         offset: int = 0,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/payment-account/ledger-entries"
-        kwargs: Dict[str, Any] = {
+        query_params: Dict[str, Any] = {
             "max_created": max_created,
             "min_created": min_created,
             "limit": limit,
             "offset": offset,
         }
-        return self.session.make_request(endpoint, **kwargs)
+        return self.session.make_request(endpoint, query_params=query_params)

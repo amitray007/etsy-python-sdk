@@ -8,6 +8,7 @@ from etsy_python.v3.enums.Listing import (
     SortOrder,
     State,
 )
+from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.models.Listing import (
     CreateDraftListingRequest,
     UpdateListingPropertyRequest,
@@ -41,6 +42,7 @@ class TestCreateDraftListing:
             f"/shops/{MOCK_SHOP_ID}/listings",
             method=Method.POST,
             payload=payload,
+            query_params={"legacy": None},
         )
 
 
@@ -56,9 +58,10 @@ class TestGetListingsByShop:
         assert result.code == 200
         call_args = mock_session.make_request.call_args
         assert call_args[0][0] == f"/shops/{MOCK_SHOP_ID}/listings"
-        assert call_args[1]["state"] == State.ACTIVE.value
-        assert call_args[1]["sort_on"] == SortOn.CREATED.value
-        assert call_args[1]["sort_order"] == SortOrder.DESC.value
+        qp = call_args[1]["query_params"]
+        assert qp["state"] == State.ACTIVE.value
+        assert qp["sort_on"] == SortOn.CREATED.value
+        assert qp["sort_order"] == SortOrder.DESC.value
 
     def test_with_includes(self, mock_session):
         mock_session.make_request.return_value = Response(
@@ -70,8 +73,8 @@ class TestGetListingsByShop:
             MOCK_SHOP_ID, includes=[Includes.IMAGES, Includes.SHOP]
         )
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["includes"] == "Images,Shop"
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["includes"] == "Images,Shop"
 
     def test_custom_state_and_sort(self, mock_session):
         mock_session.make_request.return_value = Response(
@@ -86,10 +89,10 @@ class TestGetListingsByShop:
             sort_order=SortOrder.ASC,
         )
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["state"] == "draft"
-        assert call_kwargs["sort_on"] == "price"
-        assert call_kwargs["sort_order"] == "asc"
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["state"] == "draft"
+        assert qp["sort_on"] == "price"
+        assert qp["sort_order"] == "asc"
 
 
 class TestDeleteListing:
@@ -124,9 +127,9 @@ class TestGetListing:
             MOCK_LISTING_ID, includes=[Includes.IMAGES], language="fr"
         )
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["includes"] == "Images"
-        assert call_kwargs["language"] == "fr"
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["includes"] == "Images"
+        assert qp["language"] == "fr"
 
 
 class TestFindAllListingsActive:
@@ -141,8 +144,9 @@ class TestFindAllListingsActive:
         assert result.code == 200
         call_args = mock_session.make_request.call_args
         assert call_args[0][0] == "/listings/active"
-        assert call_args[1]["limit"] == 25
-        assert call_args[1]["offset"] == 0
+        qp = call_args[1]["query_params"]
+        assert qp["limit"] == 25
+        assert qp["offset"] == 0
 
     def test_with_keywords_and_price_range(self, mock_session):
         mock_session.make_request.return_value = Response(
@@ -154,10 +158,10 @@ class TestFindAllListingsActive:
             keywords="ceramic mug", min_price=10.0, max_price=50.0
         )
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["keywords"] == "ceramic mug"
-        assert call_kwargs["min_price"] == 10.0
-        assert call_kwargs["max_price"] == 50.0
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["keywords"] == "ceramic mug"
+        assert qp["min_price"] == 10.0
+        assert qp["max_price"] == 50.0
 
 
 class TestFindAllActiveListingsByShop:
@@ -183,8 +187,8 @@ class TestGetListingsByListingsIds:
 
         resource.get_listings_by_listings_ids([111, 222, 333])
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["listing_ids"] == "111,222,333"
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["listing_ids"] == "111,222,333"
 
 
 class TestGetFeaturedListingsByShop:
@@ -235,10 +239,14 @@ class TestUpdateListingProperty:
 
 
 class TestGetListingProperty:
-    def test_raises_not_implemented(self, mock_session):
+    def test_basic_call(self, mock_session):
+        mock_session.make_request.return_value = Response(200, {"property_id": 513})
         resource = ListingResource(session=mock_session)
-        with pytest.raises(NotImplementedError):
-            resource.get_listing_property()
+        result = resource.get_listing_property(11111, 513)
+        assert result.code == 200
+        mock_session.make_request.assert_called_once_with(
+            "/listings/11111/properties/513"
+        )
 
 
 class TestGetListingProperties:
@@ -266,6 +274,7 @@ class TestUpdateListing:
             f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}",
             method=Method.PATCH,
             payload=payload,
+            query_params={"legacy": None},
         )
 
 
@@ -299,7 +308,8 @@ class TestGetListingsByShopReturnPolicy:
 
         assert result.code == 200
         mock_session.make_request.assert_called_once_with(
-            f"/shops/{MOCK_SHOP_ID}/policies/return/{MOCK_RETURN_POLICY_ID}/listings"
+            f"/shops/{MOCK_SHOP_ID}/policies/return/{MOCK_RETURN_POLICY_ID}/listings",
+            query_params={"legacy": None},
         )
 
 
@@ -314,8 +324,8 @@ class TestGetListingsByShopSectionId:
             MOCK_SHOP_ID, shop_section_ids=[111, 222]
         )
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["shop_section_ids"] == "111,222"
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["shop_section_ids"] == "111,222"
 
     def test_without_section_ids(self, mock_session):
         mock_session.make_request.return_value = Response(
@@ -325,5 +335,57 @@ class TestGetListingsByShopSectionId:
 
         resource.get_listings_by_shop_section_id(MOCK_SHOP_ID)
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["shop_section_ids"] is None
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["shop_section_ids"] is None
+
+
+class TestErrorPropagation:
+    def test_request_exception_propagates(self, mock_session):
+        """Resource methods must not swallow RequestException from make_request."""
+        mock_session.make_request.side_effect = RequestException(
+            code=404, error="Not Found"
+        )
+        resource = ListingResource(session=mock_session)
+
+        with pytest.raises(RequestException) as exc_info:
+            resource.get_listing(MOCK_LISTING_ID)
+        assert exc_info.value.code == 404
+
+
+class TestResponseDataValidation:
+    def test_create_draft_listing_returns_listing_data(self, mock_session):
+        listing_data = make_shop_listing()
+        mock_session.make_request.return_value = Response(201, listing_data)
+        resource = ListingResource(session=mock_session)
+        payload = MagicMock(spec=CreateDraftListingRequest)
+
+        result = resource.create_draft_listing(MOCK_SHOP_ID, payload)
+
+        assert result.code == 201
+        assert result.message["listing_id"] == listing_data["listing_id"]
+        assert result.message["title"] == listing_data["title"]
+
+    def test_get_listings_by_shop_returns_collection(self, mock_session):
+        collection = make_shop_listing_collection()
+        mock_session.make_request.return_value = Response(200, collection)
+        resource = ListingResource(session=mock_session)
+
+        result = resource.get_listings_by_shop(MOCK_SHOP_ID)
+
+        assert result.message["count"] == collection["count"]
+        assert len(result.message["results"]) == len(collection["results"])
+
+
+class TestNoneOptionalParams:
+    def test_none_optional_params_excluded_from_query_params(self, mock_session):
+        """Optional params passed as None should appear in query_params (filtered by generate_get_uri)."""
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.find_all_listings_active(keywords=None, min_price=None)
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["keywords"] is None
+        assert qp["min_price"] is None

@@ -81,16 +81,16 @@ class TestUpdateShopShippingProfileDestinationRequest:
 
 
 class TestCreateShopShippingProfileUpgradeRequest:
-    def test_always_raises_due_to_type_mismatch(self):
-        # SDK bug: mandatory list has "type" but attribute is stored as "_type",
-        # so check_mandatory() always fails with ValueError
-        with pytest.raises(ValueError):
-            CreateShopShippingProfileUpgradeRequest(
-                profile_type=Type.ZERO,
-                upgrade_name="Priority",
-                price=10.00,
-                secondary_price=5.00,
-            )
+    def test_valid_request(self):
+        req = CreateShopShippingProfileUpgradeRequest(
+            profile_type=Type.ZERO,
+            upgrade_name="Priority",
+            price=10.00,
+            secondary_price=5.00,
+        )
+        assert req.upgrade_name == "Priority"
+        result = req.get_dict()
+        assert result["type"] == 0
 
     def test_missing_mandatory_raises(self):
         with pytest.raises(ValueError):

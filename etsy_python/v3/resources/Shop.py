@@ -34,9 +34,9 @@ class ShopResource:
         self, shop_name: str, limit: int = 25, offset: int = 0
     ) -> Union[Response, RequestException]:
         endpoint = "/shops"
-        kwargs: Dict[str, Any] = {
+        query_params: Dict[str, Any] = {
             "shop_name": shop_name,
             "limit": limit,
             "offset": offset,
         }
-        return self.session.make_request(endpoint, **kwargs)
+        return self.session.make_request(endpoint, query_params=query_params)

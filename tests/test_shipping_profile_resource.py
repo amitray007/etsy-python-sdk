@@ -43,7 +43,7 @@ class TestGetShippingCarriers:
         assert result.code == 200
         call_args = mock_session.make_request.call_args
         assert call_args[0][0] == "/shipping-carriers"
-        assert call_args[1]["origin_country_iso"] == "US"
+        assert call_args[1]["query_params"]["origin_country_iso"] == "US"
 
 
 class TestCreateShopShippingProfile:
@@ -163,8 +163,9 @@ class TestGetShopShippingProfileDestinations:
             call_args[0][0]
             == f"/shops/{MOCK_SHOP_ID}/shipping-profiles/{SP}/destinations"
         )
-        assert call_args[1]["limit"] == 25
-        assert call_args[1]["offset"] == 0
+        qp = call_args[1]["query_params"]
+        assert qp["limit"] == 25
+        assert qp["offset"] == 0
 
 
 class TestDeleteShopShippingProfileDestination:

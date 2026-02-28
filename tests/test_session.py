@@ -69,11 +69,13 @@ class TestMakeRequestGet:
         called_url = real_etsy_client._mock_http_session.get.call_args[0][0]
         assert called_url == f"{environment.request_url}/shops/123"
 
-    def test_get_with_kwargs(self, real_etsy_client):
+    def test_get_with_query_params(self, real_etsy_client):
         mock_resp = _make_mock_response(200, {"results": []})
         real_etsy_client._mock_http_session.get.return_value = mock_resp
 
-        real_etsy_client.make_request("/shops/123/listings", limit=25, offset=0)
+        real_etsy_client.make_request(
+            "/shops/123/listings", query_params={"limit": 25, "offset": 0}
+        )
 
         called_url = real_etsy_client._mock_http_session.get.call_args[0][0]
         assert "limit=25" in called_url
@@ -299,6 +301,41 @@ class TestTokenRefresh:
             args = sync_callback.call_args[0]
             assert args[0] == "new-token"
             assert args[1] == "new-refresh"
+
+    def test_valid_token_does_not_refresh(self, real_etsy_client):
+        """A token with expiry in the future should not trigger a refresh."""
+        real_etsy_client.expiry = datetime.now(tz=timezone.utc) + timedelta(hours=1)
+
+        get_resp = _make_mock_response(200, {"shop_id": 123})
+        real_etsy_client._mock_http_session.get.return_value = get_resp
+
+        result = real_etsy_client.make_request("/shops/123")
+        assert isinstance(result, Response)
+        # post is used for token refresh; it should not be called
+        real_etsy_client._mock_http_session.post.assert_not_called()
+
+    def test_exact_expiry_boundary_triggers_refresh(self, real_etsy_client):
+        """A token with expiry at exactly now should trigger a refresh (uses >= comparison)."""
+        real_etsy_client.expiry = datetime.now(tz=timezone.utc)
+
+        refresh_resp = _make_mock_response(
+            200,
+            {
+                "access_token": "boundary-access-token",
+                "refresh_token": "boundary-refresh-token",
+                "expires_in": 3600,
+            },
+        )
+        real_etsy_client._mock_http_session.post.return_value = refresh_resp
+
+        get_resp = _make_mock_response(200, {"shop_id": 123})
+        real_etsy_client._mock_http_session.get.return_value = get_resp
+
+        result = real_etsy_client.make_request("/shops/123")
+        assert isinstance(result, Response)
+        # Refresh should have been called
+        real_etsy_client._mock_http_session.post.assert_called_once()
+        assert real_etsy_client.access_token == "boundary-access-token"
 
     def test_refresh_failure_raises(self, real_etsy_client):
         real_etsy_client.expiry = datetime.now(tz=timezone.utc) - timedelta(hours=1)

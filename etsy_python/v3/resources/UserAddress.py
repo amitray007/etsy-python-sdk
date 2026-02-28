@@ -27,5 +27,5 @@ class UserAddressResource:
         self, limit: int = 25, offset: int = 0
     ) -> Union[Response, RequestException]:
         endpoint = "/user/addresses"
-        kwargs: Dict[str, Any] = {"limit": limit, "offset": offset}
-        return self.session.make_request(endpoint, **kwargs)
+        query_params: Dict[str, Any] = {"limit": limit, "offset": offset}
+        return self.session.make_request(endpoint, query_params=query_params)

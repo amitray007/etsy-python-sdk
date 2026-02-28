@@ -15,6 +15,7 @@ class Request:
             raise ValueError
 
     def check_mandatory(self) -> bool:
+        # Keys must match the attribute name (e.g. "_type", not "type").
         if self._mandatory is not None:
             for key in self._mandatory:
                 try:
@@ -28,7 +29,7 @@ class Request:
         return [
             key
             for key, value in self.__dict__.items()
-            if key in self._nullable and (value == [] or value == "" or value == 0)
+            if key in self._nullable and (value == [] or value == "" or (value == 0 and not isinstance(value, bool)))
         ]
 
     def get_dict(self) -> Any:

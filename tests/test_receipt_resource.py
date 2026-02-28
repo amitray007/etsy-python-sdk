@@ -22,7 +22,8 @@ class TestGetShopReceipt:
 
         assert result.code == 200
         mock_session.make_request.assert_called_once_with(
-            f"/shops/{MOCK_SHOP_ID}/receipts/{MOCK_RECEIPT_ID}"
+            f"/shops/{MOCK_SHOP_ID}/receipts/{MOCK_RECEIPT_ID}",
+            query_params={"legacy": None},
         )
 
 
@@ -39,6 +40,7 @@ class TestUpdateShopReceipt:
             f"/shops/{MOCK_SHOP_ID}/receipts/{MOCK_RECEIPT_ID}",
             method=Method.PUT,
             payload=payload,
+            query_params={"legacy": None},
         )
 
 
@@ -54,8 +56,9 @@ class TestGetShopReceipts:
         assert result.code == 200
         call_args = mock_session.make_request.call_args
         assert call_args[0][0] == f"/shops/{MOCK_SHOP_ID}/receipts"
-        assert call_args[1]["sort_on"] == SortOn.CREATED.value
-        assert call_args[1]["sort_order"] == SortOrder.DESC.value
+        qp = call_args[1]["query_params"]
+        assert qp["sort_on"] == SortOn.CREATED.value
+        assert qp["sort_order"] == SortOrder.DESC.value
 
     def test_with_filters(self, mock_session):
         mock_session.make_request.return_value = Response(
@@ -71,11 +74,11 @@ class TestGetShopReceipts:
             max_created=1641000000,
         )
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["was_paid"] is True
-        assert call_kwargs["was_shipped"] is False
-        assert call_kwargs["min_created"] == 1640000000
-        assert call_kwargs["max_created"] == 1641000000
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["was_paid"] is True
+        assert qp["was_shipped"] is False
+        assert qp["min_created"] == 1640000000
+        assert qp["max_created"] == 1641000000
 
 
 class TestCreateReceiptShipment:
@@ -93,4 +96,5 @@ class TestCreateReceiptShipment:
             f"/shops/{MOCK_SHOP_ID}/receipts/{MOCK_RECEIPT_ID}/tracking",
             method=Method.POST,
             payload=payload,
+            query_params={"legacy": None},
         )

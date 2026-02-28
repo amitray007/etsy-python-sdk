@@ -29,8 +29,8 @@ class TestGetPayments:
 
         resource.get_payments(MOCK_SHOP_ID, [MOCK_PAYMENT_ID, 20202])
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["payment_ids"] == f"{MOCK_PAYMENT_ID},20202"
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["payment_ids"] == f"{MOCK_PAYMENT_ID},20202"
 
 
 class TestGetShopPaymentAccountLedgerEntryPayments:
@@ -49,4 +49,4 @@ class TestGetShopPaymentAccountLedgerEntryPayments:
             call_args[0][0]
             == f"/shops/{MOCK_SHOP_ID}/payment-account/ledger-entries/payments"
         )
-        assert call_args[1]["ledger_entry_ids"] == f"{MOCK_LEDGER_ENTRY_ID},30303"
+        assert call_args[1]["query_params"]["ledger_entry_ids"] == f"{MOCK_LEDGER_ENTRY_ID},30303"

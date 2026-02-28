@@ -38,11 +38,10 @@ class TestUpdateShopReceiptRequest:
 
     def test_nullable_fields_with_false(self):
         req = UpdateShopReceiptRequest(was_shipped=False, was_paid=False)
-        # was_shipped and was_paid are nullable; False == 0 triggers get_nulled()
-        # so they become None in the serialized output (SDK behavior)
+        # Boolean False is a valid distinct value from null; it should serialize as False
         result = req.get_dict()
-        assert result["was_shipped"] is None
-        assert result["was_paid"] is None
+        assert result["was_shipped"] is False
+        assert result["was_paid"] is False
 
     def test_nullable_fields_with_true(self):
         req = UpdateShopReceiptRequest(was_shipped=True, was_paid=True)
