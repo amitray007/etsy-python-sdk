@@ -100,9 +100,15 @@ All code lives under `etsy_python/v3/`:
 
 **EtsyClient** (`resources/Session.py`): Central HTTP client. Manages OAuth tokens with auto-refresh, session headers, rate limit parsing. All resources receive it via constructor injection.
 
-**Request base class** (`models/Request.py`): Provides `nullable`/`mandatory` field lists. `check_mandatory()` validates required fields, `get_dict()` serializes to API format excluding empty nullable fields.
+**Request base class** (`models/Request.py`): Provides `nullable`/`mandatory` field lists. `check_mandatory()` validates required fields, `get_dict()` serializes to API format excluding empty nullable fields. Note: mandatory list keys must match the Python attribute name (e.g. `"_type"`, not `"type"`).
 
 **FileRequest** (`models/FileRequest.py`): Extends Request with `file` (multipart) and `data` attributes for upload endpoints.
+
+### Important Serialization Patterns
+
+**`_type` field mapping**: Python's `type` is a builtin, so model attributes that map to the API's `type` field are stored as `_type`. `todict()` in `Utils.py` maps `_type` → `"type"` during serialization. The mandatory list in Request models must use `"_type"` (the attribute name), not `"type"`.
+
+**Boolean False vs nullable**: `get_nulled()` in `Request.py` treats empty strings, empty lists, and zero as null for nullable fields — but explicitly excludes `bool` values. `False` is a valid distinct value from null and serializes as `False`, not `None`. The `todict()` function in `Utils.py` has the same guard: `(value != 0 or isinstance(value, bool))`.
 
 ### Request Flow
 
@@ -153,14 +159,26 @@ Controlled by `ETSY_ENV` env var (default: `"PROD"`). Sets base URLs for OAuth (
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/python-publish.yml`) on push to master:
+### Publish Pipeline (`python-publish.yml`)
+
+On push to master:
 1. Check for skip-ci markers
 2. Bump version based on commit message semantics
 3. Build sdist + wheel
 4. Publish to PyPI (trusted publishing)
 5. Create GitHub Release
 
-Also supports manual workflow dispatch with version type selection.
+Uses `VERSION_BUMP_TOKEN` (fine-grained PAT with Contents:Read/Write) to push version bump commits to protected master branch. Also supports manual workflow dispatch with version type selection.
+
+### PR Workflows
+
+- **`pr-tests.yml`** — Runs pytest with coverage on every PR push. Posts/updates a coverage comment on the PR using PATCH-first upsert to avoid race conditions. Has concurrency groups to cancel in-flight runs.
+- **`pr-coverage.yml`** — SDK coverage audit against Etsy OAS spec. Triggered by `sdk-check` label or manual dispatch. Fetches latest spec with fallback to `specs/baseline.json`.
+- **`maintenance-check.yml`** — Weekly scheduled check for Etsy API changes. Fetches spec, diffs against baseline, runs SDK audit.
+
+### Branch Protection
+
+`.github/CODEOWNERS` requires `@amitray007` review for changes to `.github/workflows/` and `.github/CODEOWNERS` to protect CI secrets from unauthorized workflow modifications.
 
 ## Scripts
 

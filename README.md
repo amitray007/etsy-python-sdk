@@ -307,19 +307,25 @@ The SDK provides comprehensive coverage of Etsy API v3 resources:
 - **Listing** - Create, read, update, delete listings
 - **Shop** - Manage shop information and settings
 - **Receipt** - Handle orders and transactions
+- **ReceiptTransactions** - Individual transaction details
 - **User** - User profiles and addresses
-- **ShippingProfile** - Configure shipping options
+- **UserAddress** - User address management
+- **ShippingProfile** - Configure shipping options and destinations
 
 ### Media Resources
 
 - **ListingImage** - Upload and manage listing images
 - **ListingVideo** - Upload and manage listing videos
 - **ListingFile** - Digital file management
+- **ListingVariationImages** - Variation-specific images
 
 ### Commerce Resources
 
 - **ListingInventory** - Stock and SKU management
-- **Payment** - Payment processing and ledger entries
+- **ListingOffering** - Product offering details
+- **ListingProduct** - Product variant management
+- **Payment** - Payment processing
+- **PaymentLedgerEntry** - Payment ledger entries
 - **Review** - Customer reviews management
 
 ### Shop Management
@@ -327,6 +333,14 @@ The SDK provides comprehensive coverage of Etsy API v3 resources:
 - **ShopSection** - Organize listings into sections
 - **ShopReturnPolicy** - Define return policies
 - **ShopProductionPartner** - Manage production partners
+- **HolidayPreferences** - Shop holiday schedule
+- **ProcessingProfile** - Processing time profiles
+
+### Taxonomy & Translation
+
+- **BuyerTaxonomy** / **SellerTaxonomy** - Product categories and attributes
+- **ListingTranslation** - Listing localization
+- **Miscellaneous** - Ping and other utility endpoints
 
 ## Error Handling
 
@@ -362,16 +376,24 @@ export ETSY_ENV=PROD
 ```
 etsy-python-sdk/
 ├── etsy_python/
+│   ├── _version.py            # Single source of truth for version
 │   └── v3/
-│       ├── auth/          # OAuth authentication
-│       ├── common/        # Shared utilities
-│       ├── enums/         # API enum definitions
-│       ├── exceptions/    # Custom exceptions
-│       ├── models/        # Request/response models
-│       └── resources/     # API endpoint implementations
-├── setup.py               # Package configuration
-├── LICENSE                # MIT License
-└── README.md              # Documentation
+│       ├── auth/              # OAuth 2.0 PKCE authentication
+│       ├── common/            # Shared utilities and HTTP constants
+│       ├── enums/             # Type-safe API parameter constants
+│       ├── exceptions/        # Custom exceptions with rate limit info
+│       ├── models/            # Request data models with validation
+│       └── resources/         # ~28 API endpoint resource classes
+├── tests/                     # pytest test suite
+│   └── fixtures/              # Shared test fixtures and mock responses
+├── scripts/                   # Maintenance and release scripts
+├── specs/                     # OAS spec files and audit reports
+├── .github/
+│   ├── workflows/             # CI/CD and PR automation
+│   └── CODEOWNERS             # Required reviewers for sensitive files
+├── setup.py                   # Package configuration
+├── requirements-dev.txt       # Development/testing dependencies
+└── README.md                  # Documentation
 ```
 
 ## Contributing
@@ -438,16 +460,28 @@ python scripts/release.py patch --no-push
 4. Install dependencies:
    ```bash
    pip install -r etsy_python/requirements.txt
+   pip install -r requirements-dev.txt
    ```
-5. Create a feature branch:
+5. Run the test suite:
+   ```bash
+   pytest -v
+   pytest --cov=etsy_python --cov-report=term-missing
+   ```
+6. Create a feature branch:
    ```bash
    git checkout -b feature/your-feature-name
    ```
-6. Make your changes and commit:
+7. Make your changes and commit:
    ```bash
-   git commit -m "Add your feature"
+   git commit -m "feat: add your feature"
    ```
-7. Push and create a pull request
+8. Push and create a pull request
+
+### CI on Pull Requests
+
+Pull requests automatically trigger:
+- **pr-tests.yml** — Runs the full test suite with coverage reporting (posts/updates a comment on the PR)
+- **pr-coverage.yml** — SDK coverage audit against the Etsy OAS spec (triggered by the `sdk-check` label)
 
 ## Support
 
