@@ -55,6 +55,11 @@ cannot detect. Do not skip this phase — the script catches structural drift bu
 
 6. Load the OAS spec from `specs/latest.json`. If it doesn't exist, fall back to `specs/baseline.json`.
    Also load `specs/diff-report.md` if it exists (it highlights what changed since the last baseline).
+   Also check for `specs/release-notes.md`. If it exists, read it and use the release notes as additional
+   context throughout this phase. Release notes provide human-readable descriptions of what Etsy changed,
+   while the spec diff shows structural changes. Cross-reference the two: verify field removals match spec
+   changes, check deprecations are marked in spec, note behavioral changes as informational. Prioritize
+   reviewing operations mentioned in the release notes during steps 7-14.
 
 7. **Deep-read flagged resource files** — For every operation flagged in Request Body Drift or
    Query/Path Parameter Drift, read the actual resource file in `etsy_python/v3/resources/` AND

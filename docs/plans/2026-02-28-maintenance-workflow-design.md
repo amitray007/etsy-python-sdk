@@ -31,11 +31,14 @@ specs/
   latest.json                # Freshly fetched spec (gitignored)
   diff-report.md             # Output from diff_spec.py (gitignored)
   audit-report.md            # Output from audit_sdk.py (gitignored)
+  last-release-check.json    # Tracks last checked GitHub release (committed)
+  release-notes.md           # Output from check_releases.py (gitignored)
 
 scripts/
   fetch_spec.py              # Downloads latest OAS spec from Etsy
   diff_spec.py               # Diffs baseline vs latest, outputs structured report
   audit_sdk.py               # Maps OAS spec to SDK code, finds coverage gaps
+  check_releases.py          # Fetches GitHub releases, compares against stored state
 
 tests/
   conftest.py                # Shared fixtures: EtsyClient, credentials, markers
@@ -51,8 +54,9 @@ tests/
   test_misc.py               # Ping, token scopes
 
 .claude/skills/
-  maintain-check/SKILL.md    # /maintain-check skill
-  maintain-audit/SKILL.md    # /maintain-audit skill (4-phase pipeline: audit + verify + change list + implement)
+  maintain-check/SKILL.md          # /maintain-check skill
+  maintain-audit/SKILL.md          # /maintain-audit skill (4-phase pipeline: audit + verify + change list + implement)
+  maintain-release-check/SKILL.md  # /maintain-release-check skill (GitHub release notes check)
 ```
 
 ### Script Details
@@ -94,6 +98,16 @@ Reports:
 - **Unmapped operations** — anything that couldn't be auto-matched (needs manual review)
 
 Output goes to stdout and `specs/audit-report.md`.
+
+#### `scripts/check_releases.py`
+
+Fetches releases from `https://api.github.com/repos/etsy/open-api/releases` and compares against the last checked release stored in `specs/last-release-check.json`.
+
+Two modes:
+- **Default**: Check for new releases, save markdown report to `specs/release-notes.md`
+- **`--update [TAG]`**: Mark a release as checked (latest by default, or specific tag)
+
+Exit codes: 0 = new releases found, 1 = up to date, 2 = error.
 
 ### Integration Tests
 
@@ -137,6 +151,14 @@ Tests check response fields exist and have expected types, catching schema drift
 3. Presents the diff report conversationally
 4. Highlights breaking changes and action items
 
+#### `/maintain-release-check` (`.claude/skills/maintain-release-check/SKILL.md`)
+
+1. Runs `scripts/check_releases.py`
+2. If new releases found, reads `specs/release-notes.md` and presents an impact summary
+3. Maps each change to likely affected SDK files (resources, models, enums)
+4. Asks user: batch review (prepare change list) or interactive investigation (one-by-one)
+5. After review, suggests `--update` to mark releases as checked and `/maintain-audit` for full spec audit
+
 #### `/maintain-audit` (`.claude/skills/maintain-audit/SKILL.md`)
 
 The audit skill is a 4-phase pipeline that handles everything from detection through to implementation:
@@ -174,11 +196,16 @@ After implementation, suggests running integration tests (if available locally) 
 Typical maintenance session:
 
 ```
+/maintain-release-check  # "Are there new Etsy releases?"
+  -> Review release notes for breaking changes, deprecations
+  -> Batch review or investigate one-by-one
+  -> Update release check state
+
 /maintain-check          # "Are there new Etsy API changes?"
   -> Review diff report
   -> Decide what to act on
 
-/maintain-audit          # Full 4-phase pipeline:
+/maintain-audit          # Full 4-phase pipeline (also reads release-notes.md if present):
   -> Phase 1: Run audit script
   -> Phase 2: Claude Code verifies against actual code + spec
   -> Phase 3: Prepare categorized change list
