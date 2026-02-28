@@ -79,10 +79,14 @@ def main() -> int:
     extra_count = summary.get("Extra SDK methods (no OAS match)", "?")
 
     missing_lines = extract_section(lines, "## Missing Endpoints")
-    drift_lines = extract_section(lines, "## Parameter Drift")
+    query_drift_lines = extract_section(lines, "## Query/Path Parameter Drift")
+    body_drift_lines = extract_section(lines, "## Request Body Drift")
     enum_lines = extract_section(lines, "## Enum Staleness")
 
-    drift_count = sum(1 for l in drift_lines if l.startswith("### "))
+    drift_count = (
+        sum(1 for l in query_drift_lines if l.startswith("### "))
+        + sum(1 for l in body_drift_lines if l.startswith("### "))
+    )
     enum_count = sum(1 for l in enum_lines if l.startswith("### "))
 
     # Build condensed comment
@@ -125,7 +129,10 @@ def main() -> int:
         out.append("")
 
     # Parameter drift (compact — just list affected operations)
-    drift_ops = [l.lstrip("# ").split(" (")[0] for l in drift_lines if l.startswith("### ")]
+    drift_ops = (
+        [l.lstrip("# ").split(" (")[0] for l in query_drift_lines if l.startswith("### ")]
+        + [l.lstrip("# ").split(" (")[0] for l in body_drift_lines if l.startswith("### ")]
+    )
     if drift_ops:
         out.append("<details>")
         out.append(f"<summary><strong>Parameter Drift ({len(drift_ops)} operations)</strong></summary>")
