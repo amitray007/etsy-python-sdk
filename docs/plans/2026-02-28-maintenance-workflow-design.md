@@ -11,9 +11,9 @@ As a solo maintainer, keeping the Etsy Python SDK in sync with Etsy's evolving O
 ## Goals
 
 1. **Detect API changes** — On-demand tooling to fetch the latest Etsy OAS spec and produce a structured diff report against a known baseline.
-2. **Audit SDK coverage** — Cross-reference the OAS spec against SDK resource/model/enum code to identify gaps, stale parameters, and missing endpoints.
+2. **Audit SDK coverage** — Cross-reference the OAS spec against SDK resource/model/enum code to identify gaps, stale parameters, and missing endpoints — then verify findings against actual code and prepare actionable changes.
 3. **Test against live API** — Full CRUD integration test suite hitting a real Etsy test shop to validate the SDK works against the current API.
-4. **Claude Code integration** — Skills that orchestrate these tools conversationally via `/maintain:check`, `/maintain:audit`, `/maintain:test`.
+4. **Claude Code integration** — Skills that orchestrate these tools conversationally via `/maintain-check` and `/maintain-audit`.
 
 ## Non-Goals
 
@@ -50,10 +50,9 @@ tests/
   test_taxonomy.py           # Taxonomy reads
   test_misc.py               # Ping, token scopes
 
-.claude/skills/maintain/
-  check.md                   # /maintain:check skill
-  audit.md                   # /maintain:audit skill
-  test.md                    # /maintain:test skill
+.claude/skills/
+  maintain-check/SKILL.md    # /maintain-check skill
+  maintain-audit/SKILL.md    # /maintain-audit skill (4-phase pipeline: audit + verify + change list + implement)
 ```
 
 ### Script Details
@@ -131,41 +130,60 @@ Tests check response fields exist and have expected types, catching schema drift
 
 ### Claude Code Skills
 
-#### `/maintain:check` (`.claude/skills/maintain/check.md`)
+#### `/maintain-check` (`.claude/skills/maintain-check/SKILL.md`)
 
 1. Runs `scripts/fetch_spec.py`
 2. Runs `scripts/diff_spec.py`
 3. Presents the diff report conversationally
 4. Highlights breaking changes and action items
 
-#### `/maintain:audit` (`.claude/skills/maintain/audit.md`)
+#### `/maintain-audit` (`.claude/skills/maintain-audit/SKILL.md`)
 
+The audit skill is a 4-phase pipeline that handles everything from detection through to implementation:
+
+**Phase 1 — Run audit script:**
 1. Runs `scripts/audit_sdk.py`
-2. Presents coverage gaps mapped to specific SDK files
-3. Offers to implement changes for each gap
+2. Verifies `specs/audit-report.md` was generated successfully
+3. Reads the audit report into context
 
-#### `/maintain:test` (`.claude/skills/maintain/test.md`)
+**Phase 2 — Verify & review findings:**
+Claude Code reads the audit report alongside the actual SDK code and OAS spec to catch what the script's pattern matching missed:
+- Loads OAS spec from `specs/latest.json` (fallback: `specs/baseline.json`) and `specs/diff-report.md` if available
+- Spot-checks "mapped" operations — focuses on those with diff-report changes, complex request bodies, or many parameters; reads actual resource files + model classes and compares against spec
+- Verifies "unmapped" operations — searches SDK resource files manually for naming mismatches the script missed
+- Verifies "extra" SDK methods — checks if they map to deprecated/removed/renamed endpoints
+- Deep-checks model `mandatory`/`nullable` lists against spec `required` arrays, with `file:line` references
 
-1. Runs `pytest tests/` (all or filtered by resource/marker)
-2. Reports results
-3. Helps debug failures
+**Phase 3 — Prepare change list:**
+Consolidates all findings (script-detected + review-detected) into a categorized change list:
+- **Must Fix** — Breaking/correctness issues (mandatory fields changed, removed params still in SDK, type mismatches)
+- **Should Fix** — Completeness issues (new optional params, new enum values, missing endpoints)
+- **Informational** — Deprecation notices, response schema changes, naming inconsistencies
+
+Each item includes: category, description, specific `file:line` reference, and concrete action.
+
+**Phase 4 — User decision:**
+Uses AskUserQuestion to ask the user:
+- **"Start implementing"** — Proceeds to implement all Must Fix and Should Fix items
+- **"Need changes to the audit tasks"** — Walks through items one at a time (or in groups), lets the user approve/reject/modify each, then implements only approved items
+
+After implementation, suggests running integration tests (if available locally) and updating the baseline spec.
 
 ### Workflow
 
 Typical maintenance session:
 
 ```
-/maintain:check          # "Are there new Etsy API changes?"
+/maintain-check          # "Are there new Etsy API changes?"
   -> Review diff report
   -> Decide what to act on
 
-/maintain:audit          # "How does my SDK compare to the spec?"
-  -> Review gap report
-  -> Implement changes (manually or with Claude Code)
-
-/maintain:test           # "Does everything work?"
-  -> Run integration tests
-  -> Fix failures
+/maintain-audit          # Full 4-phase pipeline:
+  -> Phase 1: Run audit script
+  -> Phase 2: Claude Code verifies against actual code + spec
+  -> Phase 3: Prepare categorized change list
+  -> Phase 4: Ask user → implement or adjust items first
+  -> Implement approved changes
 
 # When done:
 cp specs/latest.json specs/baseline.json
@@ -184,4 +202,3 @@ New dev dependencies for tests:
 
 - `pytest`
 - `python-dotenv` (for loading `.env` credentials)
-
