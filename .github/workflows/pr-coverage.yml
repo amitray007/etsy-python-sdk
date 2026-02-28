@@ -1,9 +1,15 @@
-# Post SDK coverage report as a PR comment on every push
+# Post SDK coverage report on labeled PRs
 name: PR Coverage Report
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to post coverage report on'
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -13,6 +19,10 @@ jobs:
   coverage-report:
     name: SDK Coverage Report
     runs-on: ubuntu-latest
+    # Only run when the sdk-check label is added, or on manual dispatch
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.label.name == 'sdk-check'
     steps:
       - uses: actions/checkout@v4
 
@@ -41,11 +51,20 @@ jobs:
       - name: Generate PR comment
         run: python scripts/format_pr_comment.py > comment.md
 
+      - name: Determine PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Post or update PR comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_NUMBER=${{ steps.pr.outputs.number }}
           MARKER="<!-- sdk-coverage-report -->"
 
           # Find existing comment with our marker
