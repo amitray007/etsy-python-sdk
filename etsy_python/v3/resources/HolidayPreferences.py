@@ -20,7 +20,7 @@ class HolidayPreferencesResource:
     def update_holiday_preferences(
         self,
         shop_id: int,
-        holiday_id: Optional[Union[HOLIDAYS, US_HOLIDAYS, CA_HOLIDAYS, str]],
+        holiday_id: Optional[Union[HOLIDAYS, US_HOLIDAYS, CA_HOLIDAYS, int]],
         holiday_preference: UpdateHolidayPreferencesRequest,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/holiday-preferences/{holiday_id}"

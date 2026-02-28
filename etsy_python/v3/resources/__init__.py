@@ -7,8 +7,10 @@ from .ListingProduct import ListingProductResource
 from .ListingTranslation import ListingTranslationResource
 from .ListingVariationImages import ListingVariationImagesResource
 from .ListingVideo import ListingVideoResource
+from .HolidayPreferences import HolidayPreferencesResource
 from .Miscellaneous import MiscellaneousResource
 from .Payment import PaymentResource
+from .ProcessingProfile import ProcessingProfileResource
 from .PaymentLedgerEntry import PaymentLedgeEntryResource
 from .enums.RateLimit import RateLimit
 from .enums.Request import Method

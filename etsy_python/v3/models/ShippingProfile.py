@@ -10,6 +10,8 @@ from etsy_python.v3.models.Request import Request
 
 class CreateShopShippingProfileRequest(Request):
     nullable: List[str] = [
+        "min_processing_time",
+        "max_processing_time",
         "destination_country_iso",
         "mail_class",
         "min_delivery_days",
@@ -20,8 +22,6 @@ class CreateShopShippingProfileRequest(Request):
         "origin_country_iso",
         "primary_cost",
         "secondary_cost",
-        "min_processing_time",
-        "max_processing_time",
     ]
 
     def __init__(
@@ -131,7 +131,8 @@ class CreateShopShippingProfileDestinationRequest(Request):
 class UpdateShopShippingProfileDestinationRequest(Request):
     nullable: List[str] = [
         "primary_cost",
-        "secondary_cost" "destination_country_iso",
+        "secondary_cost",
+        "destination_country_iso",
         "shipping_carrier_id",
         "mail_class",
         "min_delivery_days",
@@ -172,7 +173,7 @@ class CreateShopShippingProfileUpgradeRequest(Request):
         "max_delivery_days",
     ]
     mandatory: List[str] = [
-        "type",
+        "_type",
         "upgrade_name",
         "price",
         "secondary_price",
@@ -189,6 +190,8 @@ class CreateShopShippingProfileUpgradeRequest(Request):
         min_delivery_days: Optional[int] = None,
         max_delivery_days: Optional[int] = None,
     ) -> None:
+        # Stored as _type to avoid shadowing Python's builtin `type`.
+        # todict() maps _type -> "type" for API serialization.
         self._type = profile_type.value if profile_type else None
         self.upgrade_name = upgrade_name
         self.price = price
@@ -209,7 +212,8 @@ class UpdateShopShippingProfileUpgradeRequest(Request):
         "upgrade_name",
         "price",
         "secondary_price",
-        "shipping_carrier_id" "mail_class",
+        "shipping_carrier_id",
+        "mail_class",
         "min_delivery_days",
         "max_delivery_days",
     ]
@@ -227,6 +231,8 @@ class UpdateShopShippingProfileUpgradeRequest(Request):
         max_delivery_days: Optional[int] = None,
     ) -> None:
         self.upgrade_name = upgrade_name
+        # Stored as _type to avoid shadowing Python's builtin `type`.
+        # todict() maps _type -> "type" for API serialization.
         self._type = profile_type.value if profile_type else None
         self.price = price
         self.secondary_price = secondary_price

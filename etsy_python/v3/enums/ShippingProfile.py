@@ -13,8 +13,8 @@ class DestinationRegion(Enum):
 
 
 class Type(Enum):
-    ZERO = "0"  # Domestic Shipping
-    ONE = "1"  # International Shipping
+    ZERO = 0  # Domestic Shipping
+    ONE = 1  # International Shipping
 
 
 class Providers(Enum):

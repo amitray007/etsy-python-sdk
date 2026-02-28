@@ -2,14 +2,15 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 
-def generate_get_uri(uri: str, **kwargs: Dict[str, Any]) -> str:
-    if kwargs == {} or kwargs is None:
+def generate_get_uri(uri: str, params: Optional[Dict[str, Any]] = None) -> str:
+    if not params:
         return uri
-    params = "&".join(
-        [f"{key}={value}" for key, value in kwargs.items() if value is not None]
+    formatted = "&".join(
+        f"{key}={str(value).lower() if isinstance(value, bool) else value}"
+        for key, value in params.items()
+        if value is not None
     )
-    uri = f"{uri}?{params}" if params != "" else uri
-    return uri
+    return f"{uri}?{formatted}" if formatted else uri
 
 
 def todict(
@@ -31,9 +32,10 @@ def todict(
     elif hasattr(obj, "__dict__"):
         data = dict(
             [
+                # _type -> "type": avoids shadowing Python's builtin in model attrs
                 ("type" if key == "_type" else key, todict(value, classkey))
                 if key not in nullable
-                and (value not in [[], "" or 0] or isinstance(value, bool))
+                or (value != [] and value != "" and (value != 0 or isinstance(value, bool)))
                 else (key, None)
                 for key, value in obj.__dict__.items()
                 if not callable(value)

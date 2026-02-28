@@ -31,6 +31,7 @@ class CreateDraftListingRequest(Request):
         "item_dimensions_unit",
         "production_partner_ids",
         "image_ids",
+        "readiness_state_id",
     ]
     mandatory = [
         "quantity",
@@ -76,6 +77,7 @@ class CreateDraftListingRequest(Request):
         should_auto_renew: Optional[bool] = None,
         is_taxable: Optional[bool] = None,
         listing_type: Optional[Type] = None,
+        readiness_state_id: Optional[int] = None,
     ):
         self.quantity = quantity
         self.title = title
@@ -109,6 +111,7 @@ class CreateDraftListingRequest(Request):
         self.should_auto_renew = should_auto_renew
         self.is_taxable = is_taxable
         self._type = listing_type
+        self.readiness_state_id = readiness_state_id
         super().__init__(
             nullable=CreateDraftListingRequest.nullable,
             mandatory=CreateDraftListingRequest.mandatory,
@@ -201,7 +204,7 @@ class UpdateListingRequest(Request):
 
 
 class UpdateListingInventoryRequest(Request):
-    nullable: List[str] = []
+    nullable: List[str] = ["readiness_state_on_property"]
     mandatory: List[str] = ["products"]
 
     def __init__(
@@ -210,11 +213,13 @@ class UpdateListingInventoryRequest(Request):
         price_on_property: Optional[List[int]] = None,
         quantity_on_property: Optional[List[int]] = None,
         sku_on_property: Optional[List[int]] = None,
+        readiness_state_on_property: Optional[List[int]] = None,
     ):
         self.products = products
         self.price_on_property = price_on_property
         self.quantity_on_property = quantity_on_property
         self.sku_on_property = sku_on_property
+        self.readiness_state_on_property = readiness_state_on_property
         super().__init__(
             nullable=UpdateListingInventoryRequest.nullable,
             mandatory=UpdateListingInventoryRequest.mandatory,
@@ -346,6 +351,21 @@ class UpdateListingTranslationRequest(Request):
         super().__init__(
             nullable=UpdateListingTranslationRequest.nullable,
             mandatory=UpdateListingTranslationRequest.mandatory,
+        )
+
+
+class UpdateListingPersonalizationRequest(Request):
+    nullable: List[str] = []
+    mandatory: List[str] = ["personalization_questions"]
+
+    def __init__(
+        self,
+        personalization_questions: Optional[List[Dict[str, Any]]] = None,
+    ):
+        self.personalization_questions = personalization_questions
+        super().__init__(
+            nullable=UpdateListingPersonalizationRequest.nullable,
+            mandatory=UpdateListingPersonalizationRequest.mandatory,
         )
 
 

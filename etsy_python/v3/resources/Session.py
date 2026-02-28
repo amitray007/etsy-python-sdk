@@ -102,7 +102,7 @@ class EtsyClient:
         uri_path: str,
         method: Method = Method.GET,
         payload: Optional[Request] = None,
-        **kwargs: Dict[str, Any],
+        query_params: Optional[Dict[str, Any]] = None,
     ) -> Any:
         if method not in {Method.GET, Method.DELETE} and payload is None:
             raise ValueError(f"Improper payload for {method}")
@@ -112,8 +112,8 @@ class EtsyClient:
             self.update_token()
 
         uri_path = f"{environment.request_url}{uri_path}"
+        uri_path = generate_get_uri(uri_path, query_params)
         if method == Method.GET:
-            uri_path = generate_get_uri(uri_path, **kwargs)
             response = self.session.get(uri_path)
         elif method == Method.PUT and isinstance(payload, Request):
             response = self.session.put(uri_path, json=payload.get_dict())

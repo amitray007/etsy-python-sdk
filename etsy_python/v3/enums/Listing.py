@@ -9,11 +9,11 @@ class WhoMade(Enum):
 
 class WhenMade(Enum):
     MADE_TO_ORDER = "made_to_order"
-    TWENTY_TWENTIES = "2020_2025"
+    TWENTY_TWENTIES = "2020_2026"
     TWENTY_TENS = "2010_2019"
-    TWENTY_OH_SIX_TO_NINE = "2006_2009"
-    BEFORE_2006 = "before_2006"
-    TWO_THOUSAND_TO_FIVE = "2000_2005"
+    TWENTY_OH_SEVEN_TO_NINE = "2007_2009"
+    BEFORE_2007 = "before_2007"
+    TWO_THOUSAND_TO_SIX = "2000_2006"
     NINETEEN_NINETIES = "1990s"
     NINETEEN_EIGHTIES = "1980s"
     NINETEEN_SEVENTIES = "1970s"
@@ -58,6 +58,14 @@ class State(Enum):
     SOLD_OUT = "sold_out"
     DRAFT = "draft"
     EXPIRED = "expired"
+    REMOVED = "removed"
+
+
+class VideoState(Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    DELETED = "deleted"
+    FLAGGED = "flagged"
 
 
 class SortOn(Enum):

@@ -61,7 +61,7 @@ class TestFindShops:
         assert result.code == 200
         call_args = mock_session.make_request.call_args
         assert call_args[0][0] == "/shops"
-        assert call_args[1]["shop_name"] == "TestShop"
+        assert call_args[1]["query_params"]["shop_name"] == "TestShop"
 
     def test_custom_pagination(self, mock_session):
         mock_session.make_request.return_value = Response(
@@ -71,6 +71,6 @@ class TestFindShops:
 
         resource.find_shops("TestShop", limit=10, offset=5)
 
-        call_kwargs = mock_session.make_request.call_args[1]
-        assert call_kwargs["limit"] == 10
-        assert call_kwargs["offset"] == 5
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["limit"] == 10
+        assert qp["offset"] == 5

@@ -66,7 +66,7 @@ class TestCreateDraftListingRequest:
         )
         result = req.get_dict()
         assert result["who_made"] == "i_did"
-        assert result["when_made"] == "2020_2025"
+        assert result["when_made"] == "2020_2026"
 
 
 class TestUpdateListingRequest:

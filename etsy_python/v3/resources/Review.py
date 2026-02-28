@@ -19,13 +19,13 @@ class ReviewResource:
         max_created: Optional[int] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/listings/{listing_id}/reviews"
-        kwargs: Dict[str, Any] = {
+        query_params: Dict[str, Any] = {
             "limit": limit,
             "offset": offset,
             "min_created": min_created,
             "max_created": max_created,
         }
-        return self.session.make_request(endpoint, **kwargs)
+        return self.session.make_request(endpoint, query_params=query_params)
 
     def get_reviews_by_shop(
         self,
@@ -36,10 +36,10 @@ class ReviewResource:
         max_created: Optional[int] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/reviews"
-        kwargs: Dict[str, Any] = {
+        query_params: Dict[str, Any] = {
             "limit": limit,
             "offset": offset,
             "min_created": min_created,
             "max_created": max_created,
         }
-        return self.session.make_request(endpoint, **kwargs)
+        return self.session.make_request(endpoint, query_params=query_params)

@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from typing import Union, Dict, Any
 
@@ -23,8 +24,8 @@ class ShippingProfileResource:
         self, origin_country_iso: str
     ) -> Union[Response, RequestException]:
         endpoint = "/shipping-carriers"
-        kwargs: Dict[str, Any] = {"origin_country_iso": origin_country_iso}
-        return self.session.make_request(endpoint, **kwargs)
+        query_params: Dict[str, Any] = {"origin_country_iso": origin_country_iso}
+        return self.session.make_request(endpoint, query_params=query_params)
 
     def create_shop_shipping_profile(
         self, shop_id: int, shipping_profile: CreateShopShippingProfileRequest
@@ -76,14 +77,28 @@ class ShippingProfileResource:
             endpoint, method=Method.POST, payload=shipping_profile_destination
         )
 
-    def get_shop_shipping_profile_destination_by_shipping_profile(
+    def get_shop_shipping_profile_destinations_by_shipping_profile(
         self, shop_id: int, shipping_profile_id: int, limit: int = 25, offset: int = 0
     ) -> Union[Response, RequestException]:
         endpoint = (
             f"/shops/{shop_id}/shipping-profiles/{shipping_profile_id}/destinations"
         )
-        kwargs: Dict[str, Any] = {"limit": limit, "offset": offset}
-        return self.session.make_request(endpoint, **kwargs)
+        query_params: Dict[str, Any] = {"limit": limit, "offset": offset}
+        return self.session.make_request(endpoint, query_params=query_params)
+
+    def get_shop_shipping_profile_destination_by_shipping_profile(
+        self, shop_id: int, shipping_profile_id: int, limit: int = 25, offset: int = 0
+    ) -> Union[Response, RequestException]:
+        """Deprecated: use get_shop_shipping_profile_destinations_by_shipping_profile instead."""
+        warnings.warn(
+            "get_shop_shipping_profile_destination_by_shipping_profile is deprecated, "
+            "use get_shop_shipping_profile_destinations_by_shipping_profile",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.get_shop_shipping_profile_destinations_by_shipping_profile(
+            shop_id, shipping_profile_id, limit, offset
+        )
 
     def delete_shop_shipping_profile_destination(
         self,

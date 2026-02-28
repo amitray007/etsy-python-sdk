@@ -14,20 +14,24 @@ class ReceiptResource:
     session: EtsyClient
 
     def get_shop_receipt(
-        self, shop_id: int, receipt_id: int
+        self, shop_id: int, receipt_id: int,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/receipts/{receipt_id}"
-        return self.session.make_request(endpoint)
+        query_params: Dict[str, Any] = {"legacy": legacy}
+        return self.session.make_request(endpoint, query_params=query_params)
 
     def update_shop_receipt(
         self,
         shop_id: int,
         receipt_id: int,
         shop_receipt_request: UpdateShopReceiptRequest,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/receipts/{receipt_id}"
         return self.session.make_request(
-            endpoint, method=Method.PUT, payload=shop_receipt_request
+            endpoint, method=Method.PUT, payload=shop_receipt_request,
+            query_params={"legacy": legacy},
         )
 
     def get_shop_receipts(
@@ -45,9 +49,10 @@ class ReceiptResource:
         was_shipped: Optional[bool] = None,
         was_delivered: Optional[bool] = None,
         was_canceled: Optional[bool] = None,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/receipts"
-        kwargs: Dict[str, Any] = {
+        query_params: Dict[str, Any] = {
             "max_created": max_created,
             "min_created": min_created,
             "min_last_modified": min_last_modified,
@@ -60,16 +65,19 @@ class ReceiptResource:
             "was_shipped": was_shipped,
             "was_delivered": was_delivered,
             "was_canceled": was_canceled,
+            "legacy": legacy,
         }
-        return self.session.make_request(endpoint, **kwargs)
+        return self.session.make_request(endpoint, query_params=query_params)
 
     def create_receipt_shipment(
         self,
         shop_id: int,
         receipt_id: int,
         receipt_shipment_request: CreateReceiptShipmentRequest,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/receipts/{receipt_id}/tracking"
         return self.session.make_request(
-            endpoint, method=Method.POST, payload=receipt_shipment_request
+            endpoint, method=Method.POST, payload=receipt_shipment_request,
+            query_params={"legacy": legacy},
         )
