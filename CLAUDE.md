@@ -28,10 +28,13 @@ python scripts/release.py patch --no-push                # Local release test
 ```
 
 ### Testing
-No formal test framework. Verify changes with:
 ```bash
-python scripts/check_version_consistency.py
-python -c "from etsy_python._version import __version__; print(__version__)"
+pip install -r requirements-dev.txt                  # Install pytest + pytest-cov
+pytest                                               # Run all tests
+pytest -v                                            # Verbose output
+pytest --cov=etsy_python --cov-report=term-missing   # Coverage report
+pytest tests/test_session.py                         # Run specific test file
+python scripts/check_version_consistency.py          # Validate versions match
 ```
 
 ### Maintenance Workflow

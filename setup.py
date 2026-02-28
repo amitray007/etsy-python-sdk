@@ -30,7 +30,7 @@ setup(
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
     long_description=long_description,
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=["requests", "requests-oauthlib"],
     keywords=["python", "etsy", "api"],
     classifiers=[
