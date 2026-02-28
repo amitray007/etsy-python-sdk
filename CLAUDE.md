@@ -55,6 +55,10 @@ cp specs/latest.json specs/baseline.json
 # /maintain:check   - Fetch + diff spec
 # /maintain:audit   - Audit SDK coverage
 # /maintain:test    - Run integration tests
+
+# GitHub Actions (see .github/workflows/)
+# maintenance-check.yml  - Weekly API change detection + SDK audit
+# integration-tests.yml  - On-demand integration tests (needs secrets)
 ```
 
 ## Version Management
