@@ -5,8 +5,9 @@ description: Audit SDK coverage against the Etsy OAS spec to find gaps, drift, a
 
 # Audit SDK Coverage
 
-Run a full 4-phase audit pipeline: gather fresh data (spec + release notes + diff), run script-based
-detection, AI-verified review, change list preparation, and user-driven implementation.
+Run a full 7-phase audit pipeline: gather fresh data (spec + release notes + diff), run script-based
+detection, AI-verified review, change list preparation, branch setup, implementation with test
+verification, and post-implementation workflow (PR, code review, further changes).
 
 ## Phase 1: Gather Fresh Data & Run Audit
 
@@ -158,19 +159,125 @@ mentioned in release notes or the diff report are most likely to have issues.
 
 19. Use the **AskUserQuestion** tool to ask the user how to proceed:
 
-    - **"Start implementing"** — Proceed to implement all Must Fix and Should Fix items from the
-      change list.
+    - **"Start implementing"** — Proceed to Phase 5 (branch setup) then Phase 6 (implementation).
     - **"Need changes to the audit tasks"** — Walk through items one at a time or in groups. For
       each item, ask the user to approve, reject, or modify. After all items are reviewed, prepare
-      an implementation plan from only the approved items, then implement.
+      an implementation plan from only the approved items, then proceed to Phase 5.
 
-20. After implementation is complete, suggest next steps:
-    - Run tests to validate changes: `pytest`
-    - Update the baseline spec:
-      ```bash
-      cp specs/latest.json specs/baseline.json
-      ```
-    - Mark release notes as checked (if new releases were found in step 2):
-      ```bash
-      python scripts/check_releases.py --update
-      ```
+## Phase 5: Branch Setup
+
+Before writing any code, establish the correct git branch.
+
+20. Use **AskUserQuestion** to ask the user about branch strategy:
+
+    - **"Work on current branch"** — Stay on the current git branch. Verify it is clean
+      (`git status`). If there are uncommitted changes, warn the user and ask whether to proceed
+      or stash first.
+    - **"Create a new release branch"** — Create a new branch from `master` using a release-style
+      name derived from the latest Etsy release tag found in step 2 (e.g.,
+      `release/etsy-api-2025-10-24`). If no new releases were found, use the current date
+      (e.g., `release/sdk-audit-2026-03-01`).
+
+21. If creating a new branch:
+    ```bash
+    git fetch origin master
+    git checkout -b <branch-name> origin/master
+    ```
+    Verify the branch is up to date with master before proceeding. If `master` does not exist,
+    try `main` as a fallback.
+
+22. If working on the current branch, simply confirm the branch name and proceed.
+
+## Phase 6: Implementation & Test Verification
+
+23. Implement all approved changes from the change list (Must Fix + Should Fix items). Use
+    **TaskCreate** to track progress on each item. Mark tasks `in_progress` when starting and
+    `completed` when done.
+
+24. After all changes are implemented, run the test suite:
+    ```bash
+    pytest -v
+    ```
+
+25. **If tests fail:**
+    - Read the failure output and identify which tests broke.
+    - Determine if failures are caused by the audit changes (expected — update tests to match)
+      or by regressions (unexpected — fix the implementation).
+    - Fix all failures and re-run `pytest -v` until all tests pass.
+    - Do NOT proceed to step 26 until the full test suite is green.
+
+26. **Once all tests pass**, update the baseline and release tracking:
+    ```bash
+    cp specs/latest.json specs/baseline.json
+    ```
+    If new releases were found in step 2:
+    ```bash
+    python scripts/check_releases.py --update
+    ```
+
+27. Stage and commit all changes with a descriptive commit message summarizing the audit changes.
+    Use semantic commit prefix `feat:` for new endpoints or `fix:` for correctness fixes,
+    whichever is dominant. Example:
+    ```
+    feat: sync SDK with Etsy API spec (Oct 2025 releases)
+    ```
+
+## Phase 7: Post-Implementation Workflow
+
+After committing, use **AskUserQuestion** to ask the user what to do next. This is an iterative
+loop — after completing any option, return to this question until the user is satisfied.
+
+28. Present options via **AskUserQuestion**:
+
+    - **"Raise a PR"** — Go to step 29.
+    - **"Run code review"** — Go to step 30.
+    - **"Run tests"** — Go to step 31.
+    - **"Make additional changes"** — Go to step 32.
+
+### Raise a PR (step 29)
+
+29. Push the branch and create a pull request:
+    ```bash
+    git push -u origin <branch-name>
+    ```
+    Use `gh pr create` with:
+    - Title summarizing the audit (e.g., "Sync SDK with Etsy API spec — Oct 2025 releases")
+    - Body containing the change list summary from Phase 3 (Must Fix / Should Fix counts and
+      key highlights), formatted with `## Summary` and `## Test plan` sections
+    - Assign the current user as reviewer (`--assignee @me`)
+    - Add relevant labels (`--label sdk-sync` or similar if labels exist; skip if they don't)
+
+    After the PR is created, return the PR URL to the user and loop back to step 28.
+
+### Run code review (step 30)
+
+30. Use the **superpowers:requesting-code-review** skill or the **pr-review-toolkit:review-pr**
+    skill to perform a thorough code review of the changes. Present all findings categorized by
+    severity.
+
+    After presenting review findings, use **AskUserQuestion** to ask for each issue:
+    - **"Fix this"** — Apply the fix immediately.
+    - **"Skip this"** — Move to the next issue.
+    - **"Fix all remaining"** — Apply all remaining suggested fixes.
+
+    If any fixes were applied, re-run `pytest -v` to verify nothing broke, then commit the
+    review fixes as a separate commit (e.g., `fix: address code review feedback`).
+
+    Loop back to step 28.
+
+### Run tests (step 31)
+
+31. Run the full test suite:
+    ```bash
+    pytest -v
+    ```
+    Report results to the user. If failures are found, use **AskUserQuestion** to ask:
+    - **"Fix failures"** — Diagnose and fix each failure, then re-run.
+    - **"Skip for now"** — Continue without fixing.
+
+    Loop back to step 28.
+
+### Make additional changes (step 32)
+
+32. Use **AskUserQuestion** to ask the user what additional changes they want. Implement them,
+    run tests to verify, and commit. Loop back to step 28.
