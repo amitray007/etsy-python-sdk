@@ -5,6 +5,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: pr-tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -112,7 +116,8 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           MARKER="<!-- pr-test-coverage -->"
 
-          # Find existing comment with our marker
+          # Try to find and update an existing comment first (avoids race where
+          # two concurrent runs both see no comment and both create one).
           COMMENT_ID=$(gh api \
             "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
             --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" \
@@ -120,14 +125,17 @@ jobs:
 
           if [ -n "$COMMENT_ID" ]; then
             echo "Updating existing comment ${COMMENT_ID}"
-            gh api \
+            if gh api \
               --method PATCH \
               "repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
-              --field body=@comment.md
-          else
-            echo "Creating new comment"
-            gh api \
-              --method POST \
-              "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
-              --field body=@comment.md
+              --field body=@comment.md > /dev/null 2>&1; then
+              exit 0
+            fi
+            echo "PATCH failed (comment may have been deleted), falling back to create"
           fi
+
+          echo "Creating new comment"
+          gh api \
+            --method POST \
+            "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --field body=@comment.md

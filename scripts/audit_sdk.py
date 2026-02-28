@@ -22,7 +22,7 @@ import sys
 import argparse
 import tokenize
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 
 def load_json(path: Path) -> dict:
@@ -59,7 +59,7 @@ def get_operations(spec: dict) -> Dict[str, dict]:
     return operations
 
 
-def resolve_ref(obj, spec: dict):
+def resolve_ref(obj: Any, spec: dict) -> Any:
     """Resolve a $ref pointer."""
     if isinstance(obj, dict) and "$ref" in obj:
         ref_path = obj["$ref"].lstrip("#/").split("/")
@@ -796,7 +796,12 @@ def main() -> int:
         print("Run `python scripts/fetch_spec.py` first.")
         return 1
 
-    spec = load_json(spec_path)
+    try:
+        spec = load_json(spec_path)
+    except json.JSONDecodeError as e:
+        print(f"Error: Failed to parse {spec_path}: {e}")
+        return 1
+
     report = generate_report(spec, resources_dir, enums_dir, models_dir)
     print(report)
 

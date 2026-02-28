@@ -21,6 +21,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import requests
 
@@ -48,7 +49,7 @@ def save_state(state_path: Path, state: dict) -> None:
         f.write("\n")
 
 
-def fetch_releases() -> list[dict]:
+def fetch_releases() -> List[Dict]:
     """Fetch releases from the GitHub API."""
     response = requests.get(
         GITHUB_RELEASES_URL,
@@ -67,7 +68,7 @@ def parse_date(date_str: str) -> datetime:
     )
 
 
-def filter_new_releases(releases: list[dict], last_checked_date: str) -> list[dict]:
+def filter_new_releases(releases: List[Dict], last_checked_date: str) -> List[Dict]:
     """Filter releases published after the last checked date, sorted oldest-first."""
     cutoff = parse_date(last_checked_date)
     new = [
@@ -79,7 +80,7 @@ def filter_new_releases(releases: list[dict], last_checked_date: str) -> list[di
     return new
 
 
-def generate_report(releases: list[dict]) -> str:
+def generate_report(releases: List[Dict]) -> str:
     """Produce a markdown report of new releases."""
     lines = ["# Etsy Open API — New Releases", ""]
     lines.append(f"Found **{len(releases)}** new release(s).\n")
@@ -148,7 +149,7 @@ def cmd_check(state_path: Path, report_path: Path) -> int:
     return 0
 
 
-def cmd_update(state_path: Path, tag: str | None) -> int:
+def cmd_update(state_path: Path, tag: Optional[str]) -> int:
     """Mark a release as checked. Returns exit code."""
     print(f"Fetching releases from {GITHUB_RELEASES_URL}...")
     try:

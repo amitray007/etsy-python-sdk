@@ -335,8 +335,17 @@ def main() -> int:
         print("Run `python scripts/fetch_spec.py` first.")
         return 1
 
-    baseline = load_json(baseline_path)
-    latest = load_json(latest_path)
+    try:
+        baseline = load_json(baseline_path)
+    except json.JSONDecodeError as e:
+        print(f"Error: Failed to parse {baseline_path}: {e}")
+        return 1
+
+    try:
+        latest = load_json(latest_path)
+    except json.JSONDecodeError as e:
+        print(f"Error: Failed to parse {latest_path}: {e}")
+        return 1
 
     report = generate_report(baseline, latest)
     print(report)

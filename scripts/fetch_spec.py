@@ -63,7 +63,12 @@ def main() -> int:
         print(f"  cp specs/latest.json specs/baseline.json")
         return 0
 
-    baseline = load_json(baseline_path)
+    try:
+        baseline = load_json(baseline_path)
+    except json.JSONDecodeError as e:
+        print(f"Error: Failed to parse {baseline_path}: {e}")
+        return 2
+
     if baseline == spec:
         print("No changes detected. Spec matches baseline.")
         return 1
