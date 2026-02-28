@@ -37,7 +37,6 @@ description: Audit SDK coverage against the Etsy OAS spec to find gaps, drift, a
 
 4. Suggest next steps:
    - Implement the changes identified
-   - Run `/maintain-test` to validate changes work against the live API
    - After all changes are applied, update the baseline:
      ```bash
      cp specs/latest.json specs/baseline.json

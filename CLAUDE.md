@@ -43,18 +43,12 @@ python scripts/diff_spec.py           # Diff against baseline
 # Audit SDK coverage
 python scripts/audit_sdk.py           # Compare spec vs SDK code
 
-# Run integration tests (local only — requires .env with API credentials)
-pytest tests/ -v                      # All tests
-pytest tests/ -m readonly -v          # Read-only tests only
-pytest tests/ -m write -v             # Write tests only
-
 # After applying changes, update baseline
 cp specs/latest.json specs/baseline.json
 
 # Claude Code skills (interactive)
 # /maintain-check   - Fetch + diff spec
 # /maintain-audit   - Audit SDK coverage
-# /maintain-test    - Run integration tests
 
 # GitHub Actions (see .github/workflows/)
 # maintenance-check.yml  - Weekly API change detection + SDK audit
