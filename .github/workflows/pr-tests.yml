@@ -126,5 +126,8 @@ jobs:
               --field body=@comment.md
           else
             echo "Creating new comment"
-            gh pr comment "$PR_NUMBER" --body-file comment.md
+            gh api \
+              --method POST \
+              "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+              --field body=@comment.md
           fi
