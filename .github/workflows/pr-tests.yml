@@ -1,0 +1,130 @@
+# Run tests and post coverage report on every PR push
+name: PR Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -r requirements-dev.txt
+
+      - name: Run tests with coverage
+        run: pytest --cov=etsy_python --cov-report=term-missing --cov-report=json:coverage.json -v
+
+      - name: Upload coverage data
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data
+          path: coverage.json
+
+  coverage-report:
+    name: Coverage Report
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-data
+
+      - name: Generate coverage comment
+        run: |
+          python3 -c "
+          import json, os
+
+          with open('coverage.json') as f:
+              data = json.load(f)
+
+          totals = data['totals']
+          pct = totals['percent_covered_display']
+          stmts = totals['num_statements']
+          miss = totals['missing_lines']
+          covered = stmts - miss
+
+          # Per-file breakdown sorted by coverage ascending (worst first)
+          files = []
+          for path, info in sorted(data['files'].items(), key=lambda x: x[1]['summary']['percent_covered']):
+              s = info['summary']
+              fpct = s['percent_covered_display']
+              fstmts = s['num_statements']
+              fmiss = s['missing_lines']
+              if fstmts == 0:
+                  continue
+              files.append(f'| \`{path}\` | {fstmts} | {fmiss} | {fpct}% |')
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          run_id = os.environ['GITHUB_RUN_ID']
+
+          marker = '<!-- pr-test-coverage -->'
+          lines = [
+              marker,
+              '## Test Coverage Report',
+              '',
+              f'**Overall: {pct}%** ({covered}/{stmts} statements covered)',
+              '',
+              '<details>',
+              '<summary>Coverage by file</summary>',
+              '',
+              '| File | Statements | Missing | Coverage |',
+              '|------|-----------|---------|----------|',
+          ]
+          lines.extend(files)
+          lines.extend([
+              '',
+              '</details>',
+              '',
+              f'*Updated by [PR Tests](https://github.com/{repo}/actions/runs/{run_id})*',
+          ])
+
+          with open('comment.md', 'w') as f:
+              f.write('\n'.join(lines))
+
+          print(f'Coverage: {pct}%')
+          "
+
+      - name: Post or update PR comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          MARKER="<!-- pr-test-coverage -->"
+
+          # Find existing comment with our marker
+          COMMENT_ID=$(gh api \
+            "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" \
+            | head -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            echo "Updating existing comment ${COMMENT_ID}"
+            gh api \
+              --method PATCH \
+              "repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
+              --field body=@comment.md
+          else
+            echo "Creating new comment"
+            gh pr comment "$PR_NUMBER" --body-file comment.md
+          fi

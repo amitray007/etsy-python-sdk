@@ -55,6 +55,7 @@ cp specs/latest.json specs/baseline.json
 # /maintain-audit          - Full pipeline: fetch spec + releases, audit, review, implement
 
 # GitHub Actions (see .github/workflows/)
+# pr-tests.yml           - Tests + coverage on every PR push (posts/updates comment)
 # maintenance-check.yml  - Weekly API change detection + SDK audit
 # pr-coverage.yml        - SDK coverage report on PRs (add 'sdk-check' label)
 ```
