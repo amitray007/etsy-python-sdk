@@ -1,0 +1,66 @@
+# Post SDK coverage report as a PR comment on every push
+name: PR Coverage Report
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage-report:
+    name: SDK Coverage Report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Fetch latest spec
+        run: python scripts/fetch_spec.py || true
+
+      - name: Ensure baseline exists
+        run: |
+          if [ ! -f specs/baseline.json ]; then
+            cp specs/latest.json specs/baseline.json
+          fi
+
+      - name: Run SDK audit
+        run: python scripts/audit_sdk.py
+
+      - name: Generate PR comment
+        run: python scripts/format_pr_comment.py > comment.md
+
+      - name: Post or update PR comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          MARKER="<!-- sdk-coverage-report -->"
+
+          # Find existing comment with our marker
+          COMMENT_ID=$(gh api \
+            "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" \
+            | head -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            echo "Updating existing comment ${COMMENT_ID}"
+            gh api \
+              --method PATCH \
+              "repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
+              --field body=@comment.md
+          else
+            echo "Creating new comment"
+            gh pr comment "$PR_NUMBER" --body-file comment.md
+          fi
