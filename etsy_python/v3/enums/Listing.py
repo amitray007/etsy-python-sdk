@@ -58,7 +58,6 @@ class State(Enum):
     SOLD_OUT = "sold_out"
     DRAFT = "draft"
     EXPIRED = "expired"
-    REMOVED = "removed"
 
 
 class VideoState(Enum):
@@ -92,6 +91,7 @@ class Includes(Enum):
     TRANSLATIONS = "Translations"
     INVENTORY = "Inventory"
     VIDEOS = "Videos"
+    PERSONALIZATION = "Personalization"
 
 
 class InventoryIncludes(Enum):

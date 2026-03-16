@@ -129,7 +129,10 @@ class ListingResource:
         return self.session.make_request(endpoint, query_params=query_params)
 
     def get_listings_by_listing_ids(
-        self, listing_ids: List[int], includes: Optional[List[Includes]] = None
+        self,
+        listing_ids: List[int],
+        includes: Optional[List[Includes]] = None,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/batch"
         query_params: Dict[str, Any] = {
@@ -137,6 +140,7 @@ class ListingResource:
             "includes": ",".join(list(map(lambda inc: inc.value, includes)))
             if includes is not None
             else None,
+            "legacy": legacy,
         }
         return self.session.make_request(endpoint, query_params=query_params)
 

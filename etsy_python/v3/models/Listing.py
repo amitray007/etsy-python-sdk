@@ -1,3 +1,4 @@
+import warnings
 from typing import List, Optional, Dict, Any
 
 from etsy_python.v3.enums.Listing import (
@@ -104,6 +105,18 @@ class CreateDraftListingRequest(Request):
         self.personalization_is_required = personalization_is_required
         self.personalization_char_count_max = personalization_char_count_max
         self.personalization_instructions = personalization_instructions
+        if any(v is not None for v in [
+            personalization_is_required, personalization_char_count_max,
+            personalization_instructions,
+        ]):
+            warnings.warn(
+                "personalization_is_required, personalization_char_count_max, and "
+                "personalization_instructions are deprecated and will be removed "
+                "from the Etsy API on April 9, 2026. Use the personalization "
+                "endpoint (update_listing_personalization) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.production_partner_ids = production_partner_ids
         self.image_ids = image_ids
         self.is_supply = is_supply
@@ -133,7 +146,7 @@ class UpdateListingRequest(Request):
         "tags",
         "featured_rank",
         "production_partner_ids",
-        "type",
+        "_type",
     ]
 
     mandatory: List[str] = []
@@ -193,6 +206,18 @@ class UpdateListingRequest(Request):
         self.personalization_is_required = personalization_is_required
         self.personalization_char_count_max = personalization_char_count_max
         self.personalization_instructions = personalization_instructions
+        if any(v is not None for v in [
+            personalization_is_required, personalization_char_count_max,
+            personalization_instructions,
+        ]):
+            warnings.warn(
+                "personalization_is_required, personalization_char_count_max, and "
+                "personalization_instructions are deprecated and will be removed "
+                "from the Etsy API on April 9, 2026. Use the personalization "
+                "endpoint (update_listing_personalization) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.state = state
         self.is_supply = is_supply
         self.production_partner_ids = production_partner_ids
