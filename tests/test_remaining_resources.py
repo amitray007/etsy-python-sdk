@@ -508,6 +508,28 @@ class TestReceiptTransactionsResource:
             f"/shops/{MOCK_SHOP_ID}/transactions/{MOCK_TRANSACTION_ID}"
         )
 
+    def test_get_shop_receipt_transactions_by_shop(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_collection(make_transaction)
+        )
+        resource = ReceiptTransactionsResource(session=mock_session)
+        resource.get_shop_receipt_transactions_by_shop(MOCK_SHOP_ID)
+        mock_session.make_request.assert_called_once_with(
+            f"/shops/{MOCK_SHOP_ID}/transactions",
+            query_params={"limit": 25, "offset": 0, "legacy": None},
+        )
+
+    def test_get_shop_receipt_transactions_by_shop_with_legacy(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_collection(make_transaction)
+        )
+        resource = ReceiptTransactionsResource(session=mock_session)
+        resource.get_shop_receipt_transactions_by_shop(MOCK_SHOP_ID, legacy=True)
+        mock_session.make_request.assert_called_once_with(
+            f"/shops/{MOCK_SHOP_ID}/transactions",
+            query_params={"limit": 25, "offset": 0, "legacy": True},
+        )
+
     def test_get_shop_receipt_transaction_by_shop(self, mock_session):
         mock_session.make_request.return_value = Response(
             200, make_collection(make_transaction)

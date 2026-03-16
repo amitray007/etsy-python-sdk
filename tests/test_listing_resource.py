@@ -178,6 +178,41 @@ class TestFindAllActiveListingsByShop:
         assert call_args[0][0] == f"/shops/{MOCK_SHOP_ID}/listings/active"
 
 
+class TestGetListingsByListingIds:
+    def test_listing_ids_joined(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_by_listing_ids([111, 222, 333])
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["listing_ids"] == "111,222,333"
+
+    def test_legacy_param_passed(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_by_listing_ids([111], legacy=True)
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["legacy"] is True
+
+    def test_legacy_defaults_to_none(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_by_listing_ids([111])
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["legacy"] is None
+
+
 class TestGetListingsByListingsIds:
     def test_listing_ids_joined(self, mock_session):
         mock_session.make_request.return_value = Response(
