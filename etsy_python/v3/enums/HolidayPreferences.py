@@ -15,6 +15,7 @@ class HOLIDAYS(Enum):
     pass
 
 class US_HOLIDAYS(Enum):
+    """US holidays (IDs 1-11)."""
     NEW_YEARS_DAY = 1
     MARTIN_LUTHER_KING_JR_DAY = 2
     PRESIDENTS_DAY = 3
@@ -28,6 +29,8 @@ class US_HOLIDAYS(Enum):
     CHRISTMAS_DAY = 11
 
 class CA_HOLIDAYS(Enum):
+    """Canadian holidays (IDs 12-23). For other regions (IDs 24-105),
+    pass the integer ID directly to update_holiday_preferences()."""
     GOOD_FRIDAY = 12
     EASTER = 13
     VICTORIA_DAY = 14
