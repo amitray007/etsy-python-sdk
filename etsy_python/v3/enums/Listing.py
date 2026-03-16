@@ -58,7 +58,7 @@ class State(Enum):
     SOLD_OUT = "sold_out"
     DRAFT = "draft"
     EXPIRED = "expired"
-    REMOVED = "removed"
+    REMOVED = "removed"  # Not in OAS spec; kept for backward compatibility, may be removed in next major version
 
 
 class VideoState(Enum):
@@ -92,6 +92,7 @@ class Includes(Enum):
     TRANSLATIONS = "Translations"
     INVENTORY = "Inventory"
     VIDEOS = "Videos"
+    PERSONALIZATION = "Personalization"
 
 
 class InventoryIncludes(Enum):

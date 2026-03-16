@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 from etsy_python.v3.enums.Listing import WhenMade, WhoMade
@@ -86,6 +88,11 @@ class TestUpdateListingRequest:
         assert result["title"] == "New Title"
         assert result["is_taxable"] is True
 
+    def test_type_nullable_uses_underscore_prefix(self):
+        """_type field in nullable list must use attribute name '_type', not API key 'type'."""
+        assert "_type" in UpdateListingRequest.nullable
+        assert "type" not in UpdateListingRequest.nullable
+
 
 class TestUpdateListingInventoryRequest:
     def test_valid_request(self):
@@ -152,3 +159,49 @@ class TestUploadListingFileRequest:
         req = UploadListingFileRequest(file_bytes=b"fake-pdf-data", name="test.pdf")
         assert req.file is not None
         assert req.data is not None
+
+
+class TestPersonalizationDeprecationWarnings:
+    def _make_create_kwargs(self):
+        return dict(
+            quantity=10,
+            title="Test",
+            description="A test",
+            price=25.00,
+            who_made=WhoMade.I_DID,
+            when_made=WhenMade.TWENTY_TWENTIES,
+            taxonomy_id=30303,
+        )
+
+    def test_create_no_warning_without_personalization(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            CreateDraftListingRequest(**self._make_create_kwargs())
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 0
+
+    def test_create_warns_with_personalization_is_required(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            CreateDraftListingRequest(
+                **self._make_create_kwargs(),
+                personalization_is_required=True,
+            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 1
+            assert "April 9, 2026" in str(deprecation_warnings[0].message)
+
+    def test_update_no_warning_without_personalization(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            UpdateListingRequest(title="Updated")
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 0
+
+    def test_update_warns_with_personalization_instructions(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            UpdateListingRequest(personalization_instructions="Enter name")
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 1
+            assert "update_listing_personalization" in str(deprecation_warnings[0].message)

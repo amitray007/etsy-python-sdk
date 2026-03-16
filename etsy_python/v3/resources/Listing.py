@@ -129,7 +129,10 @@ class ListingResource:
         return self.session.make_request(endpoint, query_params=query_params)
 
     def get_listings_by_listing_ids(
-        self, listing_ids: List[int], includes: Optional[List[Includes]] = None
+        self,
+        listing_ids: List[int],
+        includes: Optional[List[Includes]] = None,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/batch"
         query_params: Dict[str, Any] = {
@@ -137,11 +140,15 @@ class ListingResource:
             "includes": ",".join(list(map(lambda inc: inc.value, includes)))
             if includes is not None
             else None,
+            "legacy": legacy,
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
     def get_listings_by_listings_ids(
-        self, listing_ids: List[int], includes: Optional[List[Includes]] = None
+        self,
+        listing_ids: List[int],
+        includes: Optional[List[Includes]] = None,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         """Deprecated: use get_listings_by_listing_ids instead."""
         warnings.warn(
@@ -149,7 +156,7 @@ class ListingResource:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.get_listings_by_listing_ids(listing_ids, includes)
+        return self.get_listings_by_listing_ids(listing_ids, includes, legacy)
 
     def get_featured_listings_by_shop(
         self, shop_id: int, limit: int = 25, offset: int = 0,

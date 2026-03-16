@@ -3191,7 +3191,7 @@
                       "properties": {
                         "question_id": {
                           "type": "integer",
-                          "description": "The ID of the personalization question. Note: This value may change if the personalization question is updated.",
+                          "description": "The ID of the personalization question. This field is optional. Include it when updating an existing question; omit it when creating a new question. Note: This value may change if the personalization question is updated.",
                           "format": "int64",
                           "nullable": true,
                           "minimum": 1
@@ -3202,7 +3202,7 @@
                         },
                         "instructions": {
                           "type": "string",
-                          "description": "Optional instructions for a personalization question. For legacy, single personalization, max length is 256 characters. Once multiple personalization questions are enabled, the max length will be 120 characters.",
+                          "description": "Optional instructions for a personalization question. This field is not allowed for 'dropdown' questions. For legacy, single personalization, max length is 256 characters. Once multiple personalization questions are enabled, the max length will be 120 characters.",
                           "nullable": true
                         },
                         "question_type": {
@@ -3218,12 +3218,12 @@
                         },
                         "max_allowed_files": {
                           "type": "integer",
-                          "description": "The maximum number of files the buyer may upload in response to a personalization question. Note: This value is only applicable to 'unlabeled_upload' and 'labeled_upload' questions.",
+                          "description": "The maximum number of files the buyer may upload in response to a personalization question. This field is optional and only applicable to 'unlabeled_upload' and 'labeled_upload' questions.",
                           "nullable": true
                         },
                         "max_allowed_characters": {
                           "type": "integer",
-                          "description": "The maximum number of characters the buyer may enter in response to a personalization question. Note: This value is only applicable to 'text_input' questions.",
+                          "description": "The maximum number of characters the buyer may enter in response to a personalization question. This field is optional and only applicable to 'text_input' questions.",
                           "nullable": true
                         },
                         "options": {
@@ -3235,7 +3235,7 @@
                             "properties": {
                               "option_id": {
                                 "type": "integer",
-                                "description": "The ID of the option. Note: This value may change if the option or question is updated.",
+                                "description": "The ID of the option. This field is optional. Include it when updating an existing option; omit it when creating a new option. Note: This value may change if the option or question is updated.",
                                 "format": "int64",
                                 "nullable": true,
                                 "minimum": 1
@@ -5335,6 +5335,16 @@
           },
           "401": {
             "description": "The request lacks valid authentication credentials. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "There was a request conflict with the current state of the target resource. See the error message for details.",
             "content": {
               "application/json": {
                 "schema": {
