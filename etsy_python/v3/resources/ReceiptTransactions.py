@@ -42,7 +42,8 @@ class ReceiptTransactionsResource:
         return self.session.make_request(endpoint, query_params=query_params)
 
     def get_shop_receipt_transaction_by_shop(
-        self, shop_id: int, limit: int = 25, offset: int = 0
+        self, shop_id: int, limit: int = 25, offset: int = 0,
+        legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         """Deprecated: use get_shop_receipt_transactions_by_shop instead."""
         warnings.warn(
@@ -50,4 +51,4 @@ class ReceiptTransactionsResource:
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.get_shop_receipt_transactions_by_shop(shop_id, limit, offset)
+        return self.get_shop_receipt_transactions_by_shop(shop_id, limit, offset, legacy)
