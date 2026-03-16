@@ -539,6 +539,15 @@ class TestReceiptTransactionsResource:
         call_args = mock_session.make_request.call_args
         assert call_args[0][0] == f"/shops/{MOCK_SHOP_ID}/transactions"
 
+    def test_get_shop_receipt_transaction_by_shop_forwards_legacy(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_collection(make_transaction)
+        )
+        resource = ReceiptTransactionsResource(session=mock_session)
+        resource.get_shop_receipt_transaction_by_shop(MOCK_SHOP_ID, legacy=True)
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["legacy"] is True
+
 
 # --- PaymentLedgerEntry ---
 class TestPaymentLedgeEntryResource:
