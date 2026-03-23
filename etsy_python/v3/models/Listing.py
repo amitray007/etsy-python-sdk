@@ -71,7 +71,7 @@ class CreateDraftListingRequest(Request):
         personalization_is_required: Optional[bool] = None,
         personalization_char_count_max: Optional[int] = None,
         personalization_instructions: Optional[str] = None,
-        production_partner_ids: Optional[int] = None,
+        production_partner_ids: Optional[List[int]] = None,
         image_ids: Optional[List[int]] = None,
         is_supply: Optional[bool] = None,
         is_customizable: Optional[bool] = None,
@@ -153,7 +153,7 @@ class UpdateListingRequest(Request):
 
     def __init__(
         self,
-        image_ids: Optional[List[str]] = None,
+        image_ids: Optional[List[int]] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
         materials: Optional[List[str]] = None,
@@ -323,7 +323,7 @@ class UploadListingFileRequest(FileRequest):
 
 class UpdateVariationImagesRequest(Request):
     nullable: List[str] = []
-    mandatory: List[str] = []
+    mandatory: List[str] = ["variation_images"]
 
     def __init__(self, variation_images: List[Dict[str, Any]]) -> None:
         self.variation_images = variation_images
