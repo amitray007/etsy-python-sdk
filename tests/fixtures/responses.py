@@ -589,8 +589,8 @@ def make_user_address(**overrides):
 
 def make_holiday_preference(**overrides):
     data = {
-        "holiday_id": "thanksgiving",
-        "holiday_name": "Thanksgiving",
+        "holiday_id": 10,
+        "holiday_name": "Thanksgiving Day",
         "is_working": False,
     }
     data.update(overrides)

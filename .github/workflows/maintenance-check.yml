@@ -71,49 +71,229 @@ jobs:
           name: audit-report
           path: specs/audit-report.md
 
-      - name: Build issue body
+      - name: Classify severity and build issue
+        id: classify
         if: steps.fetch.outputs.changes == 'true'
         run: |
+          SEVERITY="low"
+          DATE=$(date -u +%Y-%m-%d)
+
+          # --- Parse diff report for high/medium signals ---
+          DIFF_FILE="specs/diff-report.md"
+          NEW_ENDPOINTS=0
+          REMOVED_ENDPOINTS=0
+          CHANGED_ENDPOINTS=0
+          SCHEMA_CHANGES=0
+
+          if [ -f "$DIFF_FILE" ]; then
+            # Count sections that have content (not just "No ... endpoints/changes")
+            if ! grep -q "No new endpoints" "$DIFF_FILE"; then
+              NEW_ENDPOINTS=$(grep -c '^\- \*\*' "$DIFF_FILE" 2>/dev/null || echo 0)
+            fi
+            if ! grep -q "No removed endpoints" "$DIFF_FILE"; then
+              REMOVED_ENDPOINTS=1
+            fi
+            if ! grep -q "No changed endpoints" "$DIFF_FILE"; then
+              CHANGED_ENDPOINTS=1
+            fi
+            if ! grep -q "No schema changes" "$DIFF_FILE"; then
+              SCHEMA_CHANGES=1
+            fi
+          fi
+
+          # --- Parse audit report for drift signals ---
+          AUDIT_FILE="specs/audit-report.md"
+          MISSING_ENDPOINTS=0
+          BODY_DRIFT=0
+          PARAM_DRIFT=0
+          CODE_ISSUES=0
+
+          if [ -f "$AUDIT_FILE" ]; then
+            MISSING_ENDPOINTS=$(grep -oP 'Missing from SDK: \K[0-9]+' "$AUDIT_FILE" | head -1 || echo 0)
+            [ -z "$MISSING_ENDPOINTS" ] && MISSING_ENDPOINTS=0
+
+            if ! grep -q "No request body drift" "$AUDIT_FILE"; then
+              BODY_DRIFT=1
+            fi
+            if ! grep -q "No query/path parameter drift" "$AUDIT_FILE"; then
+              PARAM_DRIFT=1
+            fi
+            CODE_ISSUES=$(grep -oP 'Code issues found: \K[0-9]+' "$AUDIT_FILE" | head -1 || echo 0)
+            [ -z "$CODE_ISSUES" ] && CODE_ISSUES=0
+          fi
+
+          # --- Determine severity ---
+          # High: removed endpoints, missing endpoints, breaking schema changes, body drift
+          if [ "$REMOVED_ENDPOINTS" -gt 0 ] || [ "$MISSING_ENDPOINTS" -gt 0 ] || [ "$BODY_DRIFT" -gt 0 ]; then
+            SEVERITY="high"
+          # Medium: new endpoints, changed endpoints, param drift, schema changes, real code issues
+          elif [ "$NEW_ENDPOINTS" -gt 0 ] || [ "$CHANGED_ENDPOINTS" -gt 0 ] || [ "$PARAM_DRIFT" -gt 0 ] || [ "$SCHEMA_CHANGES" -gt 0 ]; then
+            SEVERITY="medium"
+          # Low: cosmetic changes only (descriptions, formatting)
+          else
+            SEVERITY="low"
+          fi
+
+          echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+
+          # --- Build summary line ---
+          SUMMARY=""
+          [ "$REMOVED_ENDPOINTS" -gt 0 ] && SUMMARY="${SUMMARY}removed endpoints, "
+          [ "$MISSING_ENDPOINTS" -gt 0 ] && SUMMARY="${SUMMARY}${MISSING_ENDPOINTS} missing SDK methods, "
+          [ "$BODY_DRIFT" -gt 0 ] && SUMMARY="${SUMMARY}request body drift, "
+          [ "$PARAM_DRIFT" -gt 0 ] && SUMMARY="${SUMMARY}parameter drift, "
+          [ "$NEW_ENDPOINTS" -gt 0 ] && SUMMARY="${SUMMARY}${NEW_ENDPOINTS} new endpoints, "
+          [ "$CHANGED_ENDPOINTS" -gt 0 ] && SUMMARY="${SUMMARY}changed endpoints, "
+          [ "$SCHEMA_CHANGES" -gt 0 ] && SUMMARY="${SUMMARY}schema changes, "
+          [ "$CODE_ISSUES" -gt 0 ] && SUMMARY="${SUMMARY}${CODE_ISSUES} code issues, "
+
+          if [ -z "$SUMMARY" ]; then
+            SUMMARY="cosmetic spec changes only"
+          else
+            SUMMARY="${SUMMARY%, }"
+          fi
+
+          # --- Build issue body ---
           {
-            echo "## Etsy API Drift Detected"
+            echo "## Etsy API Drift — \`${SEVERITY}\` severity"
             echo ""
-            echo "The weekly maintenance check found changes in the Etsy OpenAPI spec."
+            echo "**Detected:** ${DATE} | **Severity:** \`${SEVERITY}\` | **Summary:** ${SUMMARY}"
             echo ""
-            echo "### Diff Report"
+
+            echo "### What Changed (Diff Report)"
             echo ""
-            cat specs/diff-report.md
+            if [ -f "$DIFF_FILE" ]; then
+              cat "$DIFF_FILE"
+            else
+              echo "No diff report generated."
+            fi
             echo ""
-            echo "### SDK Coverage"
+
+            echo "### SDK Impact (Audit Report)"
             echo ""
-            sed -n '/## Coverage Summary/,/^## [^C]/p' specs/audit-report.md | head -20
-            echo ""
+            if [ -f "$AUDIT_FILE" ]; then
+              # Coverage summary
+              sed -n '/## Coverage Summary/,/^## Missing Endpoints/p' "$AUDIT_FILE" | head -15
+              echo ""
+
+              # Missing endpoints (if any)
+              MISSING_SECTION=$(sed -n '/## Missing Endpoints/,/^## Not Implemented/p' "$AUDIT_FILE")
+              if ! echo "$MISSING_SECTION" | grep -q "All OAS operations are covered"; then
+                echo "#### Missing Endpoints"
+                echo "$MISSING_SECTION" | tail -n +2 | head -20
+                echo ""
+              fi
+
+              # Body drift (if any)
+              if ! grep -q "No request body drift" "$AUDIT_FILE"; then
+                echo "#### Request Body Drift"
+                sed -n '/## Request Body Drift/,/^## /p' "$AUDIT_FILE" | head -30
+                echo ""
+              fi
+
+              # Param drift (if any)
+              if ! grep -q "No query/path parameter drift" "$AUDIT_FILE"; then
+                echo "#### Parameter Drift"
+                sed -n '/## Query\/Path Parameter Drift/,/^## /p' "$AUDIT_FILE" | head -30
+                echo ""
+              fi
+
+              # Enum staleness (if any — only show real drift, not the known holiday IDs)
+              ENUM_SECTION=$(sed -n '/## Enum Staleness/,/^## /p' "$AUDIT_FILE")
+              if [ -n "$ENUM_SECTION" ] && ! echo "$ENUM_SECTION" | grep -q "^$"; then
+                ENUM_LINE_COUNT=$(echo "$ENUM_SECTION" | wc -l)
+                if [ "$ENUM_LINE_COUNT" -gt 3 ]; then
+                  echo "#### Enum Staleness"
+                  echo "$ENUM_SECTION" | head -30
+                  echo ""
+                fi
+              fi
+
+              # Code issues (if any)
+              if [ "$CODE_ISSUES" -gt 0 ]; then
+                echo "#### Code Issues (${CODE_ISSUES})"
+                sed -n '/## Code Issues/,/^## /p' "$AUDIT_FILE" | head -30
+                echo ""
+              fi
+
+              # Extra SDK methods
+              EXTRA_SECTION=$(sed -n '/## Extra SDK Methods/,/^## /p' "$AUDIT_FILE")
+              if ! echo "$EXTRA_SECTION" | grep -q "no matching OAS operation" || echo "$EXTRA_SECTION" | grep -q "\*\*"; then
+                echo "<details><summary>Extra SDK Methods (no OAS match)</summary>"
+                echo ""
+                echo "$EXTRA_SECTION" | head -20
+                echo ""
+                echo "</details>"
+                echo ""
+              fi
+            fi
+
             echo "---"
             echo ""
-            echo "**Next steps:**"
-            echo "1. Review the changes above"
-            echo '2. Run `/maintain-audit` to audit SDK coverage and implement changes'
-            echo "3. Update baseline: \`cp specs/latest.json specs/baseline.json\`"
+            echo "### Action Required"
+            echo ""
+            if [ "$SEVERITY" = "high" ]; then
+              echo "**Immediate action needed.** Breaking changes or missing SDK coverage detected."
+              echo ""
+              echo "1. Run \`/maintain-audit\` to review and implement fixes"
+              echo "2. Prioritize request body drift and missing endpoints"
+            elif [ "$SEVERITY" = "medium" ]; then
+              echo "**Review recommended.** New or changed endpoints that may need SDK updates."
+              echo ""
+              echo "1. Run \`/maintain-audit\` to review changes"
+              echo "2. Check if new endpoints need SDK methods"
+            else
+              echo "**Low priority.** Cosmetic spec changes only — no SDK code impact."
+              echo ""
+              echo "1. Review to confirm no hidden semantic changes"
+              echo "2. Update baseline if confirmed: \`cp specs/latest.json specs/baseline.json\`"
+            fi
             echo ""
             echo "*Auto-generated by [Maintenance Check](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})*"
           } > issue-body.md
+
+      - name: Ensure severity labels exist
+        if: steps.fetch.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "severity: high" --color "B60205" --description "High severity — breaking changes or missing coverage" --force 2>/dev/null || true
+          gh label create "severity: medium" --color "D93F0B" --description "Medium severity — new/changed endpoints need review" --force 2>/dev/null || true
+          gh label create "severity: low" --color "0E8A16" --description "Low severity — cosmetic or informational only" --force 2>/dev/null || true
 
       - name: Create or update issue on API drift
         if: steps.fetch.outputs.changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEVERITY: ${{ steps.classify.outputs.severity }}
+          DATE: ${{ steps.classify.outputs.date }}
         run: |
+          TITLE="audit: Spec Drift [${DATE}] — ${SEVERITY}"
           EXISTING=$(gh issue list --label "api-drift" --state open --json number --jq '.[0].number // empty')
 
           if [ -n "$EXISTING" ]; then
             echo "Updating existing issue #${EXISTING}"
-            gh issue edit "$EXISTING" --body-file issue-body.md
-            gh issue comment "$EXISTING" --body "Updated $(date -u +%Y-%m-%dT%H:%M:%SZ): New spec changes detected. Issue body updated with latest diff."
+            gh issue edit "$EXISTING" \
+              --title "$TITLE" \
+              --body-file issue-body.md \
+              --add-label "severity: ${SEVERITY}" \
+              --add-assignee amitray007
+            # Remove stale severity labels
+            for LBL in high medium low; do
+              if [ "$LBL" != "$SEVERITY" ]; then
+                gh issue edit "$EXISTING" --remove-label "severity: $LBL" 2>/dev/null || true
+              fi
+            done
+            gh issue comment "$EXISTING" --body "Updated ${DATE}: Spec changes re-evaluated. Severity: \`${SEVERITY}\`."
           else
             echo "Creating new api-drift issue"
             gh issue create \
-              --title "Etsy API drift detected" \
+              --title "$TITLE" \
               --body-file issue-body.md \
-              --label "api-drift"
+              --label "api-drift" \
+              --label "severity: ${SEVERITY}" \
+              --assignee amitray007
           fi
 
       - name: Close drift issue if no changes
