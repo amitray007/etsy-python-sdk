@@ -18,6 +18,7 @@ from etsy_python.v3.models.ShopReturnPolicy import (
     CreateShopReturnPolicyRequest,
     UpdateShopReturnPolicyRequest,
 )
+from etsy_python.v3.enums.HolidayPreferences import US_HOLIDAYS
 from etsy_python.v3.models.HolidayPreferences import UpdateHolidayPreferencesRequest
 from etsy_python.v3.resources.HolidayPreferences import HolidayPreferencesResource
 from etsy_python.v3.resources.ListingFile import ListingFileResource
@@ -641,6 +642,21 @@ class TestHolidayPreferencesResource:
         resource.update_holiday_preferences(MOCK_SHOP_ID, MOCK_HOLIDAY_ID, payload)
         mock_session.make_request.assert_called_once_with(
             f"/shops/{MOCK_SHOP_ID}/holiday-preferences/{MOCK_HOLIDAY_ID}",
+            method=Method.PUT,
+            payload=payload,
+        )
+
+    def test_update_holiday_preferences_with_enum(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_holiday_preference()
+        )
+        resource = HolidayPreferencesResource(session=mock_session)
+        payload = MagicMock(spec=UpdateHolidayPreferencesRequest)
+        resource.update_holiday_preferences(
+            MOCK_SHOP_ID, US_HOLIDAYS.THANKSGIVING_DAY, payload
+        )
+        mock_session.make_request.assert_called_once_with(
+            f"/shops/{MOCK_SHOP_ID}/holiday-preferences/{US_HOLIDAYS.THANKSGIVING_DAY.value}",
             method=Method.PUT,
             payload=payload,
         )

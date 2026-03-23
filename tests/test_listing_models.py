@@ -141,6 +141,10 @@ class TestUpdateVariationImagesRequest:
         result = req.get_dict()
         assert len(result["variation_images"]) == 1
 
+    def test_missing_variation_images_raises(self):
+        with pytest.raises(ValueError):
+            UpdateVariationImagesRequest(variation_images=None)
+
 
 class TestUploadListingImageRequest:
     def test_sets_file_and_data(self):
