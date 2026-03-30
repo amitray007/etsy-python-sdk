@@ -90,7 +90,7 @@ A comprehensive Python client library for the Etsy API v3, providing a modern, t
 
 ## Requirements
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - An Etsy App API Key (get one at [Etsy Developers](https://www.etsy.com/developers))
 
 ## Installation
