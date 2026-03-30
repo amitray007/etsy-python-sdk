@@ -90,6 +90,7 @@ class ListingResource:
         max_price: Optional[float] = None,
         taxonomy_id: Optional[int] = None,
         shop_location: Optional[str] = None,
+        is_safe: Optional[bool] = None,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/active"
@@ -103,6 +104,7 @@ class ListingResource:
             "max_price": max_price,
             "taxonomy_id": taxonomy_id,
             "shop_location": shop_location,
+            "is_safe": is_safe,
             "legacy": legacy,
         }
         return self.session.make_request(endpoint, query_params=query_params)

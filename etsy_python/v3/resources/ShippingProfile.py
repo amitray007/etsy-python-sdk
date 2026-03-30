@@ -91,8 +91,8 @@ class ShippingProfileResource:
     ) -> Union[Response, RequestException]:
         """Deprecated: use get_shop_shipping_profile_destinations_by_shipping_profile instead."""
         warnings.warn(
-            "get_shop_shipping_profile_destination_by_shipping_profile is deprecated, "
-            "use get_shop_shipping_profile_destinations_by_shipping_profile",
+            ("get_shop_shipping_profile_destination_by_shipping_profile is deprecated, "
+             "use get_shop_shipping_profile_destinations_by_shipping_profile"),
             DeprecationWarning,
             stacklevel=2,
         )

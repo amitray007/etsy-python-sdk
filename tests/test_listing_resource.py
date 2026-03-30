@@ -163,6 +163,28 @@ class TestFindAllListingsActive:
         assert qp["min_price"] == 10.0
         assert qp["max_price"] == 50.0
 
+    def test_with_is_safe_parameter(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.find_all_listings_active(is_safe=True)
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["is_safe"] is True
+
+    def test_is_safe_defaults_to_none(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.find_all_listings_active()
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["is_safe"] is None
+
 
 class TestFindAllActiveListingsByShop:
     def test_basic_call(self, mock_session):
