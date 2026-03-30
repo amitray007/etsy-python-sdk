@@ -25,8 +25,8 @@ class PaymentResource:
     ) -> Union[Response, RequestException]:
         """Deprecated: use get_payment_account_ledger_entry_payments instead."""
         warnings.warn(
-            ("get_shop_payment_account_ledger_entry_payments is deprecated, "
-             "use get_payment_account_ledger_entry_payments"),
+            "get_shop_payment_account_ledger_entry_payments is deprecated, "
+            "use get_payment_account_ledger_entry_payments",
             DeprecationWarning,
             stacklevel=2,
         )
