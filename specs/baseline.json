@@ -1647,6 +1647,16 @@
               "type": "boolean",
               "description": "This parameter needed to enable new parameters and response values related to processing profiles."
             }
+          },
+          {
+            "name": "is_safe",
+            "in": "query",
+            "description": "When true, filters out mature/adult content from search results.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "When true, filters out mature/adult content from search results."
+            }
           }
         ],
         "responses": {
@@ -3209,7 +3219,10 @@
                           "type": "string",
                           "description": "The type of the personalization question. Note: Currently, only a single question with type 'text_input' is supported. See https://developers.etsy.com/documentation/tutorials/personalization-migration for details about new question types.",
                           "enum": [
-                            "text_input"
+                            "text_input",
+                            "dropdown",
+                            "unlabeled_upload",
+                            "labeled_upload"
                           ]
                         },
                         "required": {
@@ -5235,7 +5248,7 @@
     "/v3/application/shops/{shop_id}/listings/{listing_id}/videos": {
       "post": {
         "operationId": "uploadListingVideo",
-        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nUploads a new video for a listing, or associates an existing video with a specific listing. You must either provide the `video_id` of an existing video, or the name and binary file data for a video to upload.",
+        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nUploads a new video for a listing, or associates an existing video with a specific listing. You must either provide the `video_id` of an existing video, or the name and binary file data for a video to upload. If providing a `video_id`, the video must already be associated with the same shop as the listing, but it does not need to be currently associated with the listing. ",
         "tags": [
           "ShopListing Video"
         ],
