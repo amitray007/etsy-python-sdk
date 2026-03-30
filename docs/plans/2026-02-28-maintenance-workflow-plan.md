@@ -6,7 +6,7 @@
 
 **Architecture:** Three Python scripts (`fetch_spec.py`, `diff_spec.py`, `audit_sdk.py`) provide the core logic. A pytest test suite covers live API integration. Three Claude Code skills (`/maintain:check`, `/maintain:audit`, `/maintain:test`) orchestrate these tools conversationally. `/maintain:audit` is a full pipeline — it runs the audit script, then Claude Code verifies findings against actual code, prepares a categorized change list, and asks the user whether to implement directly or adjust items first. A `specs/` directory stores baseline and latest OAS specs.
 
-**Tech Stack:** Python 3.8+, requests (already a dependency), pytest, python-dotenv
+**Tech Stack:** Python 3.10+, requests (already a dependency), pytest, python-dotenv
 
 **Design doc:** `docs/plans/2026-02-28-maintenance-workflow-design.md`
 
