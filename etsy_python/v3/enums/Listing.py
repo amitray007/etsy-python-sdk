@@ -93,6 +93,7 @@ class Includes(Enum):
     INVENTORY = "Inventory"
     VIDEOS = "Videos"
     PERSONALIZATION = "Personalization"
+    BUYER_PRICE = "BuyerPrice"
 
 
 class InventoryIncludes(Enum):
