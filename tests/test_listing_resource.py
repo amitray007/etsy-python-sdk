@@ -185,6 +185,30 @@ class TestFindAllListingsActive:
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert qp["is_safe"] is None
 
+    def test_with_buyer_country_and_currency(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.find_all_listings_active(buyer_country="DE", currency="EUR")
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["buyer_country"] == "DE"
+        assert qp["currency"] == "EUR"
+
+    def test_buyer_country_and_currency_default_to_none(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.find_all_listings_active()
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["buyer_country"] is None
+        assert qp["currency"] is None
+
 
 class TestFindAllActiveListingsByShop:
     def test_basic_call(self, mock_session):
@@ -233,6 +257,32 @@ class TestGetListingsByListingIds:
 
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert qp["legacy"] is None
+
+    def test_with_buyer_country_and_currency(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_by_listing_ids(
+            [111, 222], buyer_country="GB", currency="GBP"
+        )
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["buyer_country"] == "GB"
+        assert qp["currency"] == "GBP"
+
+    def test_buyer_country_and_currency_default_to_none(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_by_listing_ids([111])
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["buyer_country"] is None
+        assert qp["currency"] is None
 
 
 class TestGetListingsByListingsIds:

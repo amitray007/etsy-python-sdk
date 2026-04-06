@@ -92,6 +92,8 @@ class ListingResource:
         shop_location: Optional[str] = None,
         is_safe: Optional[bool] = None,
         legacy: Optional[bool] = None,
+        buyer_country: Optional[str] = None,
+        currency: Optional[str] = None,
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/active"
         query_params: Dict[str, Any] = {
@@ -106,6 +108,8 @@ class ListingResource:
             "shop_location": shop_location,
             "is_safe": is_safe,
             "legacy": legacy,
+            "buyer_country": buyer_country,
+            "currency": currency,
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
@@ -135,6 +139,8 @@ class ListingResource:
         listing_ids: List[int],
         includes: Optional[List[Includes]] = None,
         legacy: Optional[bool] = None,
+        buyer_country: Optional[str] = None,
+        currency: Optional[str] = None,
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/batch"
         query_params: Dict[str, Any] = {
@@ -143,6 +149,8 @@ class ListingResource:
             if includes is not None
             else None,
             "legacy": legacy,
+            "buyer_country": buyer_country,
+            "currency": currency,
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
