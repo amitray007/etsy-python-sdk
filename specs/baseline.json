@@ -750,7 +750,8 @@
                   "Translations",
                   "Inventory",
                   "Videos",
-                  "Personalization"
+                  "Personalization",
+                  "BuyerPrice"
                 ]
               },
               "default": null
@@ -961,7 +962,8 @@
                   "Translations",
                   "Inventory",
                   "Videos",
-                  "Personalization"
+                  "Personalization",
+                  "BuyerPrice"
                 ]
               },
               "default": null
@@ -1656,6 +1658,29 @@
             "schema": {
               "type": "boolean",
               "description": "When true, filters out mature/adult content from search results."
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "description": "The ISO 4217 alphabetic currency code (e.g., EUR, MXN) for price conversion. If provided, the listing price will be converted to this currency.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "The ISO 4217 alphabetic currency code (e.g., EUR, MXN) for price conversion. If provided, the listing price will be converted to this currency.",
+              "default": null
+            }
+          },
+          {
+            "name": "buyer_country",
+            "in": "query",
+            "description": "The ISO 3166-1 alpha-2 country code (e.g., DE, MX). Filters results to listings that ship to this country.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "The ISO 3166-1 alpha-2 country code (e.g., DE, MX). Filters results to listings that ship to this country.",
+              "format": "ISO 3166-1 alpha-2",
+              "default": null
             }
           }
         ],
@@ -2884,7 +2909,8 @@
                   "Translations",
                   "Inventory",
                   "Videos",
-                  "Personalization"
+                  "Personalization",
+                  "BuyerPrice"
                 ]
               },
               "default": null
@@ -2898,6 +2924,29 @@
             "schema": {
               "type": "boolean",
               "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "description": "The ISO 4217 alphabetic currency code (e.g., EUR, MXN) for price conversion. If provided, the listing price will be converted to this currency.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "The ISO 4217 alphabetic currency code (e.g., EUR, MXN) for price conversion. If provided, the listing price will be converted to this currency.",
+              "default": null
+            }
+          },
+          {
+            "name": "buyer_country",
+            "in": "query",
+            "description": "The ISO 3166-1 alpha-2 country code (e.g., GB, DE). Used for buyer-facing price calculations (VAT, inclusive shipping). Does not filter listings.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "The ISO 3166-1 alpha-2 country code (e.g., GB, DE). Used for buyer-facing price calculations (VAT, inclusive shipping). Does not filter listings.",
+              "format": "ISO 3166-1 alpha-2",
+              "default": null
             }
           }
         ],
@@ -8188,15 +8237,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "api_key": [],
-            "oauth2": [
-              "shops_r"
-            ]
-          }
-        ]
+        }
       }
     },
     "/v3/application/shops/{shop_id}/policies/return/{return_policy_id}": {
@@ -8369,15 +8410,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "api_key": [],
-            "oauth2": [
-              "shops_r"
-            ]
-          }
-        ]
+        }
       },
       "put": {
         "operationId": "updateShopReturnPolicy",
@@ -12941,6 +12974,15 @@
               }
             ]
           },
+          "converted_price": {
+            "description": "The listing price converted to the currency requested via the currency parameter. Only present when the currency parameter is provided. Null if the conversion rate is unavailable.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
           "taxonomy_id": {
             "type": "integer",
             "description": "The numerical taxonomy ID of the listing. See [SellerTaxonomy](/documentation/reference#tag/SellerTaxonomy) and [BuyerTaxonomy](/documentation/reference#tag/BuyerTaxonomy) for more information.",
@@ -13388,6 +13430,15 @@
               }
             ]
           },
+          "converted_price": {
+            "description": "The listing price converted to the currency requested via the currency parameter. Only present when the currency parameter is provided. Null if the conversion rate is unavailable.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
           "taxonomy_id": {
             "type": "integer",
             "description": "The numerical taxonomy ID of the listing. See [SellerTaxonomy](/documentation/reference#tag/SellerTaxonomy) and [BuyerTaxonomy](/documentation/reference#tag/BuyerTaxonomy) for more information.",
@@ -13501,6 +13552,15 @@
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Etsy_Modules_ListingPersonalization_Api_Resources_OpenApi_ListingPersonalization"
+              }
+            ],
+            "nullable": true
+          },
+          "buyer_price": {
+            "description": "The buyer-facing price for a listing, including VAT, inclusive shipping (UK), and active promotions. Requires buyer_country parameter. Shows base_price, shipping_cost, original_price (display price), and discounted_price if a promotion is active. Currently only supported on the /listings/batch endpoint.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ListingBuyerPrice"
               }
             ],
             "nullable": true
@@ -14578,6 +14638,75 @@
                 "label"
               ]
             }
+          }
+        }
+      },
+      "ListingBuyerPrice": {
+        "type": "object",
+        "x-resource-id": "ListingBuyerPrice",
+        "description": "The buyer-facing price for a listing, including VAT, inclusive shipping (UK), and active promotions.",
+        "properties": {
+          "base_price": {
+            "description": "The pre-discount listing price with VAT applied, excluding shipping. When a promotion is active, this is the price before the discount is applied.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ]
+          },
+          "shipping_cost": {
+            "description": "The shipping cost with VAT applied. Only present for UK buyers.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "original_price": {
+            "description": "The all-in display price (base + shipping for UK). This is the price to show to the buyer.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ]
+          },
+          "discounted_price": {
+            "description": "The sale price (all-in). Null if no active promotion.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "discount_amount": {
+            "description": "The discount amount as money (original_price - discounted_price). Null if no active promotion.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
+            "nullable": true
+          },
+          "discount_percentage": {
+            "type": "integer",
+            "description": "The discount percentage (e.g. 20 for 20% off). Null if no active promotion or if the promotion is a fixed-amount discount.",
+            "nullable": true
+          },
+          "has_discount": {
+            "type": "boolean",
+            "description": "Whether an active promotion applies to this listing."
+          },
+          "discount_start_epoch": {
+            "type": "integer",
+            "description": "The start timestamp of the active promotion. Null if no active promotion.",
+            "nullable": true
+          },
+          "discount_end_epoch": {
+            "type": "integer",
+            "description": "The end timestamp of the active promotion. Null if no active promotion.",
+            "nullable": true
           }
         }
       },
