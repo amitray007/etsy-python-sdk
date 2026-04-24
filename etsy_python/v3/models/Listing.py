@@ -111,9 +111,11 @@ class CreateDraftListingRequest(Request):
         ]):
             warnings.warn(
                 "personalization_is_required, personalization_char_count_max, and "
-                "personalization_instructions are deprecated and will be removed "
-                "from the Etsy API on April 9, 2026. Use the personalization "
-                "endpoint (update_listing_personalization) instead.",
+                "personalization_instructions are deprecated by the Etsy API and "
+                "scheduled for removal. Use the personalization endpoint "
+                "(update_listing_personalization) instead. See "
+                "https://developers.etsy.com/documentation/tutorials/personalization-migration "
+                "for migration details.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -212,9 +214,11 @@ class UpdateListingRequest(Request):
         ]):
             warnings.warn(
                 "personalization_is_required, personalization_char_count_max, and "
-                "personalization_instructions are deprecated and will be removed "
-                "from the Etsy API on April 9, 2026. Use the personalization "
-                "endpoint (update_listing_personalization) instead.",
+                "personalization_instructions are deprecated by the Etsy API and "
+                "scheduled for removal. Use the personalization endpoint "
+                "(update_listing_personalization) instead. See "
+                "https://developers.etsy.com/documentation/tutorials/personalization-migration "
+                "for migration details.",
                 DeprecationWarning,
                 stacklevel=2,
             )
