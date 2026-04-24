@@ -19,6 +19,7 @@ from etsy_python.v3.models.ShopReturnPolicy import (
     UpdateShopReturnPolicyRequest,
 )
 from etsy_python.v3.enums.HolidayPreferences import US_HOLIDAYS
+from etsy_python.v3.enums.ListingInventory import MaxVariationsSupported
 from etsy_python.v3.models.HolidayPreferences import UpdateHolidayPreferencesRequest
 from etsy_python.v3.resources.HolidayPreferences import HolidayPreferencesResource
 from etsy_python.v3.resources.ListingFile import ListingFileResource
@@ -157,7 +158,26 @@ class TestListingInventoryResource:
             f"/listings/{MOCK_LISTING_ID}/inventory",
             method=Method.PUT,
             payload=payload,
-            query_params={"legacy": None},
+            query_params={"legacy": None, "max_variations_supported": None},
+        )
+
+    def test_update_listing_inventory_with_max_variations(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_listing_inventory()
+        )
+        resource = ListingInventoryResource(session=mock_session)
+        payload = MagicMock(spec=UpdateListingInventoryRequest)
+        resource.update_listing_inventory(
+            MOCK_LISTING_ID,
+            payload,
+            legacy=True,
+            max_variations_supported=MaxVariationsSupported.THREE,
+        )
+        mock_session.make_request.assert_called_once_with(
+            f"/listings/{MOCK_LISTING_ID}/inventory",
+            method=Method.PUT,
+            payload=payload,
+            query_params={"legacy": True, "max_variations_supported": "3"},
         )
 
 

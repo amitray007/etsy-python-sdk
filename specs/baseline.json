@@ -499,7 +499,7 @@
                   },
                   "is_personalizable": {
                     "type": "boolean",
-                    "description": "When true, this listing is personalizable. The default value is false."
+                    "description": "[DEPRECATED] When true, this listing is personalizable. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
                   },
                   "personalization_is_required": {
                     "type": "boolean",
@@ -2449,6 +2449,20 @@
               "type": "boolean",
               "description": "This parameter needed to enable new parameters and response values related to processing profiles."
             }
+          },
+          {
+            "name": "max_variations_supported",
+            "in": "query",
+            "description": "Coming soon: This parameter determines whether a third variation can be added to or updated for a listing. It accepts values of 2 or 3, where 3 enables third-variation support.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Coming soon: This parameter determines whether a third variation can be added to or updated for a listing. It accepts values of 2 or 3, where 3 enables third-variation support.",
+              "enum": [
+                "2",
+                "3"
+              ]
+            }
           }
         ],
         "requestBody": {
@@ -2479,13 +2493,13 @@
                             "properties": {
                               "property_id": {
                                 "type": "integer",
-                                "description": "The unique ID of an Etsy [listing property](/documentation/reference#operation/getListingProperties).",
+                                "description": "The unique ID of an Etsy [listing property](/documentation/reference#operation/getListingInventory).",
                                 "format": "int64",
                                 "minimum": 1
                               },
                               "value_ids": {
                                 "type": "array",
-                                "description": "An array of unique IDs of multiple Etsy [listing property](/documentation/reference#operation/getListingProperties) values. For example, if your listing offers different sizes of a product, then the value ID list contains value IDs for each size.",
+                                "description": "An array of unique IDs of Etsy [listing property](/documentation/reference#operation/getListingInventory) values.",
                                 "items": {
                                   "type": "integer",
                                   "format": "int64",
@@ -2561,28 +2575,28 @@
                   },
                   "price_on_property": {
                     "type": "array",
-                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
+                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
                     "items": {
                       "type": "integer"
                     }
                   },
                   "quantity_on_property": {
                     "type": "array",
-                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
+                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
                     "items": {
                       "type": "integer"
                     }
                   },
                   "sku_on_property": {
                     "type": "array",
-                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
+                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
                     "items": {
                       "type": "integer"
                     }
                   },
                   "readiness_state_on_property": {
                     "type": "array",
-                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change processing profile, if any. For example, if you need specific processing profiles for different colored products in the same listing, then this array contains the property ID for color.",
+                    "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change processing profile, if any. For example, if you need specific processing profiles for different colored products in the same listing, then this array contains the property ID for color.",
                     "nullable": true,
                     "items": {
                       "type": "integer",
@@ -3647,7 +3661,7 @@
                 "properties": {
                   "value_ids": {
                     "type": "array",
-                    "description": "An array of unique IDs of multiple Etsy [listing property](/documentation/reference#operation/getListingProperties) values. For example, if your listing offers different sizes of a product, then the value ID list contains value IDs for each size.",
+                    "description": "An array of unique IDs of multiple Etsy [listing property](/documentation/reference#operation/getListingProperties) values. For example, if your listing is composed of different materials, then the value ID list contains value IDs for each material.",
                     "items": {
                       "type": "integer",
                       "format": "int64",
@@ -3656,7 +3670,7 @@
                   },
                   "values": {
                     "type": "array",
-                    "description": "An array of value strings for multiple Etsy [listing property](/documentation/reference#operation/getListingProperties) values. For example, if your listing offers different colored products, then the values array contains the color strings for each color. Note: parenthesis characters (`(` and `)`) are not allowed.",
+                    "description": "An array of value strings for multiple Etsy [listing property](/documentation/reference#operation/getListingProperties) values. For example, if your listing is painted in different colors, then the values array contains the color strings for each color. Note: parenthesis characters (`(` and `)`) are not allowed.",
                     "items": {
                       "type": "string"
                     }
@@ -4636,7 +4650,7 @@
                   },
                   "is_personalizable": {
                     "type": "boolean",
-                    "description": "When true, this listing is personalizable. The default value is false."
+                    "description": "[DEPRECATED] When true, this listing is personalizable. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
                   },
                   "personalization_is_required": {
                     "type": "boolean",
@@ -12218,7 +12232,7 @@
     "/v3/application/users/{user_id}": {
       "get": {
         "operationId": "getUser",
-        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves a user profile based on a unique user ID.                  Access is limited to profiles of the authenticated user                  or linked buyers. For the primary_email field, specific                  app-based permissions are required and granted case-by-case.",
+        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves a user profile based on a unique user ID.                 Access is limited to profiles of the authenticated user                 or linked buyers. For the primary_email field, specific                 app-based permissions are required and granted case-by-case.",
         "tags": [
           "User"
         ],
@@ -12570,11 +12584,11 @@
           },
           "supports_attributes": {
             "type": "boolean",
-            "description": "When true, you can use this property in listing attributes."
+            "description": "When true, you can use this property in listing properties."
           },
           "supports_variations": {
             "type": "boolean",
-            "description": "When true, you can use this property in listing variations."
+            "description": "When true, you can use this property in listing inventory."
           },
           "is_multivalued": {
             "type": "boolean",
@@ -12783,20 +12797,6 @@
           "is_personalizable": {
             "type": "boolean",
             "description": "When true, this listing is personalizable. The default value is false."
-          },
-          "personalization_is_required": {
-            "type": "boolean",
-            "description": "[DEPRECATED] When true, this listing requires personalization. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
-          },
-          "personalization_char_count_max": {
-            "type": "integer",
-            "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
-            "nullable": true
-          },
-          "personalization_instructions": {
-            "type": "string",
-            "description": "[DEPRECATED] When true, this listing requires personalization. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
-            "nullable": true
           },
           "listing_type": {
             "type": "string",
@@ -13239,20 +13239,6 @@
           "is_personalizable": {
             "type": "boolean",
             "description": "When true, this listing is personalizable. The default value is false."
-          },
-          "personalization_is_required": {
-            "type": "boolean",
-            "description": "[DEPRECATED] When true, this listing requires personalization. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
-          },
-          "personalization_char_count_max": {
-            "type": "integer",
-            "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
-            "nullable": true
-          },
-          "personalization_instructions": {
-            "type": "string",
-            "description": "[DEPRECATED] When true, this listing requires personalization. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
-            "nullable": true
           },
           "listing_type": {
             "type": "string",
@@ -14246,28 +14232,28 @@
           },
           "price_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
             "items": {
               "type": "integer"
             }
           },
           "quantity_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
               "type": "integer"
             }
           },
           "sku_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
               "type": "integer"
             }
           },
           "readiness_state_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change processing profile, if any. For example, if you need specific processing profiles for different colored products in the same listing, then this array contains the property ID for color.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change processing profile, if any. For example, if you need specific processing profiles for different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
               "type": "integer",
               "format": "int64",
@@ -14655,7 +14641,7 @@
             ]
           },
           "shipping_cost": {
-            "description": "The shipping cost with VAT applied. Only present for UK buyers.",
+            "description": "The shipping cost to the buyer's country. Includes VAT where applicable. Null when shipping is free or unavailable — use is_free_shipping to distinguish.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Money"
@@ -14663,8 +14649,12 @@
             ],
             "nullable": true
           },
+          "is_free_shipping": {
+            "type": "boolean",
+            "description": "Whether shipping is free to the buyer's country."
+          },
           "original_price": {
-            "description": "The all-in display price (base + shipping for UK). This is the price to show to the buyer.",
+            "description": "The display price. For UK buyers, includes base + shipping (DMCC). For others, base price only.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Money"
@@ -14672,7 +14662,7 @@
             ]
           },
           "discounted_price": {
-            "description": "The sale price (all-in). Null if no active promotion.",
+            "description": "The sale price. For UK buyers, includes base + shipping. For others, base price only. Null if no active promotion.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Money"
@@ -14753,28 +14743,28 @@
           },
           "price_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
             "items": {
               "type": "integer"
             }
           },
           "quantity_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
               "type": "integer"
             }
           },
           "sku_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
               "type": "integer"
             }
           },
           "readiness_state_on_property": {
             "type": "array",
-            "description": "An array of unique [listing property](/documentation/reference#operation/getListingProperties) ID integers for the properties that change processing profile, if any. For example, if you need specific processing profiles for different colored products in the same listing, then this array contains the property ID for color.",
+            "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change processing profile, if any. For example, if you need specific processing profiles for different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
               "type": "integer",
               "format": "int64",
@@ -16274,11 +16264,11 @@
           },
           "supports_attributes": {
             "type": "boolean",
-            "description": "When true, you can use this property in listing attributes."
+            "description": "When true, you can use this property in listing properties."
           },
           "supports_variations": {
             "type": "boolean",
-            "description": "When true, you can use this property in listing variations."
+            "description": "When true, you can use this property in listing inventory."
           },
           "is_multivalued": {
             "type": "boolean",
