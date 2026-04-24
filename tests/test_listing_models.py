@@ -193,7 +193,8 @@ class TestPersonalizationDeprecationWarnings:
             )
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             assert len(deprecation_warnings) == 1
-            assert "April 9, 2026" in str(deprecation_warnings[0].message)
+            assert "deprecated by the Etsy API" in str(deprecation_warnings[0].message)
+            assert "personalization-migration" in str(deprecation_warnings[0].message)
 
     def test_update_no_warning_without_personalization(self):
         with warnings.catch_warnings(record=True) as w:
