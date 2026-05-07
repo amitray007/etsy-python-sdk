@@ -1,9 +1,10 @@
-from typing import List, Optional, TypedDict, Union
+from typing import List, Optional, TypedDict
 
 from etsy_python.v3.models.Request import Request
 
 
 class CustomsItem(TypedDict):
+    # HS_code preserves Etsy's spec casing (Harmonized System code); do not snake_case.
     country_of_origin: Optional[str]
     declared_value: Optional[float]
     HS_code: Optional[str]
@@ -47,7 +48,7 @@ class CreateReceiptShipmentRequest(Request):
         ship_from_country: Optional[str] = None,
         ship_to_country: Optional[str] = None,
         incoterm: Optional[str] = None,
-        customs_data: Optional[List[Union[CustomsItem, dict]]] = None,
+        customs_data: Optional[List[CustomsItem]] = None,
         duty_amount: Optional[float] = None,
         duty_currency: Optional[str] = None,
         ship_date: Optional[str] = None,
