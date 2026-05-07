@@ -1,5 +1,6 @@
 from etsy_python.v3.models.Receipt import (
     CreateReceiptShipmentRequest,
+    CustomsItem,
     UpdateShopReceiptRequest,
 )
 
@@ -29,6 +30,118 @@ class TestCreateReceiptShipmentRequest:
         result = req.get_dict()
         assert result["send_bcc"] is True
         assert result["note_to_buyer"] == "Shipping soon!"
+
+    def test_with_shipping_label_fields(self):
+        req = CreateReceiptShipmentRequest(
+            tracking_code="TRACK123",
+            carrier_name="USPS",
+            mail_class="Priority",
+            weight=1.5,
+            weight_units="lb",
+            length=10.0,
+            width=8.0,
+            height=4.0,
+            dimension_units="in",
+            shipping_label_cost=8.95,
+            shipping_label_currency="USD",
+            ship_from_country="US",
+            ship_to_country="CA",
+            ship_date="2026-05-07",
+        )
+        result = req.get_dict()
+        assert result["mail_class"] == "Priority"
+        assert result["weight"] == 1.5
+        assert result["weight_units"] == "lb"
+        assert result["length"] == 10.0
+        assert result["width"] == 8.0
+        assert result["height"] == 4.0
+        assert result["dimension_units"] == "in"
+        assert result["shipping_label_cost"] == 8.95
+        assert result["shipping_label_currency"] == "USD"
+        assert result["ship_from_country"] == "US"
+        assert result["ship_to_country"] == "CA"
+        assert result["ship_date"] == "2026-05-07"
+
+    def test_with_customs_and_duty_fields(self):
+        customs = [
+            {
+                "country_of_origin": "US",
+                "declared_value": 25.00,
+                "HS_code": "9503.00.00",
+            }
+        ]
+        req = CreateReceiptShipmentRequest(
+            tracking_code="TRACK123",
+            customs_data=customs,
+            incoterm="DDP",
+            duty_amount=2.50,
+            duty_currency="USD",
+            revenue_eligibility="eligible",
+        )
+        result = req.get_dict()
+        assert result["customs_data"] == customs
+        assert result["incoterm"] == "DDP"
+        assert result["duty_amount"] == 2.50
+        assert result["duty_currency"] == "USD"
+        assert result["revenue_eligibility"] == "eligible"
+
+    def test_new_optional_fields_excluded_when_none(self):
+        req = CreateReceiptShipmentRequest(tracking_code="TRACK123")
+        result = req.get_dict()
+        for key in (
+            "mail_class", "weight", "weight_units", "length", "width", "height",
+            "dimension_units", "shipping_label_cost", "shipping_label_currency",
+            "revenue_eligibility", "ship_from_country", "ship_to_country",
+            "incoterm", "customs_data", "duty_amount", "duty_currency", "ship_date",
+        ):
+            assert key not in result
+
+    def test_zero_floats_serialize_as_zero(self):
+        # Float fields are intentionally excluded from the nullable list so that
+        # legitimate zero values (free shipping label, no duty) round-trip as 0
+        # rather than null.
+        req = CreateReceiptShipmentRequest(
+            weight=0.0,
+            length=0.0,
+            width=0.0,
+            height=0.0,
+            shipping_label_cost=0.0,
+            duty_amount=0.0,
+        )
+        result = req.get_dict()
+        assert result["weight"] == 0.0
+        assert result["length"] == 0.0
+        assert result["width"] == 0.0
+        assert result["height"] == 0.0
+        assert result["shipping_label_cost"] == 0.0
+        assert result["duty_amount"] == 0.0
+
+    def test_nullable_strings_send_null_when_empty(self):
+        # Spec marks these fields nullable: true; empty string is normalized to
+        # an explicit JSON null on the wire so callers can clear server state.
+        req = CreateReceiptShipmentRequest(
+            mail_class="",
+            weight_units="",
+            ship_from_country="",
+            duty_currency="",
+        )
+        result = req.get_dict()
+        assert result["mail_class"] is None
+        assert result["weight_units"] is None
+        assert result["ship_from_country"] is None
+        assert result["duty_currency"] is None
+
+    def test_customs_data_typed_dict(self):
+        # CustomsItem is a TypedDict; passing it works exactly like a plain dict
+        # but gives callers IDE completion / type-checker validation.
+        item: CustomsItem = {
+            "country_of_origin": "US",
+            "declared_value": 42.50,
+            "HS_code": "9503.00.00",
+        }
+        req = CreateReceiptShipmentRequest(customs_data=[item])
+        result = req.get_dict()
+        assert result["customs_data"] == [item]
 
 
 class TestUpdateShopReceiptRequest:

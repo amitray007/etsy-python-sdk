@@ -298,11 +298,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -760,11 +760,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -983,11 +983,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           },
           {
@@ -1210,7 +1210,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The metatdata for a file associated with a digital listing.",
+            "description": "The metadata for a file associated with a digital listing.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1643,11 +1643,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           },
           {
@@ -1813,11 +1813,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -2342,11 +2342,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -2443,11 +2443,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           },
           {
@@ -2716,11 +2716,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -2830,11 +2830,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -2933,11 +2933,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           },
           {
@@ -3056,11 +3056,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -3239,11 +3239,11 @@
           {
             "name": "supports_multiple_personalization_questions",
             "in": "query",
-            "description": "This query parameter indicates that the caller supports up to 5 personalization questions and the following question types: 'text_input', 'dropdown', 'unlabeled_upload', 'labeled_upload'. Sending this param without updating your application can lead to inadvertantly deleting seller-entered data.",
+            "description": "This query parameter indicates that the caller supports up to 5 personalization questions and the following question types: 'text_input', 'dropdown', 'unlabeled_upload', 'labeled_upload'. Sending this param without updating your application can lead to inadvertently deleting seller-entered data.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This query parameter indicates that the caller supports up to 5 personalization questions and the following question types: 'text_input', 'dropdown', 'unlabeled_upload', 'labeled_upload'. Sending this param without updating your application can lead to inadvertantly deleting seller-entered data.",
+              "description": "This query parameter indicates that the caller supports up to 5 personalization questions and the following question types: 'text_input', 'dropdown', 'unlabeled_upload', 'labeled_upload'. Sending this param without updating your application can lead to inadvertently deleting seller-entered data.",
               "nullable": true
             }
           }
@@ -4470,11 +4470,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -5171,7 +5171,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The metatdata for a video associated with a listing.",
+            "description": "The metadata for a video associated with a listing.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6206,7 +6206,7 @@
                   },
                   "was_paid": {
                     "type": "boolean",
-                    "description": "When `true`, returns receipts where the seller has recieved payment for the receipt. When `false`, returns receipts where payment has not been received.",
+                    "description": "When `true`, returns receipts where the seller has received payment for the receipt. When `false`, returns receipts where payment has not been received.",
                     "nullable": true
                   }
                 }
@@ -6417,11 +6417,11 @@
           {
             "name": "was_paid",
             "in": "query",
-            "description": "When `true`, returns receipts where the seller has recieved payment for the receipt. When `false`, returns receipts where payment has not been received.",
+            "description": "When `true`, returns receipts where the seller has received payment for the receipt. When `false`, returns receipts where payment has not been received.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "When `true`, returns receipts where the seller has recieved payment for the receipt. When `false`, returns receipts where payment has not been received.",
+              "description": "When `true`, returns receipts where the seller has received payment for the receipt. When `false`, returns receipts where payment has not been received.",
               "nullable": true
             }
           },
@@ -6601,11 +6601,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -6726,7 +6726,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -6745,6 +6745,126 @@
                   "note_to_buyer": {
                     "type": "string",
                     "description": "Message to include in notification to the buyer."
+                  },
+                  "mail_class": {
+                    "type": "string",
+                    "description": "The service level of postal or carrier service selected for the shipment (e.g., First-Class, Priority, Ground, Express).",
+                    "nullable": true
+                  },
+                  "weight": {
+                    "type": "number",
+                    "description": "The total weight of the package.",
+                    "format": "float",
+                    "nullable": true
+                  },
+                  "weight_units": {
+                    "type": "string",
+                    "description": "Unit of measurement used for package weight (oz, grams, etc.).",
+                    "nullable": true
+                  },
+                  "length": {
+                    "type": "number",
+                    "description": "Longest side of the package.",
+                    "format": "float",
+                    "nullable": true
+                  },
+                  "width": {
+                    "type": "number",
+                    "description": "Second longest side of the package.",
+                    "format": "float",
+                    "nullable": true
+                  },
+                  "height": {
+                    "type": "number",
+                    "description": "Third longest side of the package.",
+                    "format": "float",
+                    "nullable": true
+                  },
+                  "dimension_units": {
+                    "type": "string",
+                    "description": "Unit of measurement used for package dimensions (in, cm...).",
+                    "nullable": true
+                  },
+                  "shipping_label_cost": {
+                    "type": "number",
+                    "description": "The purchase price the seller paid for the shipping label.",
+                    "format": "float",
+                    "nullable": true
+                  },
+                  "shipping_label_currency": {
+                    "type": "string",
+                    "description": "The currency in which the shipping label was purchased.",
+                    "nullable": true
+                  },
+                  "revenue_eligibility": {
+                    "type": "string",
+                    "description": "A flag indicating if the shipment is tied to a revenue share agreement between Etsy and the vendor.",
+                    "nullable": true
+                  },
+                  "ship_from_country": {
+                    "type": "string",
+                    "description": "Where the package ships from.",
+                    "nullable": true
+                  },
+                  "ship_to_country": {
+                    "type": "string",
+                    "description": "Package destination.",
+                    "nullable": true
+                  },
+                  "incoterm": {
+                    "type": "string",
+                    "description": "The specific incoterm (e.g., DDU, DDP) designated for the shipment.",
+                    "nullable": true
+                  },
+                  "customs_data": {
+                    "type": "array",
+                    "description": "Contains custom data like country of origin, declared value and HS code.",
+                    "nullable": true,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "country_of_origin": {
+                          "type": "string",
+                          "description": "The country in which the goods originate from.",
+                          "nullable": true,
+                          "default": null
+                        },
+                        "declared_value": {
+                          "type": "number",
+                          "description": "The commercial value of the goods.",
+                          "format": "float",
+                          "nullable": true,
+                          "default": null
+                        },
+                        "HS_code": {
+                          "type": "string",
+                          "description": "The standardized global system (Harmonized System) for classifying traded products.",
+                          "nullable": true,
+                          "default": null
+                        }
+                      },
+                      "required": [
+                        "country_of_origin",
+                        "declared_value",
+                        "HS_code"
+                      ]
+                    }
+                  },
+                  "duty_amount": {
+                    "type": "number",
+                    "description": "The estimated or actual amount of import duties and taxes assessed by customs for the shipment.",
+                    "format": "float",
+                    "nullable": true
+                  },
+                  "duty_currency": {
+                    "type": "string",
+                    "description": "The currency in which the duty was paid.",
+                    "nullable": true
+                  },
+                  "ship_date": {
+                    "type": "string",
+                    "description": "The date package was shipped.",
+                    "nullable": true
                   }
                 }
               }
@@ -8601,11 +8721,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -9889,11 +10009,11 @@
           {
             "name": "legacy",
             "in": "query",
-            "description": "This parameter needed to enable new parameters and response values related to processing profiles.",
+            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "This parameter needed to enable new parameters and response values related to processing profiles."
+              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -12628,7 +12748,7 @@
       "BuyerTaxonomyPropertyScale": {
         "type": "object",
         "x-resource-id": "BuyerTaxonomyPropertyScale",
-        "description": "A scale defnining the assignable increments for the property values available to specific product properties.",
+        "description": "A scale defining the assignable increments for the property values available to specific product properties.",
         "properties": {
           "scale_id": {
             "type": "integer",
@@ -14038,13 +14158,13 @@
           },
           "shipping_from_country_iso": {
             "type": "string",
-            "description": "The country iso the shop is shipping from.",
+            "description": "The country ISO the shop is shipping from.",
             "format": "ISO 3166-1 alpha-2",
             "nullable": true
           },
           "shop_location_country_iso": {
             "type": "string",
-            "description": "The country iso where the shop is located.",
+            "description": "The country ISO where the shop is located.",
             "format": "ISO 3166-1 alpha-2",
             "nullable": true
           },
@@ -14209,7 +14329,8 @@
               "inactive",
               "deleted",
               "flagged"
-            ]
+            ],
+            "default": "active"
           }
         }
       },
@@ -15058,6 +15179,11 @@
           "formatted_value": {
             "type": "string",
             "description": "Value of the variation entered by the buyer."
+          },
+          "question_id": {
+            "type": "integer",
+            "description": "[Personalization only] The ID of the original personalization question.",
+            "nullable": true
           }
         }
       },
@@ -15307,7 +15433,7 @@
       "PaymentAdjustmentItem": {
         "type": "object",
         "x-resource-id": "PaymentAdjustmentItem",
-        "description": "A payemnt adjustment line item for a payment adjustment.",
+        "description": "A payment adjustment line item for a payment adjustment.",
         "properties": {
           "payment_adjustment_id": {
             "type": "integer",
@@ -15473,7 +15599,7 @@
             "nullable": true
           },
           "posted_fees": {
-            "description": "The total value of the fees posted once the purchase ships. Etsy refunds a proportional amount of the fees when a seller refunds a buyer. When the seller issues a refund prior to shipping, the posted amount is less then the original.",
+            "description": "The total value of the fees posted once the purchase ships. Etsy refunds a proportional amount of the fees when a seller refunds a buyer. When the seller issues a refund prior to shipping, the posted amount is less than the original.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Money"
@@ -15771,7 +15897,7 @@
             ]
           },
           "subtotal": {
-            "description": "A number equal to the total_price minus coupon discounts. Does not included tax or shipping costs.",
+            "description": "A number equal to the total_price minus coupon discounts. Does not include tax or shipping costs.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Money"
@@ -15779,7 +15905,7 @@
             ]
           },
           "total_price": {
-            "description": "A number equal to the sum of the individual listings' (price * quantity). Does not included tax or shipping costs.",
+            "description": "A number equal to the sum of the individual listings' (price * quantity). Does not include tax or shipping costs.",
             "oneOf": [
               {
                 "$ref": "#/components/schemas/Money"
@@ -16308,7 +16434,7 @@
       "TaxonomyPropertyScale": {
         "type": "object",
         "x-resource-id": "TaxonomyPropertyScale",
-        "description": "A scale defnining the assignable increments for the property values available to specific product properties.",
+        "description": "A scale defining the assignable increments for the property values available to specific product properties.",
         "properties": {
           "scale_id": {
             "type": "integer",
@@ -16556,7 +16682,7 @@
           },
           "country_iso": {
             "type": "string",
-            "description": "The country iso where the shop is located.",
+            "description": "The country ISO where the shop is located.",
             "format": "ISO 3166-1 alpha-2"
           },
           "is_working": {
@@ -16760,7 +16886,7 @@
       "ShopSections": {
         "type": "object",
         "x-resource-id": "ShopSections",
-        "description": "All the sections in a sprecific Shop.",
+        "description": "All the sections in a specific Shop.",
         "properties": {
           "count": {
             "type": "integer",
