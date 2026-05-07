@@ -1,10 +1,31 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional, TypedDict, Union
 
 from etsy_python.v3.models.Request import Request
 
 
+class CustomsItem(TypedDict):
+    country_of_origin: Optional[str]
+    declared_value: Optional[float]
+    HS_code: Optional[str]
+
+
 class CreateReceiptShipmentRequest(Request):
-    nullable: List[str] = []
+    # Spec marks these fields nullable: true. Strings + array are added so callers
+    # can pass empty values to clear them; floats are intentionally excluded so
+    # legitimate zero values (free label, zero duty) serialize as 0, not null.
+    nullable: List[str] = [
+        "mail_class",
+        "weight_units",
+        "dimension_units",
+        "shipping_label_currency",
+        "revenue_eligibility",
+        "ship_from_country",
+        "ship_to_country",
+        "incoterm",
+        "customs_data",
+        "duty_currency",
+        "ship_date",
+    ]
     mandatory: List[str] = []
 
     def __init__(
@@ -26,7 +47,7 @@ class CreateReceiptShipmentRequest(Request):
         ship_from_country: Optional[str] = None,
         ship_to_country: Optional[str] = None,
         incoterm: Optional[str] = None,
-        customs_data: Optional[List[Dict[str, Any]]] = None,
+        customs_data: Optional[List[Union[CustomsItem, dict]]] = None,
         duty_amount: Optional[float] = None,
         duty_currency: Optional[str] = None,
         ship_date: Optional[str] = None,

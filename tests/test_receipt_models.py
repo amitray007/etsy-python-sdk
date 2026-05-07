@@ -1,5 +1,6 @@
 from etsy_python.v3.models.Receipt import (
     CreateReceiptShipmentRequest,
+    CustomsItem,
     UpdateShopReceiptRequest,
 )
 
@@ -94,6 +95,53 @@ class TestCreateReceiptShipmentRequest:
             "incoterm", "customs_data", "duty_amount", "duty_currency", "ship_date",
         ):
             assert key not in result
+
+    def test_zero_floats_serialize_as_zero(self):
+        # Float fields are intentionally excluded from the nullable list so that
+        # legitimate zero values (free shipping label, no duty) round-trip as 0
+        # rather than null.
+        req = CreateReceiptShipmentRequest(
+            weight=0.0,
+            length=0.0,
+            width=0.0,
+            height=0.0,
+            shipping_label_cost=0.0,
+            duty_amount=0.0,
+        )
+        result = req.get_dict()
+        assert result["weight"] == 0.0
+        assert result["length"] == 0.0
+        assert result["width"] == 0.0
+        assert result["height"] == 0.0
+        assert result["shipping_label_cost"] == 0.0
+        assert result["duty_amount"] == 0.0
+
+    def test_nullable_strings_send_null_when_empty(self):
+        # Spec marks these fields nullable: true; empty string is normalized to
+        # an explicit JSON null on the wire so callers can clear server state.
+        req = CreateReceiptShipmentRequest(
+            mail_class="",
+            weight_units="",
+            ship_from_country="",
+            duty_currency="",
+        )
+        result = req.get_dict()
+        assert result["mail_class"] is None
+        assert result["weight_units"] is None
+        assert result["ship_from_country"] is None
+        assert result["duty_currency"] is None
+
+    def test_customs_data_typed_dict(self):
+        # CustomsItem is a TypedDict; passing it works exactly like a plain dict
+        # but gives callers IDE completion / type-checker validation.
+        item: CustomsItem = {
+            "country_of_origin": "US",
+            "declared_value": 42.50,
+            "HS_code": "9503.00.00",
+        }
+        req = CreateReceiptShipmentRequest(customs_data=[item])
+        result = req.get_dict()
+        assert result["customs_data"] == [item]
 
 
 class TestUpdateShopReceiptRequest:
