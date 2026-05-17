@@ -210,3 +210,23 @@ class TestPersonalizationDeprecationWarnings:
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             assert len(deprecation_warnings) == 1
             assert "update_listing_personalization" in str(deprecation_warnings[0].message)
+
+    def test_create_warns_with_is_personalizable(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            CreateDraftListingRequest(
+                **self._make_create_kwargs(),
+                is_personalizable=True,
+            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 1
+            assert "is_personalizable" in str(deprecation_warnings[0].message)
+            assert "personalization-migration" in str(deprecation_warnings[0].message)
+
+    def test_update_warns_with_is_personalizable(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            UpdateListingRequest(is_personalizable=True)
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 1
+            assert "is_personalizable" in str(deprecation_warnings[0].message)

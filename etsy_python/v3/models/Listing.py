@@ -106,14 +106,15 @@ class CreateDraftListingRequest(Request):
         self.personalization_char_count_max = personalization_char_count_max
         self.personalization_instructions = personalization_instructions
         if any(v is not None for v in [
-            personalization_is_required, personalization_char_count_max,
-            personalization_instructions,
+            is_personalizable, personalization_is_required,
+            personalization_char_count_max, personalization_instructions,
         ]):
             warnings.warn(
-                "personalization_is_required, personalization_char_count_max, and "
-                "personalization_instructions are deprecated by the Etsy API and "
-                "scheduled for removal. Use the personalization endpoint "
-                "(update_listing_personalization) instead. See "
+                "is_personalizable, personalization_is_required, "
+                "personalization_char_count_max, and personalization_instructions "
+                "are deprecated by the Etsy API and scheduled for removal. "
+                "Use the personalization endpoint (update_listing_personalization) "
+                "instead. See "
                 "https://developers.etsy.com/documentation/tutorials/personalization-migration "
                 "for migration details.",
                 DeprecationWarning,
@@ -209,14 +210,15 @@ class UpdateListingRequest(Request):
         self.personalization_char_count_max = personalization_char_count_max
         self.personalization_instructions = personalization_instructions
         if any(v is not None for v in [
-            personalization_is_required, personalization_char_count_max,
-            personalization_instructions,
+            is_personalizable, personalization_is_required,
+            personalization_char_count_max, personalization_instructions,
         ]):
             warnings.warn(
-                "personalization_is_required, personalization_char_count_max, and "
-                "personalization_instructions are deprecated by the Etsy API and "
-                "scheduled for removal. Use the personalization endpoint "
-                "(update_listing_personalization) instead. See "
+                "is_personalizable, personalization_is_required, "
+                "personalization_char_count_max, and personalization_instructions "
+                "are deprecated by the Etsy API and scheduled for removal. "
+                "Use the personalization endpoint (update_listing_personalization) "
+                "instead. See "
                 "https://developers.etsy.com/documentation/tutorials/personalization-migration "
                 "for migration details.",
                 DeprecationWarning,
