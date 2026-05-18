@@ -14,6 +14,42 @@ from etsy_python.v3.models.Request import Request
 from etsy_python.v3.models.FileRequest import FileRequest
 
 
+_PERSONALIZATION_DEPRECATION_MSG = (
+    "is_personalizable, personalization_is_required, "
+    "personalization_char_count_max, and personalization_instructions "
+    "are deprecated by the Etsy API and scheduled for removal. "
+    "Use the personalization endpoint (update_listing_personalization) "
+    "instead. See "
+    "https://developers.etsy.com/documentation/tutorials/personalization-migration "
+    "for migration details."
+)
+
+
+def _warn_if_personalization_used(
+    is_personalizable: Optional[bool],
+    personalization_is_required: Optional[bool],
+    personalization_char_count_max: Optional[int],
+    personalization_instructions: Optional[str],
+) -> None:
+    """Emit DeprecationWarning when a deprecated personalization field is actively set.
+
+    Falsy values (False, 0, empty string, None) match the API's documented
+    defaults and remain no-ops after the fields are removed, so they do not
+    trigger the warning.
+    """
+    if any([
+        is_personalizable,
+        personalization_is_required,
+        personalization_char_count_max,
+        personalization_instructions,
+    ]):
+        warnings.warn(
+            _PERSONALIZATION_DEPRECATION_MSG,
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
+
 class CreateDraftListingRequest(Request):
     nullable = [
         "shipping_profile_id",
@@ -105,21 +141,12 @@ class CreateDraftListingRequest(Request):
         self.personalization_is_required = personalization_is_required
         self.personalization_char_count_max = personalization_char_count_max
         self.personalization_instructions = personalization_instructions
-        if any(v is not None for v in [
-            is_personalizable, personalization_is_required,
-            personalization_char_count_max, personalization_instructions,
-        ]):
-            warnings.warn(
-                "is_personalizable, personalization_is_required, "
-                "personalization_char_count_max, and personalization_instructions "
-                "are deprecated by the Etsy API and scheduled for removal. "
-                "Use the personalization endpoint (update_listing_personalization) "
-                "instead. See "
-                "https://developers.etsy.com/documentation/tutorials/personalization-migration "
-                "for migration details.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        _warn_if_personalization_used(
+            is_personalizable,
+            personalization_is_required,
+            personalization_char_count_max,
+            personalization_instructions,
+        )
         self.production_partner_ids = production_partner_ids
         self.image_ids = image_ids
         self.is_supply = is_supply
@@ -209,21 +236,12 @@ class UpdateListingRequest(Request):
         self.personalization_is_required = personalization_is_required
         self.personalization_char_count_max = personalization_char_count_max
         self.personalization_instructions = personalization_instructions
-        if any(v is not None for v in [
-            is_personalizable, personalization_is_required,
-            personalization_char_count_max, personalization_instructions,
-        ]):
-            warnings.warn(
-                "is_personalizable, personalization_is_required, "
-                "personalization_char_count_max, and personalization_instructions "
-                "are deprecated by the Etsy API and scheduled for removal. "
-                "Use the personalization endpoint (update_listing_personalization) "
-                "instead. See "
-                "https://developers.etsy.com/documentation/tutorials/personalization-migration "
-                "for migration details.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        _warn_if_personalization_used(
+            is_personalizable,
+            personalization_is_required,
+            personalization_char_count_max,
+            personalization_instructions,
+        )
         self.state = state
         self.is_supply = is_supply
         self.production_partner_ids = production_partner_ids

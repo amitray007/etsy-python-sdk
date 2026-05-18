@@ -230,3 +230,44 @@ class TestPersonalizationDeprecationWarnings:
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             assert len(deprecation_warnings) == 1
             assert "is_personalizable" in str(deprecation_warnings[0].message)
+
+    def test_create_no_warning_with_is_personalizable_false(self):
+        # False matches the API's documented default and is a no-op once
+        # the field is removed, so explicit opt-out should not warn.
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            CreateDraftListingRequest(
+                **self._make_create_kwargs(),
+                is_personalizable=False,
+                personalization_is_required=False,
+            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 0
+
+    def test_update_no_warning_with_falsy_personalization_values(self):
+        # 0 char count and empty instructions are equivalent to "not used".
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            UpdateListingRequest(
+                is_personalizable=False,
+                personalization_char_count_max=0,
+                personalization_instructions="",
+            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 0
+
+    def test_create_warns_once_with_multiple_personalization_fields(self):
+        # Setting several deprecated fields together must produce exactly one
+        # DeprecationWarning, not one per field.
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            CreateDraftListingRequest(
+                **self._make_create_kwargs(),
+                is_personalizable=True,
+                personalization_is_required=True,
+                personalization_char_count_max=256,
+                personalization_instructions="Enter name",
+            )
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 1
+            assert "is_personalizable" in str(deprecation_warnings[0].message)
