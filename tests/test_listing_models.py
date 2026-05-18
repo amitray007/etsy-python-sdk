@@ -8,7 +8,10 @@ from etsy_python.v3.models.Listing import (
     CreateListingTranslationRequest,
     UpdateListingRequest,
     UpdateListingInventoryRequest,
+    UpdateListingPersonalizationRequest,
     UpdateListingPropertyRequest,
+    UpdateListingTranslationRequest,
+    UpdateListingVideoRequest,
     UpdateVariationImagesRequest,
     UploadListingImageRequest,
     UploadListingFileRequest,
@@ -271,3 +274,44 @@ class TestPersonalizationDeprecationWarnings:
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             assert len(deprecation_warnings) == 1
             assert "is_personalizable" in str(deprecation_warnings[0].message)
+
+
+class TestUpdateListingTranslationRequest:
+    def test_stores_fields(self):
+        req = UpdateListingTranslationRequest(
+            title="New title",
+            description="New description",
+            tags=["a", "b"],
+        )
+        assert req.title == "New title"
+        assert req.description == "New description"
+        assert req.tags == ["a", "b"]
+
+    def test_missing_mandatory_raises(self):
+        with pytest.raises(Exception):
+            UpdateListingTranslationRequest()
+
+
+class TestUpdateListingPersonalizationRequest:
+    def test_stores_personalization_questions(self):
+        questions = [{"personalization_question": "Name?"}]
+        req = UpdateListingPersonalizationRequest(personalization_questions=questions)
+        assert req.personalization_questions == questions
+
+    def test_missing_mandatory_raises(self):
+        with pytest.raises(Exception):
+            UpdateListingPersonalizationRequest()
+
+
+class TestUpdateListingVideoRequest:
+    def test_sets_file_and_data(self):
+        req = UpdateListingVideoRequest(
+            video_id=42, video_bytes=b"fake-mp4-bytes", name="clip.mp4"
+        )
+        assert req.file == {"video": b"fake-mp4-bytes"}
+        assert req.data == {"video_id": 42, "name": "clip.mp4"}
+
+    def test_defaults_are_none(self):
+        req = UpdateListingVideoRequest()
+        assert req.file == {"video": None}
+        assert req.data == {"video_id": None, "name": None}
