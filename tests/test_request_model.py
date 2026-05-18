@@ -42,6 +42,19 @@ class TestCheckMandatory:
         req = NoMandatoryRequest()
         assert req.check_mandatory() is True
 
+    def test_mandatory_key_with_no_attribute_raises_value_error(self):
+        """If a mandatory key isn't set as an instance attribute,
+        check_mandatory must hit the except branch and return False,
+        causing Request.__init__ to raise ValueError."""
+
+        class MissingAttrRequest(Request):
+            def __init__(self):
+                # Deliberately do NOT set self.required_attr
+                super().__init__(mandatory=["required_attr"])
+
+        with pytest.raises(ValueError):
+            MissingAttrRequest()
+
 
 class TestGetNulled:
     def test_nullable_field_empty_string(self):

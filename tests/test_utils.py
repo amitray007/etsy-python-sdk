@@ -1,6 +1,10 @@
 from enum import Enum
 
-from etsy_python.v3.common.Utils import generate_get_uri, todict
+from etsy_python.v3.common.Utils import (
+    generate_bytes_from_file,
+    generate_get_uri,
+    todict,
+)
 
 
 class TestGenerateGetUri:
@@ -165,3 +169,25 @@ class TestTodict:
         result = todict(ObjWithNullableBool(), nullable=[])
         assert result["was_shipped"] is False
         assert result["name"] == "test"
+
+    def test_ast_attribute_is_expanded(self):
+        """Objects exposing an _ast() method get serialized via that method."""
+
+        class AstNode:
+            def _ast(self):
+                return {"kind": "literal", "value": 7}
+
+        result = todict(AstNode())
+        assert result == {"kind": "literal", "value": 7}
+
+
+class TestGenerateBytesFromFile:
+    def test_reads_file_contents(self, tmp_path):
+        path = tmp_path / "blob.bin"
+        path.write_bytes(b"hello-bytes")
+        assert generate_bytes_from_file(str(path)) == b"hello-bytes"
+
+    def test_reads_empty_file(self, tmp_path):
+        path = tmp_path / "empty.bin"
+        path.write_bytes(b"")
+        assert generate_bytes_from_file(str(path)) == b""
