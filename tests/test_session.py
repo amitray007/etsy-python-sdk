@@ -204,6 +204,15 @@ class TestMakeRequestErrors:
                 "/shops/123/listings/456", method=Method.PATCH
             )
 
+    def test_invalid_method_payload_combo_raises_value_error(self, real_etsy_client):
+        # PUT with a non-Request payload passes the "Improper payload" guard
+        # (payload is not None) but falls through every isinstance branch and
+        # hits the final "Invalid method or payload" else.
+        with pytest.raises(ValueError, match="Invalid method or payload"):
+            real_etsy_client.make_request(
+                "/shops/123", method=Method.PUT, payload="not-a-request"
+            )
+
 
 class TestRateLimits:
     def test_rate_limits_extracted(self, real_etsy_client):

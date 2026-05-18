@@ -11,6 +11,7 @@ from etsy_python.v3.enums.Listing import (
 from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.models.Listing import (
     CreateDraftListingRequest,
+    UpdateListingPersonalizationRequest,
     UpdateListingPropertyRequest,
     UpdateListingRequest,
 )
@@ -507,3 +508,55 @@ class TestNoneOptionalParams:
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert qp["keywords"] is None
         assert qp["min_price"] is None
+
+
+class TestListingPersonalizationEndpoints:
+    def test_get_listing_personalization(self, mock_session):
+        mock_session.make_request.return_value = Response(200, {"questions": []})
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listing_personalization(MOCK_LISTING_ID)
+
+        mock_session.make_request.assert_called_once_with(
+            f"/listings/{MOCK_LISTING_ID}/personalization"
+        )
+
+    def test_update_listing_personalization(self, mock_session):
+        mock_session.make_request.return_value = Response(200, {"questions": []})
+        resource = ListingResource(session=mock_session)
+        payload = MagicMock(spec=UpdateListingPersonalizationRequest)
+
+        resource.update_listing_personalization(
+            MOCK_SHOP_ID,
+            MOCK_LISTING_ID,
+            payload,
+            supports_multiple_personalization_questions=True,
+        )
+
+        mock_session.make_request.assert_called_once_with(
+            f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}/personalization",
+            method=Method.POST,
+            payload=payload,
+            query_params={"supports_multiple_personalization_questions": True},
+        )
+
+    def test_update_listing_personalization_defaults_query_param_to_none(self, mock_session):
+        mock_session.make_request.return_value = Response(200, {"questions": []})
+        resource = ListingResource(session=mock_session)
+        payload = MagicMock(spec=UpdateListingPersonalizationRequest)
+
+        resource.update_listing_personalization(MOCK_SHOP_ID, MOCK_LISTING_ID, payload)
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp == {"supports_multiple_personalization_questions": None}
+
+    def test_delete_listing_personalization(self, mock_session):
+        mock_session.make_request.return_value = Response(204, "")
+        resource = ListingResource(session=mock_session)
+
+        resource.delete_listing_personalization(MOCK_SHOP_ID, MOCK_LISTING_ID)
+
+        mock_session.make_request.assert_called_once_with(
+            f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}/personalization",
+            method=Method.DELETE,
+        )
