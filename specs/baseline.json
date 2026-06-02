@@ -323,7 +323,8 @@
                 "properties": {
                   "quantity": {
                     "type": "integer",
-                    "description": "The positive non-zero number of products available for purchase in the listing. Note: The listing quantity is the sum of available offering quantities. You can request the quantities for individual offerings from the ListingInventory resource using the [getListingInventory](/documentation/reference#operation/getListingInventory) endpoint."
+                    "description": "The positive non-zero number of products available for purchase in the listing. Note: The listing quantity is the sum of available offering quantities. You can request the quantities for individual offerings from the ListingInventory resource using the [getListingInventory](/documentation/reference#operation/getListingInventory) endpoint.",
+                    "format": "int64"
                   },
                   "title": {
                     "type": "string",
@@ -410,11 +411,13 @@
                   "processing_min": {
                     "type": "integer",
                     "description": "The minimum number of days required to process this listing. Default value is null.",
+                    "format": "int64",
                     "nullable": true
                   },
                   "processing_max": {
                     "type": "integer",
                     "description": "The maximum number of days required to process this listing. Default value is null.",
+                    "format": "int64",
                     "nullable": true
                   },
                   "readiness_state_id": {
@@ -507,7 +510,8 @@
                   },
                   "personalization_char_count_max": {
                     "type": "integer",
-                    "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
+                    "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
+                    "format": "int64"
                   },
                   "personalization_instructions": {
                     "type": "string",
@@ -679,6 +683,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -692,6 +697,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -1528,6 +1534,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -1541,6 +1548,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -1746,6 +1754,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -1795,6 +1804,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -2191,6 +2201,7 @@
                   "rank": {
                     "type": "integer",
                     "description": "The positive non-zero numeric position in the images displayed in a listing, with rank 1 images appearing in the left-most position in a listing.",
+                    "format": "int64",
                     "minimum": 0,
                     "default": 1
                   },
@@ -2545,7 +2556,8 @@
                               },
                               "quantity": {
                                 "type": "integer",
-                                "description": "How many of this product are available?"
+                                "description": "How many of this product are available?",
+                                "format": "int64"
                               },
                               "is_enabled": {
                                 "type": "boolean",
@@ -2577,21 +2589,24 @@
                     "type": "array",
                     "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
                     "items": {
-                      "type": "integer"
+                      "type": "integer",
+                      "format": "int64"
                     }
                   },
                   "quantity_on_property": {
                     "type": "array",
                     "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
                     "items": {
-                      "type": "integer"
+                      "type": "integer",
+                      "format": "int64"
                     }
                   },
                   "sku_on_property": {
                     "type": "array",
                     "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
                     "items": {
-                      "type": "integer"
+                      "type": "integer",
+                      "format": "int64"
                     }
                   },
                   "readiness_state_on_property": {
@@ -3036,6 +3051,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -3049,6 +3065,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -3295,11 +3312,13 @@
                         "max_allowed_files": {
                           "type": "integer",
                           "description": "The maximum number of files the buyer may upload in response to a personalization question. This field is optional and only applicable to 'unlabeled_upload' and 'labeled_upload' questions.",
+                          "format": "int64",
                           "nullable": true
                         },
                         "max_allowed_characters": {
                           "type": "integer",
                           "description": "The maximum number of characters the buyer may enter in response to a personalization question. This field is optional and only applicable to 'text_input' questions.",
+                          "format": "int64",
                           "nullable": true
                         },
                         "options": {
@@ -3962,6 +3981,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -3975,6 +3995,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -4530,6 +4551,7 @@
                   "shop_section_id": {
                     "type": "integer",
                     "description": "The numeric ID of the [shop section](/documentation/reference#tag/Shop-Section) for this listing. Default value is null.",
+                    "format": "int64",
                     "nullable": true
                   },
                   "item_weight": {
@@ -4646,6 +4668,7 @@
                   "featured_rank": {
                     "type": "integer",
                     "description": "The positive non-zero numeric position in the featured listings of the shop, with rank 1 listings appearing in the left-most position in featured listing on a shop's home page.",
+                    "format": "int64",
                     "nullable": true
                   },
                   "is_personalizable": {
@@ -4658,7 +4681,8 @@
                   },
                   "personalization_char_count_max": {
                     "type": "integer",
-                    "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
+                    "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
+                    "format": "int64"
                   },
                   "personalization_instructions": {
                     "type": "string",
@@ -5573,6 +5597,7 @@
             "schema": {
               "type": "integer",
               "description": "The earliest unix timestamp for when a record was created.",
+              "format": "int64",
               "minimum": 946684800
             }
           },
@@ -5584,6 +5609,7 @@
             "schema": {
               "type": "integer",
               "description": "The latest unix timestamp for when a record was created.",
+              "format": "int64",
               "minimum": 946684800
             }
           },
@@ -5595,6 +5621,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -5608,6 +5635,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -6314,6 +6342,7 @@
             "schema": {
               "type": "integer",
               "description": "The earliest unix timestamp for when a record was created.",
+              "format": "int64",
               "minimum": 946684800,
               "default": null
             }
@@ -6326,6 +6355,7 @@
             "schema": {
               "type": "integer",
               "description": "The latest unix timestamp for when a record was created.",
+              "format": "int64",
               "minimum": 946684800,
               "default": null
             }
@@ -6338,6 +6368,7 @@
             "schema": {
               "type": "integer",
               "description": "The earliest unix timestamp for when a record last changed.",
+              "format": "int64",
               "minimum": 946684800,
               "default": null
             }
@@ -6350,6 +6381,7 @@
             "schema": {
               "type": "integer",
               "description": "The latest unix timestamp for when a record last changed.",
+              "format": "int64",
               "minimum": 946684800,
               "default": null
             }
@@ -6362,6 +6394,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -6375,6 +6408,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -6581,6 +6615,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -6594,6 +6629,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -7096,6 +7132,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -7109,6 +7146,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -7121,6 +7159,7 @@
             "schema": {
               "type": "integer",
               "description": "The earliest unix timestamp for when a record was created.",
+              "format": "int64",
               "nullable": true,
               "minimum": 946684800
             }
@@ -7133,6 +7172,7 @@
             "schema": {
               "type": "integer",
               "description": "The latest unix timestamp for when a record was created.",
+              "format": "int64",
               "nullable": true,
               "minimum": 946684800
             }
@@ -7210,6 +7250,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -7223,6 +7264,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -7235,6 +7277,7 @@
             "schema": {
               "type": "integer",
               "description": "The earliest unix timestamp for when a record was created.",
+              "format": "int64",
               "nullable": true,
               "minimum": 946684800
             }
@@ -7247,6 +7290,7 @@
             "schema": {
               "type": "integer",
               "description": "The latest unix timestamp for when a record was created.",
+              "format": "int64",
               "nullable": true,
               "minimum": 946684800
             }
@@ -7824,6 +7868,7 @@
             "schema": {
               "type": "integer",
               "description": "The unique id that maps to the holiday a country observes. See the [Fulfillment Tutorial docs](https://developer.etsy.com/documentation/tutorials/fulfillment/#country-holidays) for more info",
+              "format": "int64",
               "enum": [
                 1,
                 2,
@@ -8030,6 +8075,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -8043,6 +8089,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -8232,6 +8279,7 @@
                   "return_deadline": {
                     "type": "integer",
                     "description": "The deadline for the Return Policy, measured in days. The value must be one of the following: [7, 14, 21, 30, 45, 60, 90].",
+                    "format": "int64",
                     "nullable": true
                   }
                 }
@@ -8597,6 +8645,7 @@
                   "return_deadline": {
                     "type": "integer",
                     "description": "The deadline for the Return Policy, measured in days. The value must be one of the following: [7, 14, 21, 30, 45, 60, 90].",
+                    "format": "int64",
                     "nullable": true
                   }
                 }
@@ -8917,12 +8966,14 @@
                   "min_processing_time": {
                     "type": "integer",
                     "description": "The minimum number of days or weeks for processing a specific product.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
                   "max_processing_time": {
                     "type": "integer",
                     "description": "The maximum number of days or weeks for processing a specific product.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
@@ -9028,6 +9079,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -9041,6 +9093,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -9347,12 +9400,14 @@
                   "min_processing_time": {
                     "type": "integer",
                     "description": "The minimum number of days or weeks for processing a specific product.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
                   "max_processing_time": {
                     "type": "integer",
                     "description": "The maximum number of days or weeks for processing a specific product.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
@@ -9953,6 +10008,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -9966,6 +10022,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -10108,12 +10165,14 @@
                   "min_processing_time": {
                     "type": "integer",
                     "description": "The minimum time required to process to ship listings with this shipping profile.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
                   "max_processing_time": {
                     "type": "integer",
                     "description": "The maximum processing time the listing needs to ship.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
@@ -10150,6 +10209,7 @@
                   "shipping_carrier_id": {
                     "type": "integer",
                     "description": "The unique ID of a supported shipping carrier, which is used to calculate an Estimated Delivery Date. **Required with `mail_class`** if `min_delivery_days` and `max_delivery_days` are null.",
+                    "format": "int64",
                     "minimum": 0,
                     "default": 0
                   },
@@ -10161,6 +10221,7 @@
                   "min_delivery_days": {
                     "type": "integer",
                     "description": "The minimum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `max_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -10168,6 +10229,7 @@
                   "max_delivery_days": {
                     "type": "integer",
                     "description": "The maximum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `min_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -10560,12 +10622,14 @@
                   "min_processing_time": {
                     "type": "integer",
                     "description": "The minimum time required to process to ship listings with this shipping profile.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
                   "max_processing_time": {
                     "type": "integer",
                     "description": "The maximum processing time the listing needs to ship.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 10
                   },
@@ -10744,6 +10808,7 @@
                   "shipping_carrier_id": {
                     "type": "integer",
                     "description": "The unique ID of a supported shipping carrier, which is used to calculate an Estimated Delivery Date. **Required with `mail_class`** if `min_delivery_days` and `max_delivery_days` are null.",
+                    "format": "int64",
                     "minimum": 0,
                     "default": 0
                   },
@@ -10755,6 +10820,7 @@
                   "min_delivery_days": {
                     "type": "integer",
                     "description": "The minimum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `max_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -10762,6 +10828,7 @@
                   "max_delivery_days": {
                     "type": "integer",
                     "description": "The maximum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `min_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -10871,6 +10938,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -10884,6 +10952,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -11153,6 +11222,7 @@
                   "shipping_carrier_id": {
                     "type": "integer",
                     "description": "The unique ID of a supported shipping carrier, which is used to calculate an Estimated Delivery Date. **Required with `mail_class`** if `min_delivery_days` and `max_delivery_days` are null.",
+                    "format": "int64",
                     "minimum": 0,
                     "default": null
                   },
@@ -11164,6 +11234,7 @@
                   "min_delivery_days": {
                     "type": "integer",
                     "description": "The minimum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `max_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -11171,6 +11242,7 @@
                   "max_delivery_days": {
                     "type": "integer",
                     "description": "The maximum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `min_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -11310,6 +11382,7 @@
                   "type": {
                     "type": "integer",
                     "description": "The type of the shipping upgrade. Domestic (0) or international (1).",
+                    "format": "int64",
                     "enum": [
                       0,
                       1
@@ -11334,6 +11407,7 @@
                   "shipping_carrier_id": {
                     "type": "integer",
                     "description": "The unique ID of a supported shipping carrier, which is used to calculate an Estimated Delivery Date. **Required with `mail_class`** if `min_delivery_days` and `max_delivery_days` are null.",
+                    "format": "int64",
                     "minimum": 0,
                     "default": 0
                   },
@@ -11345,6 +11419,7 @@
                   "min_delivery_days": {
                     "type": "integer",
                     "description": "The minimum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `max_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -11352,6 +11427,7 @@
                   "max_delivery_days": {
                     "type": "integer",
                     "description": "The maximum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `min_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -11703,6 +11779,7 @@
                   "type": {
                     "type": "integer",
                     "description": "The type of the shipping upgrade. Domestic (0) or international (1).",
+                    "format": "int64",
                     "enum": [
                       0,
                       1
@@ -11725,6 +11802,7 @@
                   "shipping_carrier_id": {
                     "type": "integer",
                     "description": "The unique ID of a supported shipping carrier, which is used to calculate an Estimated Delivery Date. **Required with `mail_class`** if `min_delivery_days` and `max_delivery_days` are null.",
+                    "format": "int64",
                     "minimum": 0,
                     "default": null
                   },
@@ -11736,6 +11814,7 @@
                   "min_delivery_days": {
                     "type": "integer",
                     "description": "The minimum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `max_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -11743,6 +11822,7 @@
                   "max_delivery_days": {
                     "type": "integer",
                     "description": "The maximum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `min_delivery_days`** if `mail_class` is null.",
+                    "format": "int64",
                     "minimum": 1,
                     "maximum": 45,
                     "default": null
@@ -12026,6 +12106,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -12039,6 +12120,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -12279,6 +12361,7 @@
             "schema": {
               "type": "integer",
               "description": "The maximum number of results to return.",
+              "format": "int64",
               "minimum": 1,
               "maximum": 100,
               "default": 25
@@ -12292,6 +12375,7 @@
             "schema": {
               "type": "integer",
               "description": "The number of records to skip before selecting the first result.",
+              "format": "int64",
               "minimum": 0,
               "default": 0
             }
@@ -12564,6 +12648,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -12594,6 +12679,7 @@
           "level": {
             "type": "integer",
             "description": "The integer depth of this taxonomy node in the seller taxonomy tree, with roots at level 0.",
+            "format": "int64",
             "minimum": 0
           },
           "name": {
@@ -12651,6 +12737,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -12717,6 +12804,7 @@
           "max_values_allowed": {
             "type": "integer",
             "description": "When true, you can assign multiple property values to this property",
+            "format": "int64",
             "nullable": true
           },
           "possible_values": {
@@ -12794,6 +12882,7 @@
             "description": "A list of numeric property value IDs this property value is equal to (if any).",
             "items": {
               "type": "integer",
+              "format": "int64",
               "minimum": 0
             }
           }
@@ -12844,42 +12933,50 @@
           "creation_timestamp": {
             "type": "integer",
             "description": "The listing's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The listing's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "ending_timestamp": {
             "type": "integer",
             "description": "The listing's expiration time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "original_creation_timestamp": {
             "type": "integer",
             "description": "The listing's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "last_modified_timestamp": {
             "type": "integer",
             "description": "The time of the last update to the listing, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The time of the last update to the listing, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "state_timestamp": {
             "type": "integer",
             "description": "The date and time of the last state change of this listing.",
+            "format": "int64",
             "nullable": true,
             "minimum": 946684800
           },
           "quantity": {
             "type": "integer",
             "description": "The positive non-zero number of products available for purchase in the listing. Note: The listing quantity is the sum of available offering quantities. You can request the quantities for individual offerings from the ListingInventory resource using the [getListingInventory](/documentation/reference#operation/getListingInventory) endpoint.",
+            "format": "int64",
             "minimum": 0
           },
           "shop_section_id": {
@@ -12891,7 +12988,8 @@
           },
           "featured_rank": {
             "type": "integer",
-            "description": "The positive non-zero numeric position in the featured listings of the shop, with rank 1 listings appearing in the left-most position in featured listing on a shop's home page."
+            "description": "The positive non-zero numeric position in the featured listings of the shop, with rank 1 listings appearing in the left-most position in featured listing on a shop's home page.",
+            "format": "int64"
           },
           "url": {
             "type": "string",
@@ -12900,6 +12998,7 @@
           "num_favorers": {
             "type": "integer",
             "description": "The number of users who marked this Listing a favorite.",
+            "format": "int64",
             "minimum": 0
           },
           "non_taxable": {
@@ -12958,12 +13057,14 @@
           "processing_min": {
             "type": "integer",
             "description": "The minimum number of days required to process this listing. Default value is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "processing_max": {
             "type": "integer",
             "description": "The maximum number of days required to process this listing. Default value is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
@@ -13106,6 +13207,7 @@
           "taxonomy_id": {
             "type": "integer",
             "description": "The numerical taxonomy ID of the listing. See [SellerTaxonomy](/documentation/reference#tag/SellerTaxonomy) and [BuyerTaxonomy](/documentation/reference#tag/BuyerTaxonomy) for more information.",
+            "format": "int64",
             "nullable": true
           },
           "readiness_state_id": {
@@ -13129,11 +13231,13 @@
         "properties": {
           "amount": {
             "type": "integer",
-            "description": "The amount of represented by this data."
+            "description": "The amount of represented by this data.",
+            "format": "int64"
           },
           "divisor": {
             "type": "integer",
             "description": "The divisor to render the amount.",
+            "format": "int64",
             "minimum": 0
           },
           "currency_code": {
@@ -13162,6 +13266,7 @@
           "rank": {
             "type": "integer",
             "description": "The numeric index of the display order position of this file in the listing, starting at 1.",
+            "format": "int64",
             "minimum": 0
           },
           "filename": {
@@ -13175,6 +13280,7 @@
           "size_bytes": {
             "type": "integer",
             "description": "A number indicating the size of a file, measured in bytes.",
+            "format": "int64",
             "minimum": 0
           },
           "filetype": {
@@ -13184,11 +13290,13 @@
           "create_timestamp": {
             "type": "integer",
             "description": "The unique numeric ID of a file associated with a digital listing.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The unique numeric ID of a file associated with a digital listing.",
+            "format": "int64",
             "minimum": 946684800
           }
         }
@@ -13201,6 +13309,7 @@
           "count": {
             "type": "integer",
             "description": "The number of ShopListingFiles being returned..",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -13225,6 +13334,7 @@
           "count": {
             "type": "integer",
             "description": "The number of ShopListing resources found.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -13286,42 +13396,50 @@
           "creation_timestamp": {
             "type": "integer",
             "description": "The listing's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The listing's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "ending_timestamp": {
             "type": "integer",
             "description": "The listing's expiration time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "original_creation_timestamp": {
             "type": "integer",
             "description": "The listing's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "last_modified_timestamp": {
             "type": "integer",
             "description": "The time of the last update to the listing, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The time of the last update to the listing, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "state_timestamp": {
             "type": "integer",
             "description": "The date and time of the last state change of this listing.",
+            "format": "int64",
             "nullable": true,
             "minimum": 946684800
           },
           "quantity": {
             "type": "integer",
             "description": "The positive non-zero number of products available for purchase in the listing. Note: The listing quantity is the sum of available offering quantities. You can request the quantities for individual offerings from the ListingInventory resource using the [getListingInventory](/documentation/reference#operation/getListingInventory) endpoint.",
+            "format": "int64",
             "minimum": 0
           },
           "shop_section_id": {
@@ -13333,7 +13451,8 @@
           },
           "featured_rank": {
             "type": "integer",
-            "description": "The positive non-zero numeric position in the featured listings of the shop, with rank 1 listings appearing in the left-most position in featured listing on a shop's home page."
+            "description": "The positive non-zero numeric position in the featured listings of the shop, with rank 1 listings appearing in the left-most position in featured listing on a shop's home page.",
+            "format": "int64"
           },
           "url": {
             "type": "string",
@@ -13342,6 +13461,7 @@
           "num_favorers": {
             "type": "integer",
             "description": "The number of users who marked this Listing a favorite.",
+            "format": "int64",
             "minimum": 0
           },
           "non_taxable": {
@@ -13400,12 +13520,14 @@
           "processing_min": {
             "type": "integer",
             "description": "The minimum number of days required to process this listing. Default value is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "processing_max": {
             "type": "integer",
             "description": "The maximum number of days required to process this listing. Default value is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
@@ -13548,6 +13670,7 @@
           "taxonomy_id": {
             "type": "integer",
             "description": "The numerical taxonomy ID of the listing. See [SellerTaxonomy](/documentation/reference#tag/SellerTaxonomy) and [BuyerTaxonomy](/documentation/reference#tag/BuyerTaxonomy) for more information.",
+            "format": "int64",
             "nullable": true
           },
           "readiness_state_id": {
@@ -13652,7 +13775,8 @@
           },
           "views": {
             "type": "integer",
-            "description": "The number of times the listing has been viewed. This value is tabulated once per day and **only for active listings**, so the value is not real-time. If `0`, the listing has either not been viewed, not yet tabulated, was not active during the last tabulation or there was an error fetching the value. If a value is expected, call `getListing` to confirm the value."
+            "description": "The number of times the listing has been viewed. This value is tabulated once per day and **only for active listings**, so the value is not real-time. If `0`, the listing has either not been viewed, not yet tabulated, was not active during the last tabulation or there was an error fetching the value. If a value is expected, call `getListing` to confirm the value.",
+            "format": "int64"
           },
           "personalization": {
             "oneOf": [
@@ -13811,6 +13935,7 @@
           "shipping_carrier_id": {
             "type": "integer",
             "description": "The unique ID of a supported shipping carrier, which is used to calculate an Estimated Delivery Date. **Required with `mail_class`** if `min_delivery_days` and `max_delivery_days` are null.",
+            "format": "int64",
             "nullable": true
           },
           "mail_class": {
@@ -13821,6 +13946,7 @@
           "min_delivery_days": {
             "type": "integer",
             "description": "The minimum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `max_delivery_days`** if `mail_class` is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 1,
             "maximum": 45
@@ -13828,6 +13954,7 @@
           "max_delivery_days": {
             "type": "integer",
             "description": "The maximum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `min_delivery_days`** if `mail_class` is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 1,
             "maximum": 45
@@ -13858,6 +13985,7 @@
           "type": {
             "type": "integer",
             "description": "The type of the shipping upgrade. Domestic (0) or international (1).",
+            "format": "int64",
             "enum": [
               0,
               1
@@ -13866,6 +13994,7 @@
           "rank": {
             "type": "integer",
             "description": "The positive non-zero numeric position in the images displayed in a listing, with rank 1 images appearing in the left-most position in a listing.",
+            "format": "int64",
             "minimum": 0
           },
           "language": {
@@ -13891,6 +14020,7 @@
           "shipping_carrier_id": {
             "type": "integer",
             "description": "The unique ID of a supported shipping carrier, which is used to calculate an Estimated Delivery Date. **Required with `mail_class`** if `min_delivery_days` and `max_delivery_days` are null.",
+            "format": "int64",
             "nullable": true
           },
           "mail_class": {
@@ -13901,6 +14031,7 @@
           "min_delivery_days": {
             "type": "integer",
             "description": "The minimum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `max_delivery_days`** if `mail_class` is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 1,
             "maximum": 45
@@ -13908,6 +14039,7 @@
           "max_delivery_days": {
             "type": "integer",
             "description": "The maximum number of business days a buyer can expect to wait to receive their purchased item once it has shipped. **Required with `min_delivery_days`** if `mail_class` is null.",
+            "format": "int64",
             "nullable": true,
             "minimum": 1,
             "maximum": 45
@@ -13972,11 +14104,13 @@
           "create_date": {
             "type": "integer",
             "description": "The date and time this shop was created, in epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The date and time this shop was created, in epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "title": {
@@ -14015,21 +14149,25 @@
           "update_date": {
             "type": "integer",
             "description": "The date and time of the last update to the shop, in epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The date and time of the last update to the shop, in epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "listing_active_count": {
             "type": "integer",
             "description": "The number of active listings in the shop.",
+            "format": "int64",
             "minimum": 0
           },
           "digital_listing_count": {
             "type": "integer",
             "description": "The number of digital listings in the shop.",
+            "format": "int64",
             "minimum": 0
           },
           "login_name": {
@@ -14073,6 +14211,7 @@
           "policy_update_date": {
             "type": "integer",
             "description": "The date and time of the last update to the shop's policies, in epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "policy_has_private_receipt_info": {
@@ -14105,6 +14244,7 @@
           "num_favorers": {
             "type": "integer",
             "description": "The number of users who marked this shop a favorite.",
+            "format": "int64",
             "minimum": 0
           },
           "languages": {
@@ -14154,6 +14294,7 @@
           "transaction_sold_count": {
             "type": "integer",
             "description": "The total number of sales ([transactions](/documentation/reference#tag/Shop-Receipt-Transactions)) for this shop.",
+            "format": "int64",
             "minimum": 0
           },
           "shipping_from_country_iso": {
@@ -14171,6 +14312,7 @@
           "review_count": {
             "type": "integer",
             "description": "Number of reviews of shop listings in the past year.",
+            "format": "int64",
             "nullable": true
           },
           "review_average": {
@@ -14206,36 +14348,42 @@
           "red": {
             "type": "integer",
             "description": "The numeric red value equal to the image's average red value, from 0-255 (RGB color).",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "green": {
             "type": "integer",
             "description": "The numeric red value equal to the image's average red value, from 0-255 (RGB color).",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "blue": {
             "type": "integer",
             "description": "The numeric red value equal to the image's average red value, from 0-255 (RGB color).",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "hue": {
             "type": "integer",
             "description": "The numeric hue equal to the image's average hue, from 0-360 (HSV color).",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "saturation": {
             "type": "integer",
             "description": "The numeric saturation equal to the image's average saturation, from 0-100 (HSV color).",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "brightness": {
             "type": "integer",
             "description": "The numeric brightness equal to the image's average brightness, from 0-100 (HSV color).",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
@@ -14247,16 +14395,19 @@
           "creation_tsz": {
             "type": "integer",
             "description": "The listing image's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The listing image's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "rank": {
             "type": "integer",
             "description": "The positive non-zero numeric position in the images displayed in a listing, with rank 1 images appearing in the left-most position in a listing.",
+            "format": "int64",
             "minimum": 0
           },
           "url_75x75": {
@@ -14278,12 +14429,14 @@
           "full_height": {
             "type": "integer",
             "description": "The numeric height, measured in pixels, of the full-sized image referenced in url_fullxfull.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "full_width": {
             "type": "integer",
             "description": "The numeric width, measured in pixels, of the full-sized image referenced in url_fullxfull.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
@@ -14307,11 +14460,13 @@
           },
           "height": {
             "type": "integer",
-            "description": "The video height dimension in pixels."
+            "description": "The video height dimension in pixels.",
+            "format": "int64"
           },
           "width": {
             "type": "integer",
-            "description": "The video width dimension in pixels."
+            "description": "The video width dimension in pixels.",
+            "format": "int64"
           },
           "thumbnail_url": {
             "type": "string",
@@ -14355,21 +14510,24 @@
             "type": "array",
             "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
             "items": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int64"
             }
           },
           "quantity_on_property": {
             "type": "array",
             "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int64"
             }
           },
           "sku_on_property": {
             "type": "array",
             "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int64"
             }
           },
           "readiness_state_on_property": {
@@ -14442,6 +14600,7 @@
           "quantity": {
             "type": "integer",
             "description": "The quantity the ProductOffering",
+            "format": "int64",
             "minimum": 0
           },
           "is_enabled": {
@@ -14718,10 +14877,12 @@
           },
           "max_allowed_characters": {
             "type": "integer",
+            "format": "int64",
             "nullable": true
           },
           "max_allowed_files": {
             "type": "integer",
+            "format": "int64",
             "nullable": true
           },
           "options": {
@@ -14803,6 +14964,7 @@
           "discount_percentage": {
             "type": "integer",
             "description": "The discount percentage (e.g. 20 for 20% off). Null if no active promotion or if the promotion is a fixed-amount discount.",
+            "format": "int64",
             "nullable": true
           },
           "has_discount": {
@@ -14812,11 +14974,13 @@
           "discount_start_epoch": {
             "type": "integer",
             "description": "The start timestamp of the active promotion. Null if no active promotion.",
+            "format": "int64",
             "nullable": true
           },
           "discount_end_epoch": {
             "type": "integer",
             "description": "The end timestamp of the active promotion. Null if no active promotion.",
+            "format": "int64",
             "nullable": true
           }
         }
@@ -14829,6 +14993,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -14866,21 +15031,24 @@
             "type": "array",
             "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change product prices, if any. For example, if you charge specific prices for different sized products in the same listing, then this array contains the property ID for size.",
             "items": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int64"
             }
           },
           "quantity_on_property": {
             "type": "array",
             "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the quantity of the products, if any. For example, if you stock specific quantities of different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int64"
             }
           },
           "sku_on_property": {
             "type": "array",
             "description": "An array of unique [listing property](/documentation/reference#operation/getListingInventory) ID integers for the properties that change the product SKU, if any. For example, if you use specific skus for different colored products in the same listing, then this array contains the property ID for color.",
             "items": {
-              "type": "integer"
+              "type": "integer",
+              "format": "int64"
             }
           },
           "readiness_state_on_property": {
@@ -14910,6 +15078,7 @@
           "count": {
             "type": "integer",
             "description": "The number of ShopListing resources found.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -14933,6 +15102,7 @@
         "properties": {
           "count": {
             "type": "integer",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -14950,7 +15120,8 @@
         "properties": {
           "count": {
             "type": "integer",
-            "description": "The number of ShopReceiptTransaction resources found."
+            "description": "The number of ShopReceiptTransaction resources found.",
+            "format": "int64"
           },
           "results": {
             "type": "array",
@@ -15002,28 +15173,33 @@
           "create_timestamp": {
             "type": "integer",
             "description": "The transaction's creation date and time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The transaction's creation date and time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "paid_timestamp": {
             "type": "integer",
             "description": "The transaction's paid date and time, in epoch seconds.",
+            "format": "int64",
             "nullable": true,
             "minimum": 946684800
           },
           "shipped_timestamp": {
             "type": "integer",
             "description": "The transaction's shipping date and time, in epoch seconds.",
+            "format": "int64",
             "nullable": true,
             "minimum": 946684800
           },
           "quantity": {
             "type": "integer",
             "description": "The numeric quantity of products purchased in this transaction.",
+            "format": "int64",
             "minimum": 0
           },
           "listing_image_id": {
@@ -15050,6 +15226,7 @@
           "listing_id": {
             "type": "integer",
             "description": "The numeric ID for the [listing](/documentation/reference#tag/ShopListing) associated to this transaction.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
@@ -15119,12 +15296,14 @@
           "min_processing_days": {
             "type": "integer",
             "description": "The minimum number of days for processing the listing.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "max_processing_days": {
             "type": "integer",
             "description": "The maximum number of days for processing the listing.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
@@ -15141,6 +15320,7 @@
           "expected_ship_date": {
             "type": "integer",
             "description": "The date & time of the expected ship date, in epoch seconds.",
+            "format": "int64",
             "nullable": true,
             "minimum": 946684800
           },
@@ -15165,11 +15345,13 @@
         "properties": {
           "property_id": {
             "type": "integer",
-            "description": "The variation property ID."
+            "description": "The variation property ID.",
+            "format": "int64"
           },
           "value_id": {
             "type": "integer",
             "description": "The ID of the variation value selected.",
+            "format": "int64",
             "nullable": true
           },
           "formatted_name": {
@@ -15183,6 +15365,7 @@
           "question_id": {
             "type": "integer",
             "description": "[Personalization only] The ID of the original personalization question.",
+            "format": "int64",
             "nullable": true
           }
         }
@@ -15194,6 +15377,7 @@
         "properties": {
           "count": {
             "type": "integer",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -15242,6 +15426,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -15277,11 +15462,13 @@
           },
           "sequence_number": {
             "type": "integer",
-            "description": "The sequence allows ledger entries to be sorted chronologically. The higher the sequence, the more recent the entry."
+            "description": "The sequence allows ledger entries to be sorted chronologically. The higher the sequence, the more recent the entry.",
+            "format": "int64"
           },
           "amount": {
             "type": "integer",
-            "description": "The amount of money credited to the ledger."
+            "description": "The amount of money credited to the ledger.",
+            "format": "int64"
           },
           "currency": {
             "type": "string",
@@ -15293,16 +15480,19 @@
           },
           "balance": {
             "type": "integer",
-            "description": "The amount of money in the shop's ledger the moment after this entry was applied."
+            "description": "The amount of money in the shop's ledger the moment after this entry was applied.",
+            "format": "int64"
           },
           "create_date": {
             "type": "integer",
             "description": "The date and time the ledger entry was created in Epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The date and time the ledger entry was created in Epoch seconds.",
+            "format": "int64",
             "minimum": 0
           },
           "ledger_type": {
@@ -15321,6 +15511,7 @@
           "parent_entry_id": {
             "type": "integer",
             "description": "The parent ledger entry ID used to match related entries (e.g., vat_seller_services to originating seller fees).",
+            "format": "int64",
             "minimum": 0
           },
           "payment_adjustments": {
@@ -15375,45 +15566,53 @@
           "total_adjustment_amount": {
             "type": "integer",
             "description": "The total numeric amount of the refund in the payment currency.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "shop_total_adjustment_amount": {
             "type": "integer",
             "description": "The numeric amount of the refund in the shop currency.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "buyer_total_adjustment_amount": {
             "type": "integer",
             "description": "The numeric amount of the refund in the buyer currency.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "total_fee_adjustment_amount": {
             "type": "integer",
             "description": "The numeric amount of card processing fees associated with a payment adjustment.",
+            "format": "int64",
             "nullable": true,
             "minimum": 0
           },
           "create_timestamp": {
             "type": "integer",
             "description": "The transaction's creation date and time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The transaction's creation date and time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "update_timestamp": {
             "type": "integer",
             "description": "The date and time of the last change to the payment adjustment in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The date and time of the last change to the payment adjustment in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "payment_adjustment_items": {
@@ -15455,11 +15654,13 @@
           "amount": {
             "type": "integer",
             "description": "Integer value for the amount of the adjustment in original currency.",
+            "format": "int64",
             "default": 0
           },
           "shop_amount": {
             "type": "integer",
             "description": "Integer value for the amount of the adjustment in currency for the shop.",
+            "format": "int64",
             "default": 0
           },
           "transaction_id": {
@@ -15479,11 +15680,13 @@
           "created_timestamp": {
             "type": "integer",
             "description": "The transaction's creation date and time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The update date and time the payment adjustment in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           }
         }
@@ -15496,6 +15699,7 @@
           "count": {
             "type": "integer",
             "description": "The number of PaymentAccountLedgerEntry resources found.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -15520,6 +15724,7 @@
           "count": {
             "type": "integer",
             "description": "The number of payments in the response.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -15673,6 +15878,7 @@
           "billing_address_id": {
             "type": "integer",
             "description": "The numeric ID identifying the billing address of the buyer.",
+            "format": "int64",
             "minimum": 0,
             "maximum": 9223372036854775807
           },
@@ -15683,27 +15889,32 @@
           "shipped_timestamp": {
             "type": "integer",
             "description": "The transaction's shipping date and time, in epoch seconds.",
+            "format": "int64",
             "nullable": true,
             "minimum": 946684800
           },
           "create_timestamp": {
             "type": "integer",
             "description": "The transaction's creation date and time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The transaction's creation date and time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "update_timestamp": {
             "type": "integer",
             "description": "The date and time of the last change to the payment adjustment in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The date and time of the last change to the payment adjustment in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "payment_adjustments": {
@@ -15747,6 +15958,7 @@
           "receipt_type": {
             "type": "integer",
             "description": "The numeric value for the Etsy channel that serviced the purchase: 0 or 5 for Etsy.com, 1 for a Pattern shop.",
+            "format": "int64",
             "minimum": 0
           },
           "seller_user_id": {
@@ -15859,21 +16071,25 @@
           "create_timestamp": {
             "type": "integer",
             "description": "The receipt's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The receipt's creation time, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "update_timestamp": {
             "type": "integer",
             "description": "The time of the last update to the receipt, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The time of the last update to the receipt, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "is_gift": {
@@ -16005,6 +16221,7 @@
           "shipment_notification_timestamp": {
             "type": "integer",
             "description": "The time at which Etsy notified the buyer of the shipment event, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "carrier_name": {
@@ -16033,6 +16250,7 @@
           "created_timestamp": {
             "type": "integer",
             "description": "The date & time of the refund, in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "reason": {
@@ -16059,7 +16277,8 @@
         "properties": {
           "count": {
             "type": "integer",
-            "description": "The number of Shop Receipts found."
+            "description": "The number of Shop Receipts found.",
+            "format": "int64"
           },
           "results": {
             "type": "array",
@@ -16083,6 +16302,7 @@
           "count": {
             "type": "integer",
             "description": "The number of TransactionReview resources found.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16119,6 +16339,7 @@
           "rating": {
             "type": "integer",
             "description": "Rating value on scale from 1 to 5",
+            "format": "int64",
             "minimum": 1,
             "maximum": 5
           },
@@ -16139,21 +16360,25 @@
           "create_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was created in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was created in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "update_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was updated in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was updated in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           }
         }
@@ -16166,6 +16391,7 @@
           "count": {
             "type": "integer",
             "description": "The number of TransactionReview resources found.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16215,6 +16441,7 @@
           "rating": {
             "type": "integer",
             "description": "Rating value on scale from 1 to 5",
+            "format": "int64",
             "minimum": 1,
             "maximum": 5
           },
@@ -16235,21 +16462,25 @@
           "create_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was created in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "created_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was created in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "update_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was updated in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           },
           "updated_timestamp": {
             "type": "integer",
             "description": "The date and time the TransactionReview was updated in epoch seconds.",
+            "format": "int64",
             "minimum": 946684800
           }
         }
@@ -16262,6 +16493,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16292,6 +16524,7 @@
           "level": {
             "type": "integer",
             "description": "The integer depth of this taxonomy node in the seller taxonomy tree, with roots at level 0.",
+            "format": "int64",
             "minimum": 0
           },
           "name": {
@@ -16337,6 +16570,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16403,6 +16637,7 @@
           "max_values_allowed": {
             "type": "integer",
             "description": "When true, you can assign multiple property values to this property",
+            "format": "int64",
             "nullable": true
           },
           "possible_values": {
@@ -16480,6 +16715,7 @@
             "description": "A list of numeric property value IDs this property value is equal to (if any).",
             "items": {
               "type": "integer",
+              "format": "int64",
               "minimum": 0
             }
           }
@@ -16492,6 +16728,7 @@
         "properties": {
           "count": {
             "type": "integer",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16572,6 +16809,7 @@
           "holiday_id": {
             "type": "integer",
             "description": "The unique id that maps to the holiday a country observes. See the [Fulfillment Tutorial docs](https://developer.etsy.com/documentation/tutorials/fulfillment/#country-holidays) for more info",
+            "format": "int64",
             "enum": [
               1,
               2,
@@ -16703,6 +16941,7 @@
           "count": {
             "type": "integer",
             "description": "The total number of Shops",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16747,6 +16986,7 @@
           "return_deadline": {
             "type": "integer",
             "description": "The deadline for the Return Policy, measured in days. The value must be one of the following: [7, 14, 21, 30, 45, 60, 90].",
+            "format": "int64",
             "nullable": true
           }
         }
@@ -16758,6 +16998,7 @@
         "properties": {
           "count": {
             "type": "integer",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16776,6 +17017,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16820,11 +17062,13 @@
           "min_processing_days": {
             "type": "integer",
             "description": "The minimum number of days for processing a specific product.",
+            "format": "int64",
             "minimum": 0
           },
           "max_processing_days": {
             "type": "integer",
             "description": "The maximum number of days for processing a specific product.",
+            "format": "int64",
             "minimum": 0
           },
           "processing_days_display_label": {
@@ -16840,6 +17084,7 @@
         "properties": {
           "count": {
             "type": "integer",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16868,6 +17113,7 @@
           "rank": {
             "type": "integer",
             "description": "The positive non-zero numeric position of this section in the section display order for a shop, with rank 1 sections appearing first.",
+            "format": "int64",
             "minimum": 0
           },
           "user_id": {
@@ -16879,6 +17125,7 @@
           "active_listing_count": {
             "type": "integer",
             "description": "The number of active listings in one section of a specific Etsy shop.",
+            "format": "int64",
             "minimum": 0
           }
         }
@@ -16891,6 +17138,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16915,6 +17163,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16938,6 +17187,7 @@
         "properties": {
           "count": {
             "type": "integer",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -16956,6 +17206,7 @@
           "count": {
             "type": "integer",
             "description": "The number of results.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
@@ -17046,6 +17297,7 @@
           "count": {
             "type": "integer",
             "description": "The number of UserAddress records being returned.",
+            "format": "int64",
             "minimum": 0
           },
           "results": {
