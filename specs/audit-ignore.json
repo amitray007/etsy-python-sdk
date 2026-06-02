@@ -1,0 +1,53 @@
+{
+  "_README": "Reviewed, accepted audit findings that should not count as noise. scripts/audit_sdk.py loads this file and, on EVERY run, re-derives findings and only suppresses an entry while its finding still occurs (for enums, only the listed values are suppressed; newly appeared values stay active). Entries that match nothing are reported under 'Stale Ignores' so this list stays honest. Nothing here is hard-coded in the script — to accept a finding, add an entry; to stop accepting it, delete the entry. Match fields: 'type' + 'key' (+ 'direction' for enum_staleness). 'values' (enum only): \"*\" = all, or a list of specific values. 'reason'/'added' are documentation.",
+  "ignores": [
+    {
+      "type": "extra_method",
+      "key": "ListingResource.get_listings_by_listings_ids",
+      "reason": "Intentional deprecated alias for get_listings_by_listing_ids; delegates and emits DeprecationWarning.",
+      "added": "2026-06-02"
+    },
+    {
+      "type": "extra_method",
+      "key": "PaymentResource.get_shop_payment_account_ledger_entry_payments",
+      "reason": "Intentional deprecated alias for get_payment_account_ledger_entry_payments; delegates and emits DeprecationWarning.",
+      "added": "2026-06-02"
+    },
+    {
+      "type": "extra_method",
+      "key": "ReceiptTransactionsResource.get_shop_receipt_transaction_by_shop",
+      "reason": "Intentional deprecated alias for get_shop_receipt_transactions_by_shop; delegates and emits DeprecationWarning.",
+      "added": "2026-06-02"
+    },
+    {
+      "type": "extra_method",
+      "key": "ShippingProfileResource.get_shop_shipping_profile_destination_by_shipping_profile",
+      "reason": "Intentional deprecated alias for get_shop_shipping_profile_destinations_by_shipping_profile; delegates and emits DeprecationWarning.",
+      "added": "2026-06-02"
+    },
+    {
+      "type": "enum_staleness",
+      "key": "ShopHolidayPreference.holiday_id -> CA_HOLIDAYS",
+      "direction": "missing",
+      "values": "*",
+      "reason": "By design: the SDK names US_HOLIDAYS (1-11) and CA_HOLIDAYS (12-23) and documents passing integer IDs directly for other regions (24-105), so the full spec enum is intentionally not enumerated. See enums/HolidayPreferences.py.",
+      "added": "2026-06-02"
+    },
+    {
+      "type": "enum_staleness",
+      "key": "ShopListing.state -> State",
+      "direction": "extra",
+      "values": ["removed"],
+      "reason": "State.REMOVED is kept for backward compatibility and is not in the OAS response schema. Documented inline in enums/Listing.py; may be removed in the next major version.",
+      "added": "2026-06-02"
+    },
+    {
+      "type": "enum_staleness",
+      "key": "ShopListingWithAssociations.state -> State",
+      "direction": "extra",
+      "values": ["removed"],
+      "reason": "State.REMOVED is kept for backward compatibility and is not in the OAS response schema. Documented inline in enums/Listing.py; may be removed in the next major version.",
+      "added": "2026-06-02"
+    }
+  ]
+}

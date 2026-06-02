@@ -66,6 +66,8 @@ session.
    - Enum Staleness
    - Deprecation Notices
    - Code Issues
+   - Suppressed (Verified)
+   - Stale Ignores
 
    If any section is missing, the script may have errored — check stderr output.
 
@@ -121,6 +123,42 @@ mentioned in release notes or the diff report are most likely to have issues.
 16. **Verify extra SDK methods** — For methods the script flagged as having no OAS match, check
     if they map to deprecated, removed, or renamed endpoints in the spec.
 
+### Re-verify suppressions (`specs/audit-ignore.json`)
+
+The audit script suppresses reviewed findings listed in `specs/audit-ignore.json` and re-checks
+them **mechanically** every run: a suppression only hides a finding while that finding still
+occurs, and any entry matching nothing is reported under **Stale Ignores**. The script cannot
+judge whether a suppression's *reason* is still true — that is this phase's job. Do this every
+audit; never assume a suppressed finding is still safe just because it is in the file.
+
+16a. **Re-confirm each active suppression.** Read `specs/audit-ignore.json` and the report's
+     **Suppressed (Verified)** section. For EVERY entry, re-read the referenced code/spec and
+     confirm the stated `reason` still holds — do not take it on trust:
+     - `extra_method`: the method still exists, still delegates to the canonical method, and still
+       emits a `DeprecationWarning`. If the spec has since ADDED a matching operation (so it is no
+       longer "extra"), or the method's behaviour changed, the ignore is no longer valid.
+     - `enum_staleness`: the documented rationale still applies (e.g. the country-split holiday
+       design; `State.REMOVED` kept for backward compatibility). If the SDK enum or the spec
+       changed so the rationale no longer fits, the ignore is no longer valid.
+     - any other type: the flagged construct is still intentional.
+
+     For any entry whose reason no longer holds → **remove it from `specs/audit-ignore.json`** so
+     the finding resurfaces, and handle that finding as a normal Phase 3 item (apply the fix, do
+     not keep ignoring it).
+
+16b. **Act on Stale Ignores.** Every entry the script lists under **Stale Ignores** matched no
+     current finding — its condition is gone. Recommend **removing** it (a stale entry hides
+     nothing but rots the list). Keep one only if you can justify an imminent re-occurrence.
+
+16c. **Check for newly surfaced enum values.** For `enum_staleness` entries with an explicit
+     `values` list, look for the SAME enum key still appearing under the active **Enum Staleness**
+     section — the script surfaces values not covered by the ignore. A newly surfaced value is a
+     real finding to address; it is NOT covered by the existing suppression and must not be added
+     to the ignore file without its own review.
+
+Fold the outcome of 16a–16c into the Phase 3 change list (entries to remove and why, findings to
+apply instead of ignore, and suppressions re-confirmed as still valid).
+
 ## Phase 3: Prepare Change List
 
 17. Consolidate ALL findings (script-detected + review-detected + release-note-informed) into a
@@ -145,6 +183,13 @@ mentioned in release notes or the diff report are most likely to have issues.
     - Response schema changes (no SDK code impact, but good to know)
     - Naming inconsistencies between spec and SDK
     - Behavioral changes from release notes that don't require code changes
+
+    **Suppression re-verification (from Phase 2 steps 16a–16c):**
+    - Ignore entries to REMOVE from `specs/audit-ignore.json` — stale, or whose reason no longer
+      holds. If removing an entry resurfaces a real finding, also list that finding under Must Fix
+      or Should Fix as appropriate.
+    - Newly surfaced enum values not covered by an existing suppression (treat as Should Fix).
+    - Suppressions re-confirmed as still valid (note briefly; no action needed).
 
     Each item MUST include:
     - Category (Must Fix / Should Fix / Informational)
