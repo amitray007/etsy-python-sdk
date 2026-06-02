@@ -190,6 +190,18 @@ Uses `VERSION_BUMP_TOKEN` (fine-grained PAT with Contents:Read/Write) to push ve
 | `scripts/generate_release_notes.py` | Generates changelog from git commits (used by CI) |
 | `scripts/fetch_spec.py` | Downloads latest Etsy OAS spec to `specs/latest.json` |
 | `scripts/diff_spec.py` | Diffs `specs/baseline.json` vs `specs/latest.json`, outputs `specs/diff-report.md` |
-| `scripts/audit_sdk.py` | Audits SDK coverage against OAS spec, outputs `specs/audit-report.md` |
+| `scripts/audit_sdk.py` | Audits SDK coverage against OAS spec, outputs `specs/audit-report.md`. Loads `specs/audit-ignore.json` to suppress reviewed findings (override with `--ignore-file`) |
 | `scripts/check_releases.py` | Checks Etsy GitHub releases for new changes, outputs `specs/release-notes.md` |
 | `scripts/format_pr_comment.py` | Formats audit report as a PR comment (used by CI) |
+
+### Audit Suppressions (`specs/audit-ignore.json`)
+
+Reviewed, accepted audit findings (deliberate deprecated aliases, intentionally
+partial enums, etc.) live in `specs/audit-ignore.json` — never hard-coded in
+`audit_sdk.py`. Each run re-derives findings and **only suppresses an entry while
+its finding still occurs**; for enums, only the listed `values` are hidden, so a
+newly added value still surfaces. Entries matching nothing are reported under a
+**Stale Ignores** section so the list stays honest, and suppressed findings are
+listed (with reasons) under **Suppressed (Verified)**. To accept a finding, add an
+entry (`type` + `key`, plus `direction`/`values` for `enum_staleness`); to stop
+accepting it, delete the entry. A missing file means "no suppressions".

@@ -310,10 +310,15 @@ def scan_init_exports(init_path: Path) -> Set[str]:
 
 
 def scan_string_concat_issues(directory: Path) -> List[dict]:
-    """Detect implicit string concatenation in list literals inside .py files.
+    """Detect implicit string concatenation inside list literals in .py files.
 
-    Two adjacent STRING tokens without a comma between them indicate
-    accidental concatenation like: "foo" "bar" -> "foobar".
+    Two adjacent STRING tokens with no comma between them silently concatenate
+    ("foo" "bar" -> "foobar"). Inside a list display this almost always means a
+    missing comma between intended elements (e.g. a ``nullable``/``mandatory``
+    list) — a real bug. Elsewhere (parenthesised assignments, function-call
+    arguments) the same construct is the idiomatic way to split one long string
+    across lines, so only occurrences whose innermost enclosing bracket is a
+    square bracket are flagged.
     """
     issues = []
     for py_file in sorted(directory.glob("*.py")):
@@ -325,10 +330,23 @@ def scan_string_concat_issues(directory: Path) -> List[dict]:
         except (tokenize.TokenError, SyntaxError):
             continue
 
+        bracket_stack: List[str] = []
         prev_tok = None
         for tok in tokens:
-            if tok.type == tokenize.STRING:
-                if prev_tok is not None and prev_tok.type == tokenize.STRING:
+            if tok.type == tokenize.OP and tok.string in "([{":
+                bracket_stack.append(tok.string)
+                prev_tok = None
+            elif tok.type == tokenize.OP and tok.string in ")]}":
+                if bracket_stack:
+                    bracket_stack.pop()
+                prev_tok = None
+            elif tok.type == tokenize.STRING:
+                in_list = bool(bracket_stack) and bracket_stack[-1] == "["
+                if (
+                    in_list
+                    and prev_tok is not None
+                    and prev_tok.type == tokenize.STRING
+                ):
                     issues.append(
                         {
                             "file": py_file.name,
@@ -439,13 +457,157 @@ PATH_PARAM_NAMES = {
 }
 
 
+def load_ignores(path: Optional[Path]) -> List[dict]:
+    """Load reviewed audit suppressions from an external JSON file.
+
+    Returns an empty list when the file is absent or unreadable, so the audit
+    behaves exactly as if no suppressions were configured. Nothing to ignore is
+    hard-coded in this module; the accepted exceptions live entirely in the
+    data file (default: ``specs/audit-ignore.json``).
+    """
+    if path is None or not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+    ignores = data.get("ignores", []) if isinstance(data, dict) else []
+    return [ig for ig in ignores if isinstance(ig, dict)]
+
+
+def _norm_values(values: Any) -> Set[str]:
+    """Lower-case and stringify a collection of enum values for comparison."""
+    return {str(v).lower() for v in values}
+
+
+def compute_enum_findings(
+    spec: dict, sdk_enums: Dict[str, List[str]]
+) -> List[dict]:
+    """Compare OAS enum definitions against SDK enum classes.
+
+    Yields one finding per (spec enum field, matched SDK enum, direction) whose
+    value sets differ. ``direction`` is ``"missing"`` (present in the spec,
+    absent from the SDK) or ``"extra"`` (present in the SDK, absent from the
+    spec). ``values`` is a set of lower-cased strings.
+    """
+    findings: List[dict] = []
+    spec_enums = get_spec_enums(spec)
+    for spec_key, spec_values in sorted(spec_enums.items()):
+        prop_name = spec_key.split(".")[-1] if "." in spec_key else spec_key
+        expected_enum_name = snake_to_pascal(prop_name)
+
+        best_match = None
+        if expected_enum_name in sdk_enums:
+            best_match = expected_enum_name
+        else:
+            best_overlap = 0
+            for sdk_name, sdk_values in sdk_enums.items():
+                sdk_value_set = {str(v).lower() for v in sdk_values}
+                spec_value_set = {str(v).lower() for v in spec_values}
+                overlap = len(sdk_value_set & spec_value_set)
+                smaller_set = min(len(sdk_value_set), len(spec_value_set))
+                min_required = max(2, smaller_set // 2)
+                if overlap >= min_required and overlap > best_overlap:
+                    best_overlap = overlap
+                    best_match = sdk_name
+
+        if not best_match:
+            continue
+
+        sdk_value_set = {str(v).lower() for v in sdk_enums[best_match]}
+        spec_value_set = {str(v).lower() for v in spec_values}
+        missing = spec_value_set - sdk_value_set
+        extra = sdk_value_set - spec_value_set
+        key = f"{spec_key} -> {best_match}"
+        for direction, values in (("missing", missing), ("extra", extra)):
+            if values:
+                findings.append(
+                    {
+                        "type": "enum_staleness",
+                        "key": key,
+                        "direction": direction,
+                        "values": values,
+                        "sdk_enum": best_match,
+                        "spec_key": spec_key,
+                    }
+                )
+    return findings
+
+
+def partition_findings(
+    findings: List[dict], ignores: List[dict]
+) -> Tuple[List[dict], List[dict], List[dict]]:
+    """Split findings into active vs suppressed, and surface stale ignores.
+
+    A finding matches an ignore when ``type`` and ``key`` are equal (plus
+    ``direction`` for enum findings). For enum findings the ignore's ``values``
+    is re-verified against the finding's *current* values: ``"*"`` suppresses
+    all; a list suppresses only those values while any remaining (newly
+    appeared) values stay active — so a suppression can never silently hide a
+    value it was not reviewed for. An ignore that suppresses nothing on this run
+    is returned as stale (its condition no longer exists).
+
+    Returns ``(active, suppressed, stale_ignores)``. Each suppressed entry is
+    the finding dict with an added ``"ignore"`` key holding the matched entry.
+    """
+    used = [False] * len(ignores)
+    active: List[dict] = []
+    suppressed: List[dict] = []
+
+    for finding in findings:
+        match_idx = None
+        for i, ig in enumerate(ignores):
+            if ig.get("type") != finding.get("type"):
+                continue
+            if ig.get("key") != finding.get("key"):
+                continue
+            if finding.get("type") == "enum_staleness" and ig.get(
+                "direction"
+            ) != finding.get("direction"):
+                continue
+            match_idx = i
+            break
+
+        if match_idx is None:
+            active.append(finding)
+            continue
+
+        ig = ignores[match_idx]
+
+        if finding.get("type") == "enum_staleness" and isinstance(
+            finding.get("values"), set
+        ):
+            ig_values = ig.get("values", "*")
+            if ig_values == "*":
+                used[match_idx] = True
+                suppressed.append({**finding, "ignore": ig})
+                continue
+            ig_set = _norm_values(ig_values)
+            covered = finding["values"] & ig_set
+            remaining = finding["values"] - ig_set
+            if covered:
+                used[match_idx] = True
+                suppressed.append({**finding, "values": covered, "ignore": ig})
+            if remaining:
+                active.append({**finding, "values": remaining})
+            continue
+
+        used[match_idx] = True
+        suppressed.append({**finding, "ignore": ig})
+
+    stale = [ig for i, ig in enumerate(ignores) if not used[i]]
+    return active, suppressed, stale
+
+
 def generate_report(
     spec: dict,
     resources_dir: Path,
     enums_dir: Path,
     models_dir: Path,
+    ignores: Optional[List[dict]] = None,
 ) -> str:
     """Generate the audit report."""
+    ignores = ignores or []
     lines = ["# Etsy SDK Audit Report\n"]
 
     operations = get_operations(spec)
@@ -508,13 +670,43 @@ def generate_report(
     # Deprecation notices
     deprecations = detect_description_deprecations(spec)
 
+    # --- Build structured findings and apply external suppressions ---
+    # Each finding carries a stable (type, key) so the ignore engine can match
+    # and re-verify it every run. Nothing to ignore is hard-coded here; accepted
+    # exceptions live in specs/audit-ignore.json (see load_ignores).
+    findings: List[dict] = []
+    for method_name, info in sorted(extra_methods):
+        findings.append(
+            {
+                "type": "extra_method",
+                "key": f"{info['class']}.{method_name}",
+                "method": method_name,
+                "info": info,
+            }
+        )
+    findings.extend(compute_enum_findings(spec, sdk_enums))
+    for issue in concat_issues:
+        findings.append(
+            {
+                "type": "code_issue",
+                "key": f"{issue['file']}::{issue['strings']}",
+                "issue": issue,
+            }
+        )
+
+    active, suppressed, stale_ignores = partition_findings(findings, ignores)
+    active_extra = [f for f in active if f["type"] == "extra_method"]
+    active_enum = [f for f in active if f["type"] == "enum_staleness"]
+    active_code = [f for f in active if f["type"] == "code_issue"]
+
     lines.append("## Coverage Summary\n")
     lines.append(f"- Total OAS operations: {total_ops}")
     lines.append(f"- Mapped to SDK methods: {mapped_count} ({impl_count} implemented, {not_impl_count} stubs)")
     lines.append(f"- Missing from SDK: {len(unmapped)}")
-    lines.append(f"- Extra SDK methods (no OAS match): {len(extra_methods)}")
-    lines.append(f"- Code issues found: {len(concat_issues)}")
+    lines.append(f"- Extra SDK methods (no OAS match): {len(active_extra)}")
+    lines.append(f"- Code issues found: {len(active_code)}")
     lines.append(f"- Missing exports: {len(missing_exports)}")
+    lines.append(f"- Suppressed (verified): {len(suppressed)}")
     pct = (impl_count / total_ops * 100) if total_ops > 0 else 0
     lines.append(f"- Effective coverage: {pct:.1f}%\n")
 
@@ -562,10 +754,11 @@ def generate_report(
     # --- Extra SDK Methods ---
     lines.append("\n## Extra SDK Methods\n")
     lines.append("SDK methods with no matching OAS operation (possibly removed or renamed).\n")
-    if extra_methods:
-        for method_name, info in sorted(extra_methods):
+    if active_extra:
+        for f in sorted(active_extra, key=lambda x: x["key"]):
+            info = f["info"]
             lines.append(
-                f"- **{method_name}** in `{info['file']}:{info['line']}` ({info['class']})"
+                f"- **{f['method']}** in `{info['file']}:{info['line']}` ({info['class']})"
             )
     else:
         lines.append("No extra methods found.\n")
@@ -699,46 +892,24 @@ def generate_report(
     # --- Enum Staleness ---
     lines.append("\n## Enum Staleness\n")
     lines.append("OAS enum values not reflected in SDK enum classes.\n")
-    spec_enums = get_spec_enums(spec)
-    any_enum_issues = False
-
-    for spec_key, spec_values in sorted(spec_enums.items()):
-        # Extract property name from spec key (Schema.property_name)
-        prop_name = spec_key.split(".")[-1] if "." in spec_key else spec_key
-        expected_enum_name = snake_to_pascal(prop_name)
-
-        # Try name-based match first
-        best_match = None
-        if expected_enum_name in sdk_enums:
-            best_match = expected_enum_name
-        else:
-            # Fall back to overlap matching with threshold
-            best_overlap = 0
-            for sdk_name, sdk_values in sdk_enums.items():
-                sdk_value_set = {str(v).lower() for v in sdk_values}
-                spec_value_set = {str(v).lower() for v in spec_values}
-                overlap = len(sdk_value_set & spec_value_set)
-                smaller_set = min(len(sdk_value_set), len(spec_value_set))
-                min_required = max(2, smaller_set // 2)
-                if overlap >= min_required and overlap > best_overlap:
-                    best_overlap = overlap
-                    best_match = sdk_name
-
-        if best_match:
-            sdk_value_set = {str(v).lower() for v in sdk_enums[best_match]}
-            spec_value_set = {str(v).lower() for v in spec_values}
-            missing = spec_value_set - sdk_value_set
-            extra = sdk_value_set - spec_value_set
-            if missing or extra:
-                any_enum_issues = True
-                lines.append(f"### {spec_key} -> SDK `{best_match}`\n")
-                if missing:
-                    lines.append(f"- Missing from SDK: {', '.join(sorted(missing))}")
-                if extra:
-                    lines.append(f"- Extra in SDK: {', '.join(sorted(extra))}")
-                lines.append("")
-
-    if not any_enum_issues:
+    if active_enum:
+        enum_by_key: Dict[str, Dict[str, dict]] = {}
+        for f in active_enum:
+            enum_by_key.setdefault(f["key"], {})[f["direction"]] = f
+        for key in sorted(enum_by_key):
+            dirs = enum_by_key[key]
+            sample = next(iter(dirs.values()))
+            lines.append(f"### {sample['spec_key']} -> SDK `{sample['sdk_enum']}`\n")
+            if "missing" in dirs:
+                lines.append(
+                    f"- Missing from SDK: {', '.join(sorted(dirs['missing']['values']))}"
+                )
+            if "extra" in dirs:
+                lines.append(
+                    f"- Extra in SDK: {', '.join(sorted(dirs['extra']['values']))}"
+                )
+            lines.append("")
+    else:
         lines.append("All enum values are in sync.\n")
 
     # --- Deprecation Notices ---
@@ -762,15 +933,67 @@ def generate_report(
     # --- Code Issues ---
     lines.append("\n## Code Issues\n")
     lines.append("Potential bugs detected by static analysis.\n")
-    if concat_issues:
+    if active_code:
         lines.append("### Implicit String Concatenation\n")
         lines.append(
             "Adjacent string literals without a comma — these silently concatenate into a single string.\n"
         )
-        for issue in concat_issues:
+        for f in active_code:
+            issue = f["issue"]
             lines.append(f"- `{issue['file']}:{issue['line']}`: {issue['strings']}")
     else:
         lines.append("No code issues found.\n")
+
+    # --- Suppressed (Verified) ---
+    lines.append("\n## Suppressed (Verified)\n")
+    lines.append(
+        "Findings matched by an entry in `specs/audit-ignore.json`. Each was reviewed "
+        "and accepted; the audit re-verifies on every run that the finding still occurs "
+        "before hiding it, so this list cannot drift away from reality.\n"
+    )
+    if suppressed:
+        type_titles = {
+            "extra_method": "Extra SDK Methods",
+            "enum_staleness": "Enum Staleness",
+            "code_issue": "Code Issues",
+        }
+        suppressed_by_type: Dict[str, List[dict]] = {}
+        for f in suppressed:
+            suppressed_by_type.setdefault(f["type"], []).append(f)
+        for ftype in sorted(suppressed_by_type):
+            lines.append(f"### {type_titles.get(ftype, ftype)}\n")
+            for f in suppressed_by_type[ftype]:
+                reason = f.get("ignore", {}).get("reason", "(no reason given)")
+                if f["type"] == "enum_staleness":
+                    vals = ", ".join(sorted(f["values"]))
+                    lines.append(f"- `{f['key']}` [{f['direction']}: {vals}] — {reason}")
+                elif f["type"] == "extra_method":
+                    info = f["info"]
+                    lines.append(f"- `{f['method']}` ({info['class']}) — {reason}")
+                elif f["type"] == "code_issue":
+                    issue = f["issue"]
+                    lines.append(f"- `{issue['file']}`: {issue['strings']} — {reason}")
+                else:
+                    lines.append(f"- `{f['key']}` — {reason}")
+            lines.append("")
+    else:
+        lines.append("No findings suppressed.\n")
+
+    # --- Stale Ignores ---
+    lines.append("\n## Stale Ignores\n")
+    lines.append(
+        "Entries in `specs/audit-ignore.json` that matched no current finding — the "
+        "condition each was created for no longer exists, so the entry can be removed.\n"
+    )
+    if stale_ignores:
+        for ig in stale_ignores:
+            direction = f" [{ig['direction']}]" if ig.get("direction") else ""
+            reason = ig.get("reason", "")
+            lines.append(
+                f"- **{ig.get('type', '?')}** `{ig.get('key', '(no key)')}`{direction} — {reason}"
+            )
+    else:
+        lines.append("No stale ignores.\n")
 
     return "\n".join(lines)
 
@@ -782,6 +1005,12 @@ def main() -> int:
         type=Path,
         default=None,
         help="Path to OAS spec (default: specs/baseline.json)",
+    )
+    parser.add_argument(
+        "--ignore-file",
+        type=Path,
+        default=None,
+        help="Path to audit suppressions (default: specs/audit-ignore.json)",
     )
     args = parser.parse_args()
 
@@ -802,7 +1031,10 @@ def main() -> int:
         print(f"Error: Failed to parse {spec_path}: {e}")
         return 1
 
-    report = generate_report(spec, resources_dir, enums_dir, models_dir)
+    ignore_path = args.ignore_file or project_root / "specs" / "audit-ignore.json"
+    ignores = load_ignores(ignore_path)
+
+    report = generate_report(spec, resources_dir, enums_dir, models_dir, ignores)
     print(report)
 
     report_path = project_root / "specs" / "audit-report.md"
