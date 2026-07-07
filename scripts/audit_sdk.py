@@ -121,7 +121,16 @@ def get_request_body_schema(op: dict, spec: dict) -> Optional[dict]:
 
 
 def get_spec_enums(spec: dict) -> Dict[str, List[str]]:
-    """Extract all enum definitions from schemas."""
+    """Extract all enum definitions from the spec.
+
+    Covers two locations:
+      1. Component schema properties (``components/schemas/<Schema>.<prop>``).
+      2. Operation parameters (``<operationId>.<param>``), including array
+         parameters whose values live under ``schema.items.enum`` rather than
+         ``schema.enum``. Parameter-level enums (e.g. the ``includes`` filter on
+         the listing endpoints) are not defined as component schemas, so
+         omitting them left those SDK enums entirely unaudited.
+    """
     enums = {}
     for name, schema in spec.get("components", {}).get("schemas", {}).items():
         for prop_name, prop in schema.get("properties", {}).items():
@@ -129,6 +138,27 @@ def get_spec_enums(spec: dict) -> Dict[str, List[str]]:
             if "enum" in prop:
                 key = f"{name}.{prop_name}"
                 enums[key] = prop["enum"]
+
+    for path, methods in spec.get("paths", {}).items():
+        for method, details in methods.items():
+            if method not in ("get", "post", "put", "delete", "patch"):
+                continue
+            op_id = details.get("operationId", f"{method}:{path}")
+            for param in details.get("parameters", []):
+                param = resolve_ref(param, spec)
+                param_name = param.get("name")
+                if not param_name:
+                    continue
+                param_schema = param.get("schema", {})
+                # Scalar enum params (schema.enum) and array enum params
+                # (schema.items.enum) both need to be surfaced.
+                enum_values = param_schema.get("enum")
+                if enum_values is None:
+                    items = param_schema.get("items", {})
+                    if isinstance(items, dict):
+                        enum_values = items.get("enum")
+                if enum_values is not None:
+                    enums[f"{op_id}.{param_name}"] = enum_values
     return enums
 
 
@@ -193,9 +223,17 @@ def scan_resource_methods(resources_dir: Path) -> Dict[str, Dict[str, dict]]:
     return resources
 
 
-def scan_enum_values(enums_dir: Path) -> Dict[str, List[str]]:
-    """Scan enum .py files and extract enum class names and their values."""
-    sdk_enums = {}
+def scan_enum_values(enums_dir: Path) -> Dict[str, List[List[Any]]]:
+    """Scan enum .py files and extract enum class names and their values.
+
+    Two distinct enum classes may legitimately share a name across files (e.g.
+    ``Includes`` in both ``Listing.py`` and ``ListingInventory.py``). Keying a
+    plain dict by class name would let whichever file sorts last silently
+    clobber the other, corrupting the comparison. So each name maps to a *list*
+    of value-lists (one per class definition); the matcher picks the best
+    overlap per spec enum.
+    """
+    sdk_enums: Dict[str, List[List[Any]]] = {}
     for py_file in sorted(enums_dir.glob("*.py")):
         if py_file.name.startswith("__"):
             continue
@@ -215,7 +253,7 @@ def scan_enum_values(enums_dir: Path) -> Dict[str, List[str]]:
                                 if isinstance(item.value, ast.Constant):
                                     values.append(item.value.value)
                 if values:
-                    sdk_enums[node.name] = values
+                    sdk_enums.setdefault(node.name, []).append(values)
 
     return sdk_enums
 
@@ -481,7 +519,7 @@ def _norm_values(values: Any) -> Set[str]:
 
 
 def compute_enum_findings(
-    spec: dict, sdk_enums: Dict[str, List[str]]
+    spec: dict, sdk_enums: Dict[str, List[List[Any]]]
 ) -> List[dict]:
     """Compare OAS enum definitions against SDK enum classes.
 
@@ -489,33 +527,53 @@ def compute_enum_findings(
     value sets differ. ``direction`` is ``"missing"`` (present in the spec,
     absent from the SDK) or ``"extra"`` (present in the SDK, absent from the
     spec). ``values`` is a set of lower-cased strings.
+
+    ``sdk_enums`` maps each class name to the list of value-lists for every
+    class of that name (names can collide across files). When the expected name
+    matches, or when falling back to fuzzy overlap, the candidate value-list
+    with the greatest overlap against the spec enum is used, so a same-named but
+    unrelated enum can't hijack the comparison.
     """
+
+    def best_candidate(spec_value_set: Set[str], candidates: List[List[Any]]):
+        """Return the candidate value-list sharing the most values with the spec."""
+        best_vals, best_overlap = None, -1
+        for vals in candidates:
+            overlap = len(_norm_values(vals) & spec_value_set)
+            if overlap > best_overlap:
+                best_overlap, best_vals = overlap, vals
+        return best_vals, max(best_overlap, 0)
+
     findings: List[dict] = []
     spec_enums = get_spec_enums(spec)
     for spec_key, spec_values in sorted(spec_enums.items()):
         prop_name = spec_key.split(".")[-1] if "." in spec_key else spec_key
         expected_enum_name = snake_to_pascal(prop_name)
+        spec_value_set = _norm_values(spec_values)
 
         best_match = None
+        matched_values = None
         if expected_enum_name in sdk_enums:
             best_match = expected_enum_name
+            matched_values, _ = best_candidate(
+                spec_value_set, sdk_enums[expected_enum_name]
+            )
         else:
             best_overlap = 0
-            for sdk_name, sdk_values in sdk_enums.items():
-                sdk_value_set = {str(v).lower() for v in sdk_values}
-                spec_value_set = {str(v).lower() for v in spec_values}
-                overlap = len(sdk_value_set & spec_value_set)
+            for sdk_name, candidates in sdk_enums.items():
+                vals, overlap = best_candidate(spec_value_set, candidates)
+                sdk_value_set = _norm_values(vals) if vals else set()
                 smaller_set = min(len(sdk_value_set), len(spec_value_set))
                 min_required = max(2, smaller_set // 2)
                 if overlap >= min_required and overlap > best_overlap:
                     best_overlap = overlap
                     best_match = sdk_name
+                    matched_values = vals
 
         if not best_match:
             continue
 
-        sdk_value_set = {str(v).lower() for v in sdk_enums[best_match]}
-        spec_value_set = {str(v).lower() for v in spec_values}
+        sdk_value_set = _norm_values(matched_values) if matched_values else set()
         missing = spec_value_set - sdk_value_set
         extra = sdk_value_set - spec_value_set
         key = f"{spec_key} -> {best_match}"

@@ -48,6 +48,38 @@
       "values": ["removed"],
       "reason": "State.REMOVED is kept for backward compatibility and is not in the OAS response schema. Documented inline in enums/Listing.py; may be removed in the next major version.",
       "added": "2026-06-02"
+    },
+    {
+      "type": "enum_staleness",
+      "key": "getListing.includes -> Includes",
+      "direction": "extra",
+      "values": ["shipping", "inventory"],
+      "reason": "Etsy removed 'Shipping' and 'Inventory' from the includes enum on getListing and getListingsByListingIds (still valid on getListingsByShop). The SDK Includes enum keeps both for backward compatibility and because they remain valid on getListingsByShop, which shares the enum; removing them would be a breaking change. Documented inline in enums/Listing.py.",
+      "added": "2026-07-08"
+    },
+    {
+      "type": "enum_staleness",
+      "key": "getListingsByListingIds.includes -> Includes",
+      "direction": "extra",
+      "values": ["shipping", "inventory"],
+      "reason": "Etsy removed 'Shipping' and 'Inventory' from the includes enum on getListing and getListingsByListingIds (still valid on getListingsByShop). The SDK Includes enum keeps both for backward compatibility and because they remain valid on getListingsByShop, which shares the enum; removing them would be a breaking change. Documented inline in enums/Listing.py.",
+      "added": "2026-07-08"
+    },
+    {
+      "type": "enum_staleness",
+      "key": "getListingsByShop.state -> State",
+      "direction": "extra",
+      "values": ["removed"],
+      "reason": "Same State.REMOVED back-compat value as ShopListing.state; surfaced additionally as the state query parameter on getListingsByShop now that parameter-level enums are audited. Documented inline in enums/Listing.py.",
+      "added": "2026-07-08"
+    },
+    {
+      "type": "enum_staleness",
+      "key": "updateHolidayPreferences.holiday_id -> CA_HOLIDAYS",
+      "direction": "missing",
+      "values": "*",
+      "reason": "Same by-design holiday_id handling as ShopHolidayPreference.holiday_id; surfaced additionally as the holiday_id parameter on updateHolidayPreferences now that parameter-level enums are audited. The SDK names US_HOLIDAYS (1-11) and CA_HOLIDAYS (12-23) and documents passing integer IDs directly for other regions. See enums/HolidayPreferences.py.",
+      "added": "2026-07-08"
     }
   ]
 }

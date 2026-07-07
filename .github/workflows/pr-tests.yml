@@ -4,9 +4,19 @@ name: PR Tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  # Manual trigger so tests can be run on demand for any ref — including a PR
+  # whose head commit carries a [skip ci] marker, which GitHub otherwise uses
+  # to short-circuit pull_request/push runs before the workflow starts.
+  # workflow_dispatch is not subject to that skip-ci short-circuit.
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to comment coverage on (optional; omit to just run tests)'
+        required: false
+        type: string
 
 concurrency:
-  group: pr-tests-${{ github.event.pull_request.number }}
+  group: pr-tests-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -49,6 +59,11 @@ jobs:
     name: Coverage Report
     needs: test
     runs-on: ubuntu-latest
+    # Only post a PR comment when there is a PR to comment on: either the
+    # pull_request event, or a manual dispatch that supplied a pr_number.
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && inputs.pr_number != '')
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -113,7 +128,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_NUMBER="${{ github.event.pull_request.number || inputs.pr_number }}"
           MARKER="<!-- pr-test-coverage -->"
 
           # Try to find and update an existing comment first (avoids race where

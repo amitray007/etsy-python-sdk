@@ -234,7 +234,7 @@ class TestComputeEnumFindings:
                 "schemas": {"Foo": {"properties": {"color": {"enum": ["red", "green", "blue"]}}}}
             }
         }
-        findings = audit_sdk.compute_enum_findings(spec, {"Color": ["red", "green"]})
+        findings = audit_sdk.compute_enum_findings(spec, {"Color": [["red", "green"]]})
         assert len(findings) == 1
         f = findings[0]
         assert f["direction"] == "missing"
@@ -248,7 +248,7 @@ class TestComputeEnumFindings:
             }
         }
         findings = audit_sdk.compute_enum_findings(
-            spec, {"Color": ["red", "green", "purple"]}
+            spec, {"Color": [["red", "green", "purple"]]}
         )
         assert len(findings) == 1
         assert findings[0]["direction"] == "extra"
@@ -260,7 +260,108 @@ class TestComputeEnumFindings:
                 "schemas": {"Foo": {"properties": {"color": {"enum": ["red", "green"]}}}}
             }
         }
-        assert audit_sdk.compute_enum_findings(spec, {"Color": ["red", "green"]}) == []
+        assert audit_sdk.compute_enum_findings(spec, {"Color": [["red", "green"]]}) == []
+
+    def test_duplicate_sdk_enum_name_picks_best_overlap(self):
+        # Two SDK classes share the name "Includes" (Listing vs ListingInventory).
+        # The comparison must pick the candidate that actually overlaps the spec
+        # enum, not whichever was inserted last.
+        spec = {
+            "components": {
+                "schemas": {"Foo": {"properties": {"includes": {"enum": ["a", "b", "c"]}}}}
+            }
+        }
+        sdk_enums = {"Includes": [["listing"], ["a", "b", "c", "d"]]}
+        findings = audit_sdk.compute_enum_findings(spec, sdk_enums)
+        # Should match the ["a","b","c","d"] candidate: only "d" is extra.
+        assert len(findings) == 1
+        assert findings[0]["direction"] == "extra"
+        assert findings[0]["values"] == {"d"}
+
+
+# --------------------------------------------------------------------------- #
+# get_spec_enums — parameter-level enum extraction
+# --------------------------------------------------------------------------- #
+class TestGetSpecEnums:
+    def test_component_schema_enums_extracted(self):
+        spec = {
+            "components": {
+                "schemas": {"Foo": {"properties": {"color": {"enum": ["red", "green"]}}}}
+            }
+        }
+        assert audit_sdk.get_spec_enums(spec) == {"Foo.color": ["red", "green"]}
+
+    def test_scalar_parameter_enum_extracted(self):
+        spec = {
+            "paths": {
+                "/x": {
+                    "get": {
+                        "operationId": "getX",
+                        "parameters": [
+                            {"name": "state", "schema": {"enum": ["active", "draft"]}}
+                        ],
+                    }
+                }
+            }
+        }
+        assert audit_sdk.get_spec_enums(spec) == {"getX.state": ["active", "draft"]}
+
+    def test_array_parameter_items_enum_extracted(self):
+        # The `includes` filter is an array param: values live under
+        # schema.items.enum, which was previously ignored entirely.
+        spec = {
+            "paths": {
+                "/x": {
+                    "get": {
+                        "operationId": "getX",
+                        "parameters": [
+                            {
+                                "name": "includes",
+                                "schema": {
+                                    "type": "array",
+                                    "items": {"enum": ["Shop", "User"]},
+                                },
+                            }
+                        ],
+                    }
+                }
+            }
+        }
+        assert audit_sdk.get_spec_enums(spec) == {"getX.includes": ["Shop", "User"]}
+
+    def test_parameter_without_enum_ignored(self):
+        spec = {
+            "paths": {
+                "/x": {
+                    "get": {
+                        "operationId": "getX",
+                        "parameters": [
+                            {"name": "limit", "schema": {"type": "integer"}}
+                        ],
+                    }
+                }
+            }
+        }
+        assert audit_sdk.get_spec_enums(spec) == {}
+
+
+# --------------------------------------------------------------------------- #
+# scan_enum_values — duplicate class names across files
+# --------------------------------------------------------------------------- #
+class TestScanEnumValues:
+    def test_same_name_across_files_kept_separately(self, tmp_path):
+        (tmp_path / "A.py").write_text(
+            "from enum import Enum\n\nclass Includes(Enum):\n    SHOP = 'Shop'\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "B.py").write_text(
+            "from enum import Enum\n\nclass Includes(Enum):\n    LISTING = 'Listing'\n",
+            encoding="utf-8",
+        )
+        result = audit_sdk.scan_enum_values(tmp_path)
+        assert "Includes" in result
+        # Both definitions retained, neither clobbered.
+        assert sorted(result["Includes"], key=lambda v: v[0]) == [["Listing"], ["Shop"]]
 
 
 # --------------------------------------------------------------------------- #

@@ -85,6 +85,10 @@ class SortOrder(Enum):
 
 
 class Includes(Enum):
+    # SHIPPING and INVENTORY were removed from the includes enum on getListing
+    # and getListingsByListingIds, but remain valid on getListingsByShop, which
+    # shares this enum. They are kept for backward compatibility; removing them
+    # would break callers. May be revisited in the next major version.
     SHIPPING = "Shipping"
     IMAGES = "Images"
     SHOP = "Shop"
