@@ -953,20 +953,18 @@
           {
             "name": "includes",
             "in": "query",
-            "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shipping', 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Inventory' and 'Personalization'.",
+            "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Personalization' and 'BuyerPrice'.",
             "required": false,
             "schema": {
               "type": "array",
-              "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shipping', 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Inventory' and 'Personalization'.",
+              "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Personalization' and 'BuyerPrice'.",
               "items": {
                 "type": "string",
                 "enum": [
-                  "Shipping",
                   "Images",
                   "Shop",
                   "User",
                   "Translations",
-                  "Inventory",
                   "Videos",
                   "Personalization",
                   "BuyerPrice"
@@ -2923,20 +2921,18 @@
           {
             "name": "includes",
             "in": "query",
-            "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shipping', 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Inventory' and 'Personalization'.",
+            "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Personalization' and 'BuyerPrice'.",
             "required": false,
             "schema": {
               "type": "array",
-              "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shipping', 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Inventory' and 'Personalization'.",
+              "description": "An enumerated string that attaches a valid association. Acceptable inputs are 'Shop', 'Images', 'User', 'Translations', 'Videos', 'Personalization' and 'BuyerPrice'.",
               "items": {
                 "type": "string",
                 "enum": [
-                  "Shipping",
                   "Images",
                   "Shop",
                   "User",
                   "Translations",
-                  "Inventory",
                   "Videos",
                   "Personalization",
                   "BuyerPrice"

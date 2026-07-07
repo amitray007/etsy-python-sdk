@@ -75,8 +75,22 @@ def diff_parameters(
             changes.append(
                 f"type: {old_schema.get('type')} -> {new_schema.get('type')}"
             )
-        if old_schema.get("enum") != new_schema.get("enum"):
-            changes.append("enum values changed")
+        # Scalar enum params carry values under schema.enum; array params (e.g.
+        # the `includes` filter) carry them under schema.items.enum. Check both.
+        old_enum = old_schema.get("enum", old_schema.get("items", {}).get("enum"))
+        new_enum = new_schema.get("enum", new_schema.get("items", {}).get("enum"))
+        if old_enum != new_enum:
+            added = sorted(set(new_enum or []) - set(old_enum or []))
+            removed = sorted(set(old_enum or []) - set(new_enum or []))
+            detail = []
+            if added:
+                detail.append(f"added {added}")
+            if removed:
+                detail.append(f"removed {removed}")
+            changes.append(
+                "enum values changed"
+                + (f" ({'; '.join(detail)})" if detail else "")
+            )
         if changes:
             result["changed"].append(f"{name} ({', '.join(changes)})")
 
