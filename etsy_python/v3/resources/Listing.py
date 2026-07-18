@@ -168,6 +168,24 @@ class ListingResource:
         )
         return self.get_listings_by_listing_ids(listing_ids, includes, legacy)
 
+    def get_listings_inventory_by_listing_ids(
+        self, listing_ids: List[int]
+    ) -> Union[Response, RequestException]:
+        endpoint = "/listings/batch/inventory"
+        query_params: Dict[str, Any] = {
+            "listing_ids": ",".join(list(map(str, listing_ids))),
+        }
+        return self.session.make_request(endpoint, query_params=query_params)
+
+    def get_listings_shipping_by_listing_ids(
+        self, listing_ids: List[int]
+    ) -> Union[Response, RequestException]:
+        endpoint = "/listings/batch/shipping"
+        query_params: Dict[str, Any] = {
+            "listing_ids": ",".join(list(map(str, listing_ids))),
+        }
+        return self.session.make_request(endpoint, query_params=query_params)
+
     def get_featured_listings_by_shop(
         self, shop_id: int, limit: int = 25, offset: int = 0,
         legacy: Optional[bool] = None,

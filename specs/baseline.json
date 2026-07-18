@@ -2673,6 +2673,16 @@
               }
             }
           },
+          "409": {
+            "description": "There was a request conflict with the current state of the target resource. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
           "500": {
             "description": "The server encountered an internal error. See the error message for details.",
             "content": {
@@ -2689,6 +2699,82 @@
             "api_key": [],
             "oauth2": [
               "listings_w"
+            ]
+          }
+        ]
+      }
+    },
+    "/v3/application/listings/batch/inventory": {
+      "get": {
+        "operationId": "getListingsInventoryByListingIds",
+        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves the inventory record for each listing referenced by listing ID. Requires the listings_r OAuth scope. Limit 100 listing IDs per request.",
+        "tags": [
+          "ShopListing Inventory"
+        ],
+        "parameters": [
+          {
+            "name": "listing_ids",
+            "in": "query",
+            "description": "The list of numeric IDS for the listings in a specific Etsy shop.",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "description": "The list of numeric IDS for the listings in a specific Etsy shop.",
+              "items": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 1
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of listings with their inventory records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopListingsWithAssociations"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "There was a problem with the request data. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A resource could not be found. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The server encountered an internal error. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": [],
+            "oauth2": [
+              "listings_r"
             ]
           }
         ]
@@ -3935,6 +4021,82 @@
             }
           }
         }
+      }
+    },
+    "/v3/application/listings/batch/shipping": {
+      "get": {
+        "operationId": "getListingsShippingByListingIds",
+        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves the shipping profile for each listing referenced by listing ID. Requires the shops_r OAuth scope. Limit 100 listing IDs per request.",
+        "tags": [
+          "ShopListing"
+        ],
+        "parameters": [
+          {
+            "name": "listing_ids",
+            "in": "query",
+            "description": "The list of numeric IDS for the listings in a specific Etsy shop.",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "description": "The list of numeric IDS for the listings in a specific Etsy shop.",
+              "items": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 1
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of listings with their shipping profiles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopListingsWithAssociations"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "There was a problem with the request data. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A resource could not be found. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The server encountered an internal error. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": [],
+            "oauth2": [
+              "shops_r"
+            ]
+          }
+        ]
       }
     },
     "/v3/application/shops/{shop_id}/listings/{listing_id}/transactions": {
@@ -12915,6 +13077,11 @@
             "type": "string",
             "description": "A description string of the product for sale in the listing."
           },
+          "rich_description": {
+            "type": "string",
+            "description": "The seller-authored HTML rich-text description of the product when the listing uses rich text; null for plain-text listings. The plain-text `description` field is always populated. This value is HTML and consumers MUST sanitize it before rendering it in any HTML context.",
+            "nullable": true
+          },
           "state": {
             "type": "string",
             "description": "When _updating_ a listing, this value can be either `active` or `inactive`. Note: Setting a `draft` listing to `active` will also publish the listing on etsy.com and requires that the listing have an image set. Setting a `sold_out` listing to active will update the quantity to 1 and renew the listing on etsy.com.",
@@ -13377,6 +13544,11 @@
           "description": {
             "type": "string",
             "description": "A description string of the product for sale in the listing."
+          },
+          "rich_description": {
+            "type": "string",
+            "description": "The seller-authored HTML rich-text description of the product when the listing uses rich text; null for plain-text listings. The plain-text `description` field is always populated. This value is HTML and consumers MUST sanitize it before rendering it in any HTML context.",
+            "nullable": true
           },
           "state": {
             "type": "string",
