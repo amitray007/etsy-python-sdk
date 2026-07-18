@@ -310,6 +310,58 @@ class TestGetListingsByListingsIds:
         assert qp["legacy"] is True
 
 
+class TestGetListingsInventoryByListingIds:
+    def test_listing_ids_joined(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_inventory_by_listing_ids([111, 222, 333])
+
+        endpoint = mock_session.make_request.call_args[0][0]
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert endpoint == "/listings/batch/inventory"
+        assert qp["listing_ids"] == "111,222,333"
+
+    def test_single_listing_id(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_inventory_by_listing_ids([111])
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["listing_ids"] == "111"
+
+
+class TestGetListingsShippingByListingIds:
+    def test_listing_ids_joined(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_shipping_by_listing_ids([111, 222, 333])
+
+        endpoint = mock_session.make_request.call_args[0][0]
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert endpoint == "/listings/batch/shipping"
+        assert qp["listing_ids"] == "111,222,333"
+
+    def test_single_listing_id(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        resource.get_listings_shipping_by_listing_ids([111])
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert qp["listing_ids"] == "111"
+
+
 class TestGetFeaturedListingsByShop:
     def test_basic_call(self, mock_session):
         mock_session.make_request.return_value = Response(
