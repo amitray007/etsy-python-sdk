@@ -560,6 +560,25 @@ class TestShippedIgnoreFile:
             if ig["type"] in audit_sdk._VALUED_FINDING_TYPES:
                 assert "direction" in ig and "values" in ig
 
+    def test_no_duplicate_match_keys(self):
+        # partition_findings applies only the FIRST ignore matching a given
+        # (type, key, direction), so a duplicate would silently suppress just
+        # part of a finding and then report itself as stale.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        seen = set()
+        for ig in audit_sdk.load_ignores(path):
+            match_key = (ig["type"], ig["key"], ig.get("direction"))
+            assert match_key not in seen, f"duplicate ignore entry: {match_key}"
+            seen.add(match_key)
+
+    def test_no_wildcard_param_drift_ignores(self):
+        # "*" on a param_drift entry would hide unreviewed parameter drift on
+        # that operation, defeating the self-verifying property.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        for ig in audit_sdk.load_ignores(path):
+            if ig["type"] == "param_drift":
+                assert ig["values"] != "*", f"{ig['key']} uses a wildcard"
+
     def test_shipped_legacy_param_ignores_are_value_scoped(self):
         # The 8 listing-endpoint `legacy` suppressions must name the value
         # explicitly, never "*", so future drift on those operations surfaces.
