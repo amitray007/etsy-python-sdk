@@ -294,16 +294,6 @@
               "format": "int64",
               "minimum": 1
             }
-          },
-          {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
-            }
           }
         ],
         "requestBody": {
@@ -762,16 +752,6 @@
               },
               "default": null
             }
-          },
-          {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
-            }
           }
         ],
         "responses": {
@@ -982,16 +962,6 @@
               "type": "string",
               "description": "The IETF language tag for the language of this translation. Ex: `de`, `en`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt`.",
               "default": null
-            }
-          },
-          {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           },
           {
@@ -1647,16 +1617,6 @@
             }
           },
           {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
-            }
-          },
-          {
             "name": "is_safe",
             "in": "query",
             "description": "When true, filters out mature/adult content from search results.",
@@ -1816,16 +1776,6 @@
               "type": "string",
               "description": "Search term or phrase that must appear in all results.",
               "default": null
-            }
-          },
-          {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -2347,16 +2297,6 @@
                 "Listing"
               ]
             }
-          },
-          {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
-            }
           }
         ],
         "responses": {
@@ -2447,16 +2387,6 @@
               "description": "The numeric ID for the [listing](/documentation/reference#tag/ShopListing) associated to this transaction.",
               "format": "int64",
               "minimum": 1
-            }
-          },
-          {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           },
           {
@@ -2707,7 +2637,7 @@
     "/v3/application/listings/batch/inventory": {
       "get": {
         "operationId": "getListingsInventoryByListingIds",
-        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves the inventory record for each listing referenced by listing ID. Requires the listings_r OAuth scope. Limit 100 listing IDs per request.",
+        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves the inventory record for each listing referenced by listing ID. Requires the `listings_r` OAuth scope. Limit 100 listing IDs per request. All requested listing IDs must exist — if any single ID is not found, the entire request returns a 404. SKUs within product records are only returned for listings owned by the authenticated user; they are stripped (returned as empty string) for listings owned by other sellers.",
         "tags": [
           "ShopListing Inventory"
         ],
@@ -3370,11 +3300,11 @@
                         },
                         "question_text": {
                           "type": "string",
-                          "description": "The title of the personalization question. Must be between 1 and 45 characters. Note: During the migration to the new personalization endpoints, if you're still using a legacy UI (without a title input),please send the default value 'Personalization'."
+                          "description": "The title of the personalization question. Must be between 1 and 45 characters. See https://developers.etsy.com/documentation/tutorials/personalization-migration#writing-listing-personalization-data"
                         },
                         "instructions": {
                           "type": "string",
-                          "description": "Optional instructions for a personalization question. This field is not allowed for 'dropdown' questions. For legacy, single personalization, max length is 256 characters. Once multiple personalization questions are enabled, the max length will be 120 characters.",
+                          "description": "Optional instructions for a personalization question. This field is not allowed for 'dropdown' questions. See https://developers.etsy.com/documentation/tutorials/personalization-migration#writing-listing-personalization-data",
                           "nullable": true
                         },
                         "question_type": {
@@ -3426,6 +3356,12 @@
                               "label"
                             ]
                           }
+                        },
+                        "add_on_price": {
+                          "type": "number",
+                          "description": "The add-on price for a question. This field is optional and only supported for optional questions of type text_input.",
+                          "format": "float",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -4026,7 +3962,7 @@
     "/v3/application/listings/batch/shipping": {
       "get": {
         "operationId": "getListingsShippingByListingIds",
-        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves the shipping profile for each listing referenced by listing ID. Requires the shops_r OAuth scope. Limit 100 listing IDs per request.",
+        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nRetrieves the shipping profile for each listing referenced by listing ID. Requires the `shops_r` OAuth scope. Limit 100 listing IDs per request. All requested listing IDs must exist — if any single ID is not found, the entire request returns a 404. Shipping profile data (including `shipping_profile_id`) is only returned for listings owned by the authenticated user; it is nulled out for listings owned by other sellers.",
         "tags": [
           "ShopListing"
         ],
@@ -4644,16 +4580,6 @@
               "description": "The numeric ID for the [listing](/documentation/reference#tag/ShopListing) associated to this transaction.",
               "format": "int64",
               "minimum": 1
-            }
-          },
-          {
-            "name": "legacy",
-            "in": "query",
-            "description": "This parameter is needed to enable new parameters and response values related to processing profiles.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "This parameter is needed to enable new parameters and response values related to processing profiles."
             }
           }
         ],
@@ -15051,6 +14977,14 @@
           "max_allowed_files": {
             "type": "integer",
             "format": "int64",
+            "nullable": true
+          },
+          "add_on_price": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              }
+            ],
             "nullable": true
           },
           "options": {

@@ -1,5 +1,22 @@
+import warnings
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
+
+def warn_removed_legacy_param(operation_id: str) -> None:
+    """Warn that `legacy` was removed from an operation and is no longer sent.
+
+    Etsy dropped the `legacy` query parameter from the listing endpoints without
+    a deprecation period. The keyword argument is kept so existing callers don't
+    break, but the value is not forwarded. Note `legacy` is still valid on other
+    operations (receipts, transactions, getListingsByListingIds), which keep it.
+    """
+    warnings.warn(
+        f"'legacy' was removed from {operation_id} by Etsy and is no longer "
+        "sent; it will be dropped from this method in a future major version.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
 
 
 def generate_get_uri(uri: str, params: Optional[Dict[str, Any]] = None) -> str:

@@ -1,6 +1,70 @@
 {
-  "_README": "Reviewed, accepted audit findings that should not count as noise. scripts/audit_sdk.py loads this file and, on EVERY run, re-derives findings and only suppresses an entry while its finding still occurs (for enums, only the listed values are suppressed; newly appeared values stay active). Entries that match nothing are reported under 'Stale Ignores' so this list stays honest. Nothing here is hard-coded in the script — to accept a finding, add an entry; to stop accepting it, delete the entry. Match fields: 'type' + 'key' (+ 'direction' for enum_staleness). 'values' (enum only): \"*\" = all, or a list of specific values. 'reason'/'added' are documentation.",
+  "_README": "Reviewed, accepted audit findings that should not count as noise. scripts/audit_sdk.py loads this file and, on EVERY run, re-derives findings and only suppresses an entry while its finding still occurs (for enum_staleness and param_drift, only the listed values are suppressed; newly appeared values stay active). Entries that match nothing are reported under 'Stale Ignores' so this list stays honest. Nothing here is hard-coded in the script — to accept a finding, add an entry; to stop accepting it, delete the entry. Match fields: 'type' + 'key' (+ 'direction' for enum_staleness and param_drift). 'values' (enum_staleness/param_drift only): \"*\" = all, or a list of specific values. 'reason'/'added' are documentation.",
   "ignores": [
+    {
+      "type": "param_drift",
+      "key": "createDraftListing",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
+    {
+      "type": "param_drift",
+      "key": "getListingsByShop",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
+    {
+      "type": "param_drift",
+      "key": "getListing",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
+    {
+      "type": "param_drift",
+      "key": "findAllListingsActive",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
+    {
+      "type": "param_drift",
+      "key": "findAllActiveListingsByShop",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
+    {
+      "type": "param_drift",
+      "key": "updateListing",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
+    {
+      "type": "param_drift",
+      "key": "getListingInventory",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
+    {
+      "type": "param_drift",
+      "key": "updateListingInventory",
+      "direction": "extra",
+      "values": ["legacy"],
+      "reason": "Etsy removed the 'legacy' query param from the 8 listing endpoints (2026-07-27 spec) with no deprecation period; it remains valid on 14 other operations. The kwarg is retained so existing callers don't break, but it warns via warn_removed_legacy_param and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-07-30"
+    },
     {
       "type": "extra_method",
       "key": "ListingResource.get_listings_by_listings_ids",
