@@ -10,10 +10,16 @@ def warn_removed_legacy_param(operation_id: str) -> None:
     a deprecation period. The keyword argument is kept so existing callers don't
     break, but the value is not forwarded. Note `legacy` is still valid on other
     operations (receipts, transactions, getListingsByListingIds), which keep it.
+
+    Called whenever ``legacy`` is passed explicitly — including ``legacy=False``.
+    That is deliberate: ``legacy=False`` previously sent ``?legacy=false`` on the
+    wire, so silently dropping it is a request-shape change the caller should
+    know about, not just a no-op.
     """
     warnings.warn(
         f"'legacy' was removed from {operation_id} by Etsy and is no longer "
-        "sent; it will be dropped from this method in a future major version.",
+        "sent (any explicit value, including False, is discarded); it will be "
+        "dropped from this method in a future major version.",
         DeprecationWarning,
         stacklevel=3,
     )

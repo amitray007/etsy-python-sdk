@@ -652,11 +652,13 @@ def partition_findings(
     A finding matches an ignore when ``type`` and ``key`` are equal (plus
     ``direction`` for the value-bearing types in ``_VALUED_FINDING_TYPES``). For
     those types the ignore's ``values`` is re-verified against the finding's
-    *current* values: ``"*"`` suppresses all; a list suppresses only those
-    values while any remaining (newly appeared) values stay active — so a
-    suppression can never silently hide a value it was not reviewed for. An
-    ignore that suppresses nothing on this run is returned as stale (its
-    condition no longer exists).
+    *current* values: an explicit ``"*"`` suppresses all; a list suppresses only
+    those values while any remaining (newly appeared) values stay active — so a
+    suppression can never silently hide a value it was not reviewed for. A valued
+    ignore that OMITS ``values`` suppresses nothing (it does not default to a
+    wildcard), so a missing list is caught as stale rather than silently hiding
+    everything. An ignore that suppresses nothing on this run is returned as
+    stale (its condition no longer exists).
 
     Returns ``(active, suppressed, stale_ignores)``. Each suppressed entry is
     the finding dict with an added ``"ignore"`` key holding the matched entry.
@@ -688,7 +690,10 @@ def partition_findings(
         if finding.get("type") in _VALUED_FINDING_TYPES and isinstance(
             finding.get("values"), set
         ):
-            ig_values = ig.get("values", "*")
+            # An omitted `values` suppresses nothing (and self-reports stale)
+            # rather than defaulting to a wildcard — a valued ignore must name
+            # what it hides, so it can never silently swallow unreviewed drift.
+            ig_values = ig.get("values", [])
             if ig_values == "*":
                 used[match_idx] = True
                 suppressed.append({**finding, "ignore": ig})

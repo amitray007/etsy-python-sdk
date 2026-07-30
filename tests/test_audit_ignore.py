@@ -407,6 +407,33 @@ class TestPartitionParamDrift:
         assert active == [] and suppressed == []
         assert len(stale) == 1
 
+    def test_omitted_values_suppresses_nothing(self):
+        # A valued ignore with NO `values` key must NOT behave as a wildcard —
+        # otherwise it would silently hide unreviewed drift. It suppresses
+        # nothing (finding stays fully active) and self-reports as stale.
+        ig = {
+            "type": "param_drift",
+            "key": "getListing",
+            "direction": "extra",
+            "reason": "no values key",
+        }
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"legacy", "unreviewed"})], [ig]
+        )
+        assert len(active) == 1
+        assert active[0]["values"] == {"legacy", "unreviewed"}
+        assert suppressed == []
+        assert len(stale) == 1
+
+    def test_explicit_wildcard_still_suppresses_all(self):
+        # `"*"` written explicitly is still honoured (distinct from omission).
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"legacy", "other"})], [self._ignore("*")]
+        )
+        assert active == []
+        assert len(suppressed) == 1
+        assert stale == []
+
 
 # --------------------------------------------------------------------------- #
 # get_spec_enums — parameter-level enum extraction

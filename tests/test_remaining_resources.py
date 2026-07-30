@@ -181,8 +181,9 @@ class TestListingInventoryResource:
             query_params={"max_variations_supported": "3"},
         )
 
+    @pytest.mark.parametrize("legacy_value", [True, False])
     def test_update_listing_inventory_legacy_warns_and_is_not_sent(
-        self, mock_session
+        self, mock_session, legacy_value
     ):
         mock_session.make_request.return_value = Response(
             200, make_listing_inventory()
@@ -190,22 +191,29 @@ class TestListingInventoryResource:
         resource = ListingInventoryResource(session=mock_session)
         payload = MagicMock(spec=UpdateListingInventoryRequest)
 
-        with pytest.warns(DeprecationWarning, match="updateListingInventory"):
+        with pytest.warns(
+            DeprecationWarning, match=r"from updateListingInventory by Etsy"
+        ):
             resource.update_listing_inventory(
-                MOCK_LISTING_ID, payload, legacy=True
+                MOCK_LISTING_ID, payload, legacy=legacy_value
             )
 
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert "legacy" not in qp
 
-    def test_get_listing_inventory_legacy_warns_and_is_not_sent(self, mock_session):
+    @pytest.mark.parametrize("legacy_value", [True, False])
+    def test_get_listing_inventory_legacy_warns_and_is_not_sent(
+        self, mock_session, legacy_value
+    ):
         mock_session.make_request.return_value = Response(
             200, make_listing_inventory()
         )
         resource = ListingInventoryResource(session=mock_session)
 
-        with pytest.warns(DeprecationWarning, match="getListingInventory"):
-            resource.get_listing_inventory(MOCK_LISTING_ID, legacy=True)
+        with pytest.warns(
+            DeprecationWarning, match=r"from getListingInventory by Etsy"
+        ):
+            resource.get_listing_inventory(MOCK_LISTING_ID, legacy=legacy_value)
 
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert "legacy" not in qp
