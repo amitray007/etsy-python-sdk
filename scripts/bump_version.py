@@ -62,9 +62,34 @@ def write_version(version_file, new_version):
     content = f'''"""Version information for etsy-python package."""
 
 __version__ = "{new_version}"'''
-    
+
     with open(version_file, 'w') as f:
         f.write(content)
+
+
+def sync_bumpversion_cfg(cfg_file, new_version):
+    """Update ``current_version`` in .bumpversion.cfg to match _version.py.
+
+    _version.py is the source of truth (see CLAUDE.md); .bumpversion.cfg is only
+    read by the bump2version tool, which CI does not run. Keeping the two in sync
+    here stops check_version_consistency.py from flapping after every auto-bump.
+
+    Returns True if the file was updated, False if it is absent (nothing to do).
+    """
+    if not cfg_file.exists():
+        return False
+
+    content = cfg_file.read_text()
+    new_content, count = re.subn(
+        r'(?m)^(current_version\s*=\s*).*$',
+        rf'\g<1>{new_version}',
+        content,
+    )
+    if count == 0:
+        raise ValueError(f"Could not find current_version in {cfg_file}")
+
+    cfg_file.write_text(new_content)
+    return True
 
 
 def get_latest_commit_message():
@@ -126,7 +151,8 @@ def main():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     version_file = project_root / 'etsy_python' / '_version.py'
-    
+    cfg_file = project_root / '.bumpversion.cfg'
+
     if not version_file.exists():
         print(f"Error: Version file not found at {version_file}")
         sys.exit(1)
@@ -156,11 +182,17 @@ def main():
         # Write new version
         write_version(version_file, new_version)
         print(f"Version updated to {new_version}")
-        
+
+        # Keep .bumpversion.cfg in sync so the consistency check doesn't drift
+        if sync_bumpversion_cfg(cfg_file, new_version):
+            print(f".bumpversion.cfg synced to {new_version}")
+
         # Output new version for GitHub Actions
         print(f"::set-output name=version::{new_version}")
     else:
         print("Dry run - no changes made")
+        if cfg_file.exists():
+            print(f"Dry run - would sync .bumpversion.cfg to {new_version}")
     
     return 0
 
