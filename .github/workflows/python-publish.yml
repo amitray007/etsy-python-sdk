@@ -151,6 +151,9 @@ jobs:
       - name: Commit version bump
         run: |
           git add etsy_python/_version.py
+          # bump_version.py also syncs .bumpversion.cfg; stage it so the two
+          # versions stay consistent in git (not just on the runner's disk).
+          git add .bumpversion.cfg
           # Always skip CI for version bump commits to prevent infinite loops
           git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }} [skip ci]"
           

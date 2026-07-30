@@ -64,7 +64,7 @@ cp specs/latest.json specs/baseline.json
 
 **Single source of truth**: `etsy_python/_version.py`
 
-`setup.py` reads version dynamically from `_version.py`. The `.bumpversion.cfg` file tracks version for the bump tool but can drift out of sync -- always trust `_version.py`.
+`setup.py` reads version dynamically from `_version.py`, which remains the single source of truth -- always trust `_version.py`. The `.bumpversion.cfg` file tracks version for the `bump2version` tool (which CI does not run); `scripts/bump_version.py` now keeps its `current_version` synced automatically on every bump, and the publish workflow commits both files together, so the two should no longer drift.
 
 A pre-commit hook (`.pre-commit-config.yaml`) runs `scripts/check_version_consistency.py` to validate `_version.py` and `.bumpversion.cfg` agree.
 
