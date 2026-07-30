@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any, Union
 
+from etsy_python.v3.common.Utils import warn_removed_legacy_param
 from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.enums.Listing import InventoryIncludes
 from etsy_python.v3.enums.ListingInventory import MaxVariationsSupported
@@ -21,11 +22,12 @@ class ListingInventoryResource:
         includes: Optional[InventoryIncludes] = None,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("getListingInventory")
         endpoint = f"/listings/{listing_id}/inventory"
         query_params: Dict[str, Any] = {
             "show_deleted": show_deleted,
             "includes": includes.value if includes is not None else None,
-            "legacy": legacy,
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
@@ -34,9 +36,10 @@ class ListingInventoryResource:
         legacy: Optional[bool] = None,
         max_variations_supported: Optional[MaxVariationsSupported] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("updateListingInventory")
         endpoint = f"/listings/{listing_id}/inventory"
         query_params: Dict[str, Any] = {
-            "legacy": legacy,
             "max_variations_supported": max_variations_supported.value
             if max_variations_supported is not None
             else None,

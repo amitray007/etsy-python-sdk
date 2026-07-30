@@ -518,6 +518,11 @@ def _norm_values(values: Any) -> Set[str]:
     return {str(v).lower() for v in values}
 
 
+# Finding types carrying a `values` set + `direction`, where an ignore may
+# suppress specific values and leave newly appeared ones active.
+_VALUED_FINDING_TYPES = frozenset({"enum_staleness", "param_drift"})
+
+
 def compute_enum_findings(
     spec: dict, sdk_enums: Dict[str, List[List[Any]]]
 ) -> List[dict]:
@@ -592,18 +597,68 @@ def compute_enum_findings(
     return findings
 
 
+def compute_param_findings(
+    implemented: Dict[str, dict], sdk_models: Dict[str, dict]
+) -> List[dict]:
+    """Compare OAS path/query params against SDK method signatures.
+
+    Yields one finding per (operation, direction) whose parameter sets differ.
+    ``direction`` is ``"missing"`` (in the spec, absent from the SDK signature)
+    or ``"extra"`` (in the SDK signature, absent from the spec). ``values`` is a
+    set of parameter names, so an ignore listing specific names suppresses only
+    those — a newly drifted parameter on an already-suppressed operation still
+    surfaces. Model-object and path params are excluded from the comparison.
+    """
+    findings: List[dict] = []
+    for op_id, mapping in sorted(implemented.items()):
+        op = mapping["spec"]
+        sdk = mapping["sdk"]
+
+        spec_params = {p["name"] for p in op["parameters"]}
+        sdk_params = set(sdk["params"])
+        param_annotations = sdk.get("param_annotations", {})
+
+        # Exclude model-object params from method signature comparison
+        model_param_names = {
+            pname
+            for pname, ptype in param_annotations.items()
+            if ptype in sdk_models
+        }
+
+        non_model_sdk_params = sdk_params - model_param_names
+        spec_only = spec_params - non_model_sdk_params
+        sdk_only = non_model_sdk_params - spec_params - PATH_PARAM_NAMES
+
+        for direction, values in (("missing", spec_only), ("extra", sdk_only)):
+            if values:
+                findings.append(
+                    {
+                        "type": "param_drift",
+                        "key": op_id,
+                        "direction": direction,
+                        "values": values,
+                        "sdk_method": mapping["sdk_method"],
+                        "location": f"{sdk['file']}:{sdk['line']}",
+                    }
+                )
+    return findings
+
+
 def partition_findings(
     findings: List[dict], ignores: List[dict]
 ) -> Tuple[List[dict], List[dict], List[dict]]:
     """Split findings into active vs suppressed, and surface stale ignores.
 
     A finding matches an ignore when ``type`` and ``key`` are equal (plus
-    ``direction`` for enum findings). For enum findings the ignore's ``values``
-    is re-verified against the finding's *current* values: ``"*"`` suppresses
-    all; a list suppresses only those values while any remaining (newly
-    appeared) values stay active — so a suppression can never silently hide a
-    value it was not reviewed for. An ignore that suppresses nothing on this run
-    is returned as stale (its condition no longer exists).
+    ``direction`` for the value-bearing types in ``_VALUED_FINDING_TYPES``). For
+    those types the ignore's ``values`` is re-verified against the finding's
+    *current* values: an explicit ``"*"`` suppresses all; a list suppresses only
+    those values while any remaining (newly appeared) values stay active — so a
+    suppression can never silently hide a value it was not reviewed for. A valued
+    ignore that OMITS ``values`` suppresses nothing (it does not default to a
+    wildcard), so a missing list is caught as stale rather than silently hiding
+    everything. An ignore that suppresses nothing on this run is returned as
+    stale (its condition no longer exists).
 
     Returns ``(active, suppressed, stale_ignores)``. Each suppressed entry is
     the finding dict with an added ``"ignore"`` key holding the matched entry.
@@ -619,7 +674,7 @@ def partition_findings(
                 continue
             if ig.get("key") != finding.get("key"):
                 continue
-            if finding.get("type") == "enum_staleness" and ig.get(
+            if finding.get("type") in _VALUED_FINDING_TYPES and ig.get(
                 "direction"
             ) != finding.get("direction"):
                 continue
@@ -632,10 +687,13 @@ def partition_findings(
 
         ig = ignores[match_idx]
 
-        if finding.get("type") == "enum_staleness" and isinstance(
+        if finding.get("type") in _VALUED_FINDING_TYPES and isinstance(
             finding.get("values"), set
         ):
-            ig_values = ig.get("values", "*")
+            # An omitted `values` suppresses nothing (and self-reports stale)
+            # rather than defaulting to a wildcard — a valued ignore must name
+            # what it hides, so it can never silently swallow unreviewed drift.
+            ig_values = ig.get("values", [])
             if ig_values == "*":
                 used[match_idx] = True
                 suppressed.append({**finding, "ignore": ig})
@@ -743,6 +801,7 @@ def generate_report(
             }
         )
     findings.extend(compute_enum_findings(spec, sdk_enums))
+    findings.extend(compute_param_findings(implemented, sdk_models))
     for issue in concat_issues:
         findings.append(
             {
@@ -756,6 +815,7 @@ def generate_report(
     active_extra = [f for f in active if f["type"] == "extra_method"]
     active_enum = [f for f in active if f["type"] == "enum_staleness"]
     active_code = [f for f in active if f["type"] == "code_issue"]
+    active_param = [f for f in active if f["type"] == "param_drift"]
 
     lines.append("## Coverage Summary\n")
     lines.append(f"- Total OAS operations: {total_ops}")
@@ -833,37 +893,26 @@ def generate_report(
     # --- Query/Path Parameter Drift ---
     lines.append("\n## Query/Path Parameter Drift\n")
     lines.append("Mismatches between OAS path/query params and SDK method signatures.\n")
-    any_query_drift = False
-    for op_id, mapping in sorted(implemented.items()):
-        op = mapping["spec"]
-        sdk = mapping["sdk"]
-
-        spec_params = {p["name"] for p in op["parameters"]}
-        sdk_params = set(sdk["params"])
-        param_annotations = sdk.get("param_annotations", {})
-
-        # Exclude model-object params from method signature comparison
-        model_param_names = set()
-        for pname, ptype in param_annotations.items():
-            if ptype in sdk_models:
-                model_param_names.add(pname)
-
-        non_model_sdk_params = sdk_params - model_param_names
-        spec_only = spec_params - non_model_sdk_params
-        sdk_only = non_model_sdk_params - spec_params - PATH_PARAM_NAMES
-
-        if spec_only or sdk_only:
-            any_query_drift = True
+    # Grouped by operation so both directions render under one heading, using the
+    # post-suppression findings from partition_findings.
+    drift_by_op: Dict[str, Dict[str, dict]] = {}
+    for f in active_param:
+        drift_by_op.setdefault(f["key"], {})[f["direction"]] = f
+    if drift_by_op:
+        for op_id in sorted(drift_by_op):
+            directions = drift_by_op[op_id]
+            any_f = next(iter(directions.values()))
             lines.append(
-                f"### {op_id} (`{mapping['sdk_method']}` in {sdk['file']}:{sdk['line']})\n"
+                f"### {op_id} (`{any_f['sdk_method']}` in {any_f['location']})\n"
             )
-            if spec_only:
-                lines.append(f"- In spec but not SDK: {', '.join(sorted(spec_only))}")
-            if sdk_only:
-                lines.append(f"- In SDK but not spec: {', '.join(sorted(sdk_only))}")
+            if "missing" in directions:
+                names = ", ".join(sorted(directions["missing"]["values"]))
+                lines.append(f"- In spec but not SDK: {names}")
+            if "extra" in directions:
+                names = ", ".join(sorted(directions["extra"]["values"]))
+                lines.append(f"- In SDK but not spec: {names}")
             lines.append("")
-
-    if not any_query_drift:
+    else:
         lines.append("No query/path parameter drift detected.\n")
 
     # --- Request Body Drift ---
@@ -1014,6 +1063,7 @@ def generate_report(
             "extra_method": "Extra SDK Methods",
             "enum_staleness": "Enum Staleness",
             "code_issue": "Code Issues",
+            "param_drift": "Query/Path Parameter Drift",
         }
         suppressed_by_type: Dict[str, List[dict]] = {}
         for f in suppressed:
@@ -1022,7 +1072,7 @@ def generate_report(
             lines.append(f"### {type_titles.get(ftype, ftype)}\n")
             for f in suppressed_by_type[ftype]:
                 reason = f.get("ignore", {}).get("reason", "(no reason given)")
-                if f["type"] == "enum_staleness":
+                if f["type"] in _VALUED_FINDING_TYPES:
                     vals = ", ".join(sorted(f["values"]))
                     lines.append(f"- `{f['key']}` [{f['direction']}: {vals}] — {reason}")
                 elif f["type"] == "extra_method":

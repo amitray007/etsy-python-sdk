@@ -280,6 +280,162 @@ class TestComputeEnumFindings:
 
 
 # --------------------------------------------------------------------------- #
+# compute_param_findings — query/path parameter drift
+# --------------------------------------------------------------------------- #
+class TestComputeParamFindings:
+    def _implemented(self, spec_params, sdk_params, annotations=None):
+        return {
+            "getX": {
+                "spec": {"parameters": [{"name": n} for n in spec_params]},
+                "sdk": {
+                    "params": list(sdk_params),
+                    "param_annotations": annotations or {},
+                    "file": "X.py",
+                    "line": 10,
+                },
+                "sdk_method": "get_x",
+            }
+        }
+
+    def test_extra_sdk_param_detected(self):
+        findings = audit_sdk.compute_param_findings(
+            self._implemented(["limit"], ["limit", "legacy"]), {}
+        )
+        assert len(findings) == 1
+        assert findings[0]["type"] == "param_drift"
+        assert findings[0]["key"] == "getX"
+        assert findings[0]["direction"] == "extra"
+        assert findings[0]["values"] == {"legacy"}
+        assert findings[0]["location"] == "X.py:10"
+
+    def test_missing_sdk_param_detected(self):
+        findings = audit_sdk.compute_param_findings(
+            self._implemented(["limit", "offset"], ["limit"]), {}
+        )
+        assert len(findings) == 1
+        assert findings[0]["direction"] == "missing"
+        assert findings[0]["values"] == {"offset"}
+
+    def test_in_sync_yields_no_findings(self):
+        assert (
+            audit_sdk.compute_param_findings(
+                self._implemented(["limit"], ["limit"]), {}
+            )
+            == []
+        )
+
+    def test_both_directions_yield_separate_findings(self):
+        findings = audit_sdk.compute_param_findings(
+            self._implemented(["limit"], ["legacy"]), {}
+        )
+        assert {f["direction"] for f in findings} == {"missing", "extra"}
+
+    def test_model_payload_param_excluded(self):
+        # A request-model argument is not a query param and must not be flagged.
+        findings = audit_sdk.compute_param_findings(
+            self._implemented(
+                ["limit"], ["limit", "listing"], {"listing": "UpdateListingRequest"}
+            ),
+            {"UpdateListingRequest": {"init_params": []}},
+        )
+        assert findings == []
+
+    def test_path_params_excluded(self):
+        findings = audit_sdk.compute_param_findings(
+            self._implemented(["limit"], ["limit", "shop_id"]), {}
+        )
+        assert findings == []
+
+
+# --------------------------------------------------------------------------- #
+# partition_findings — param_drift value verification
+# --------------------------------------------------------------------------- #
+class TestPartitionParamDrift:
+    def _drift(self, values, direction="extra"):
+        return {
+            "type": "param_drift",
+            "key": "getListing",
+            "direction": direction,
+            "values": set(values),
+            "sdk_method": "get_listing",
+            "location": "Listing.py:66",
+        }
+
+    def _ignore(self, values, direction="extra"):
+        return {
+            "type": "param_drift",
+            "key": "getListing",
+            "direction": direction,
+            "values": values,
+            "reason": "kept for backward compatibility",
+        }
+
+    def test_listed_param_suppressed(self):
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"legacy"})], [self._ignore(["legacy"])]
+        )
+        assert active == []
+        assert len(suppressed) == 1
+        assert suppressed[0]["values"] == {"legacy"}
+        assert stale == []
+
+    def test_new_param_stays_active_while_known_param_suppressed(self):
+        # The whole point: a newly drifted param on an already-suppressed
+        # operation must still surface.
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"legacy", "brand_new"})], [self._ignore(["legacy"])]
+        )
+        assert len(active) == 1
+        assert active[0]["values"] == {"brand_new"}
+        assert suppressed[0]["values"] == {"legacy"}
+        assert stale == []
+
+    def test_direction_mismatch_is_not_suppressed(self):
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"legacy"}, "extra")],
+            [self._ignore(["legacy"], "missing")],
+        )
+        assert len(active) == 1
+        assert suppressed == []
+        assert len(stale) == 1
+
+    def test_resolved_drift_makes_ignore_stale(self):
+        # Once the kwarg is actually removed, the entry suppresses nothing.
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [], [self._ignore(["legacy"])]
+        )
+        assert active == [] and suppressed == []
+        assert len(stale) == 1
+
+    def test_omitted_values_suppresses_nothing(self):
+        # A valued ignore with NO `values` key must NOT behave as a wildcard —
+        # otherwise it would silently hide unreviewed drift. It suppresses
+        # nothing (finding stays fully active) and self-reports as stale.
+        ig = {
+            "type": "param_drift",
+            "key": "getListing",
+            "direction": "extra",
+            "reason": "no values key",
+        }
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"legacy", "unreviewed"})], [ig]
+        )
+        assert len(active) == 1
+        assert active[0]["values"] == {"legacy", "unreviewed"}
+        assert suppressed == []
+        assert len(stale) == 1
+
+    def test_explicit_wildcard_still_suppresses_all(self):
+        # `"*"` written explicitly is still honoured (distinct from omission).
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"legacy", "other"})], [self._ignore("*")]
+        )
+        assert active == []
+        assert len(suppressed) == 1
+        assert stale == []
+
+
+# --------------------------------------------------------------------------- #
 # get_spec_enums — parameter-level enum extraction
 # --------------------------------------------------------------------------- #
 class TestGetSpecEnums:
@@ -428,5 +584,38 @@ class TestShippedIgnoreFile:
         assert len(ignores) >= 1
         for ig in ignores:
             assert "type" in ig and "key" in ig and "reason" in ig
-            if ig["type"] == "enum_staleness":
+            if ig["type"] in audit_sdk._VALUED_FINDING_TYPES:
                 assert "direction" in ig and "values" in ig
+
+    def test_no_duplicate_match_keys(self):
+        # partition_findings applies only the FIRST ignore matching a given
+        # (type, key, direction), so a duplicate would silently suppress just
+        # part of a finding and then report itself as stale.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        seen = set()
+        for ig in audit_sdk.load_ignores(path):
+            match_key = (ig["type"], ig["key"], ig.get("direction"))
+            assert match_key not in seen, f"duplicate ignore entry: {match_key}"
+            seen.add(match_key)
+
+    def test_no_wildcard_param_drift_ignores(self):
+        # "*" on a param_drift entry would hide unreviewed parameter drift on
+        # that operation, defeating the self-verifying property.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        for ig in audit_sdk.load_ignores(path):
+            if ig["type"] == "param_drift":
+                assert ig["values"] != "*", f"{ig['key']} uses a wildcard"
+
+    def test_shipped_legacy_param_ignores_are_value_scoped(self):
+        # The 8 listing-endpoint `legacy` suppressions must name the value
+        # explicitly, never "*", so future drift on those operations surfaces.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        entries = [
+            ig
+            for ig in audit_sdk.load_ignores(path)
+            if ig["type"] == "param_drift"
+        ]
+        assert len(entries) == 8
+        for ig in entries:
+            assert ig["direction"] == "extra"
+            assert ig["values"] == ["legacy"]

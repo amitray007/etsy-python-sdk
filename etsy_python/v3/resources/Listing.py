@@ -2,6 +2,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Union
 
+from etsy_python.v3.common.Utils import warn_removed_legacy_param
 from etsy_python.v3.enums.Listing import Includes, State, SortOn, SortOrder
 from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.models.Listing import (
@@ -25,10 +26,11 @@ class ListingResource:
         listing: CreateDraftListingRequest,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("createDraftListing")
         endpoint = f"/shops/{shop_id}/listings"
         return self.session.make_request(
-            endpoint, method=Method.POST, payload=listing,
-            query_params={"legacy": legacy},
+            endpoint, method=Method.POST, payload=listing
         )
 
     def get_listings_by_shop(
@@ -42,6 +44,8 @@ class ListingResource:
         includes: Optional[List[Includes]] = None,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("getListingsByShop")
         endpoint = f"/shops/{shop_id}/listings"
         query_params: Dict[str, Any] = {
             "state": state.value,
@@ -52,7 +56,6 @@ class ListingResource:
             "includes": ",".join(list(map(lambda inc: inc.value, includes)))
             if includes is not None
             else None,
-            "legacy": legacy,
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
@@ -68,13 +71,14 @@ class ListingResource:
         legacy: Optional[bool] = None,
         allow_suggested_title: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("getListing")
         endpoint = f"/listings/{listing_id}"
         query_params: Dict[str, Any] = {
             "includes": ",".join(list(map(lambda inc: inc.value, includes)))
             if includes is not None
             else None,
             "language": language,
-            "legacy": legacy,
             "allow_suggested_title": allow_suggested_title,
         }
         return self.session.make_request(endpoint, query_params=query_params)
@@ -95,6 +99,8 @@ class ListingResource:
         buyer_country: Optional[str] = None,
         currency: Optional[str] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("findAllListingsActive")
         endpoint = "/listings/active"
         query_params: Dict[str, Any] = {
             "limit": limit,
@@ -107,7 +113,6 @@ class ListingResource:
             "taxonomy_id": taxonomy_id,
             "shop_location": shop_location,
             "is_safe": is_safe,
-            "legacy": legacy,
             "buyer_country": buyer_country,
             "currency": currency,
         }
@@ -123,6 +128,8 @@ class ListingResource:
         keywords: Optional[str] = None,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("findAllActiveListingsByShop")
         endpoint = f"/shops/{shop_id}/listings/active"
         query_params: Dict[str, Any] = {
             "limit": limit,
@@ -130,7 +137,6 @@ class ListingResource:
             "sort_order": sort_order.value,
             "offset": offset,
             "keywords": keywords,
-            "legacy": legacy,
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
@@ -228,10 +234,11 @@ class ListingResource:
         self, shop_id: int, listing_id: int, listing: UpdateListingRequest,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        if legacy is not None:
+            warn_removed_legacy_param("updateListing")
         endpoint = f"/shops/{shop_id}/listings/{listing_id}"
         return self.session.make_request(
-            endpoint, method=Method.PATCH, payload=listing,
-            query_params={"legacy": legacy},
+            endpoint, method=Method.PATCH, payload=listing
         )
 
     def get_listings_by_shop_receipt(

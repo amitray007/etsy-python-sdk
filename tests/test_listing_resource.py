@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import MagicMock
 
 import pytest
@@ -43,8 +44,78 @@ class TestCreateDraftListing:
             f"/shops/{MOCK_SHOP_ID}/listings",
             method=Method.POST,
             payload=payload,
-            query_params={"legacy": None},
         )
+
+    @pytest.mark.parametrize("legacy_value", [True, False])
+    def test_legacy_warns_and_is_not_sent(self, mock_session, legacy_value):
+        mock_session.make_request.return_value = Response(201, make_shop_listing())
+        resource = ListingResource(session=mock_session)
+        payload = MagicMock(spec=CreateDraftListingRequest)
+
+        with pytest.warns(
+            DeprecationWarning, match=r"from createDraftListing by Etsy"
+        ):
+            resource.create_draft_listing(MOCK_SHOP_ID, payload, legacy=legacy_value)
+
+        assert "query_params" not in mock_session.make_request.call_args[1]
+
+
+class TestRemovedLegacyParamOnGets:
+    """Etsy removed `legacy` from these listing GETs; the kwarg is accepted for
+    backward compatibility but warns and is no longer forwarded."""
+
+    @pytest.mark.parametrize("legacy_value", [True, False])
+    @pytest.mark.parametrize(
+        "method_name,operation_id,args",
+        [
+            ("get_listings_by_shop", "getListingsByShop", (MOCK_SHOP_ID,)),
+            ("get_listing", "getListing", (MOCK_LISTING_ID,)),
+            ("find_all_listings_active", "findAllListingsActive", ()),
+            (
+                "find_all_active_listings_by_shop",
+                "findAllActiveListingsByShop",
+                (MOCK_SHOP_ID,),
+            ),
+        ],
+    )
+    def test_legacy_warns_and_is_not_sent(
+        self, mock_session, method_name, operation_id, args, legacy_value
+    ):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        # `legacy=False` must warn too: any explicit value is a removed param.
+        # Anchor the match — a bare op id substring-matches sibling ops
+        # (e.g. "getListing" is a prefix of "getListingsByShop").
+        with pytest.warns(DeprecationWarning, match=rf"from {operation_id} by Etsy"):
+            getattr(resource, method_name)(*args, legacy=legacy_value)
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert "legacy" not in qp
+
+    @pytest.mark.parametrize(
+        "method_name,args",
+        [
+            ("get_listings_by_shop", (MOCK_SHOP_ID,)),
+            ("get_listing", (MOCK_LISTING_ID,)),
+            ("find_all_listings_active", ()),
+            ("find_all_active_listings_by_shop", (MOCK_SHOP_ID,)),
+        ],
+    )
+    def test_no_warning_when_legacy_omitted(self, mock_session, method_name, args):
+        mock_session.make_request.return_value = Response(
+            200, make_shop_listing_collection()
+        )
+        resource = ListingResource(session=mock_session)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            getattr(resource, method_name)(*args)
+
+        qp = mock_session.make_request.call_args[1]["query_params"]
+        assert "legacy" not in qp
 
 
 class TestGetListingsByShop:
@@ -445,8 +516,22 @@ class TestUpdateListing:
             f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}",
             method=Method.PATCH,
             payload=payload,
-            query_params={"legacy": None},
         )
+
+    @pytest.mark.parametrize("legacy_value", [True, False])
+    def test_legacy_warns_and_is_not_sent(self, mock_session, legacy_value):
+        mock_session.make_request.return_value = Response(200, make_shop_listing())
+        resource = ListingResource(session=mock_session)
+        payload = MagicMock(spec=UpdateListingRequest)
+
+        # `updateListing` is itself a prefix of `updateListingInventory`, so
+        # anchor with the trailing " by Etsy" to pin the exact operation.
+        with pytest.warns(DeprecationWarning, match=r"from updateListing by Etsy"):
+            resource.update_listing(
+                MOCK_SHOP_ID, MOCK_LISTING_ID, payload, legacy=legacy_value
+            )
+
+        assert "query_params" not in mock_session.make_request.call_args[1]
 
 
 class TestGetListingsByShopReceipt:

@@ -302,6 +302,23 @@ class TestUpdateListingPersonalizationRequest:
         with pytest.raises(Exception):
             UpdateListingPersonalizationRequest()
 
+    def test_add_on_price_passes_through(self):
+        # `add_on_price` was added to the updateListingPersonalization request
+        # body in the 2026-07-27 spec. Questions are typed as
+        # List[Dict[str, Any]], so new per-question fields reach the API without
+        # an SDK change — this pins that pass-through behaviour.
+        req = UpdateListingPersonalizationRequest(
+            personalization_questions=[
+                {
+                    "question_text": "Name?",
+                    "question_type": "text_input",
+                    "required": False,
+                    "add_on_price": 4.50,
+                }
+            ]
+        )
+        assert req.get_dict()["personalization_questions"][0]["add_on_price"] == 4.50
+
 
 class TestUpdateListingVideoRequest:
     def test_sets_file_and_data(self):
