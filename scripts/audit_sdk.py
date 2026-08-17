@@ -559,11 +559,19 @@ def compute_enum_findings(
         best_match = None
         matched_values = None
         if expected_enum_name in sdk_enums:
-            best_match = expected_enum_name
-            matched_values, _ = best_candidate(
+            vals, overlap = best_candidate(
                 spec_value_set, sdk_enums[expected_enum_name]
             )
-        else:
+            # Only trust the name match if the values actually correspond. A
+            # same-named enum in another module (e.g. `Includes` for listings
+            # vs. listing-inventory) would otherwise hijack the comparison and
+            # report drift that does not exist. On poor overlap, fall through
+            # to the fuzzy search below, which locates the real enum by value.
+            if overlap > 0:
+                best_match = expected_enum_name
+                matched_values = vals
+
+        if best_match is None:
             best_overlap = 0
             for sdk_name, candidates in sdk_enums.items():
                 vals, overlap = best_candidate(spec_value_set, candidates)
@@ -574,6 +582,23 @@ def compute_enum_findings(
                     best_overlap = overlap
                     best_match = sdk_name
                     matched_values = vals
+
+        if best_match is None:
+            # The overlap floor above needs 2 shared values, so a small spec
+            # enum (e.g. the single-valued getListingInventory.includes) can
+            # never match and would silently escape auditing. Fall back to a
+            # name-suffix match, which pairs `includes` with `InventoryIncludes`
+            # and still reports drift if that enum's values are wrong.
+            suffix_matches = [
+                name
+                for name in sdk_enums
+                if name.endswith(expected_enum_name) and name != expected_enum_name
+            ]
+            if len(suffix_matches) == 1:
+                best_match = suffix_matches[0]
+                matched_values, _ = best_candidate(
+                    spec_value_set, sdk_enums[best_match]
+                )
 
         if not best_match:
             continue

@@ -278,6 +278,56 @@ class TestComputeEnumFindings:
         assert findings[0]["direction"] == "extra"
         assert findings[0]["values"] == {"d"}
 
+    def test_same_named_unrelated_enum_does_not_hijack(self):
+        # `includes` resolves by name to `Includes`, but that class (the listing
+        # enum) shares no values with this spec enum. The matcher must reject the
+        # name match and find `InventoryIncludes` by suffix rather than reporting
+        # every value of the wrong enum as drift.
+        spec = {
+            "components": {
+                "schemas": {"Foo": {"properties": {"includes": {"enum": ["Listing"]}}}}
+            }
+        }
+        sdk_enums = {
+            "Includes": [["Shipping", "Images", "Shop"]],
+            "InventoryIncludes": [["Listing"]],
+        }
+        assert audit_sdk.compute_enum_findings(spec, sdk_enums) == []
+
+    def test_single_value_enum_drift_still_detected(self):
+        # The fuzzy-overlap floor requires 2 shared values, so a single-valued
+        # spec enum could otherwise escape auditing entirely. Real drift on
+        # `InventoryIncludes` must still surface.
+        spec = {
+            "components": {
+                "schemas": {"Foo": {"properties": {"includes": {"enum": ["Listing"]}}}}
+            }
+        }
+        sdk_enums = {
+            "Includes": [["Shipping", "Images", "Shop"]],
+            "InventoryIncludes": [["WrongValue"]],
+        }
+        findings = audit_sdk.compute_enum_findings(spec, sdk_enums)
+        directions = {f["direction"]: f["values"] for f in findings}
+        assert directions["missing"] == {"listing"}
+        assert directions["extra"] == {"wrongvalue"}
+        assert all(f["sdk_enum"] == "InventoryIncludes" for f in findings)
+
+    def test_ambiguous_suffix_matches_are_not_guessed(self):
+        # Two plausible suffix candidates: guessing between them could pin drift
+        # on the wrong class, so the matcher must decline rather than pick one.
+        spec = {
+            "components": {
+                "schemas": {"Foo": {"properties": {"includes": {"enum": ["Listing"]}}}}
+            }
+        }
+        sdk_enums = {
+            "Includes": [["Shipping", "Images"]],
+            "InventoryIncludes": [["Listing"]],
+            "OtherIncludes": [["Listing"]],
+        }
+        assert audit_sdk.compute_enum_findings(spec, sdk_enums) == []
+
 
 # --------------------------------------------------------------------------- #
 # compute_param_findings — query/path parameter drift
