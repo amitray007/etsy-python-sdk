@@ -168,3 +168,6 @@ specs/latest.json
 specs/diff-report.md
 specs/audit-report.md
 specs/release-notes.md
+
+# macOS metadata
+.DS_Store
