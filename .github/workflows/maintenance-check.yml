@@ -84,6 +84,7 @@ jobs:
           REMOVED_ENDPOINTS=0
           CHANGED_ENDPOINTS=0
           SCHEMA_CHANGES=0
+          SCOPE_CHANGES=0
 
           if [ -f "$DIFF_FILE" ]; then
             # Count sections that have content (not just "No ... endpoints/changes")
@@ -98,6 +99,11 @@ jobs:
             fi
             if ! grep -q "No schema changes" "$DIFF_FILE"; then
               SCHEMA_CHANGES=1
+            fi
+            # Scopes live outside paths/schemas; a removal here means Etsy is
+            # retiring API surface, so it must not fall through to "cosmetic".
+            if ! grep -q "No security scheme changes" "$DIFF_FILE"; then
+              SCOPE_CHANGES=1
             fi
           fi
 
@@ -127,7 +133,7 @@ jobs:
           if [ "$REMOVED_ENDPOINTS" -gt 0 ] || [ "$MISSING_ENDPOINTS" -gt 0 ] || [ "$BODY_DRIFT" -gt 0 ]; then
             SEVERITY="high"
           # Medium: new endpoints, changed endpoints, param drift, schema changes, real code issues
-          elif [ "$NEW_ENDPOINTS" -gt 0 ] || [ "$CHANGED_ENDPOINTS" -gt 0 ] || [ "$PARAM_DRIFT" -gt 0 ] || [ "$SCHEMA_CHANGES" -gt 0 ]; then
+          elif [ "$NEW_ENDPOINTS" -gt 0 ] || [ "$CHANGED_ENDPOINTS" -gt 0 ] || [ "$PARAM_DRIFT" -gt 0 ] || [ "$SCHEMA_CHANGES" -gt 0 ] || [ "$SCOPE_CHANGES" -gt 0 ]; then
             SEVERITY="medium"
           # Low: cosmetic changes only (descriptions, formatting)
           else
@@ -146,6 +152,7 @@ jobs:
           [ "$NEW_ENDPOINTS" -gt 0 ] && SUMMARY="${SUMMARY}${NEW_ENDPOINTS} new endpoints, "
           [ "$CHANGED_ENDPOINTS" -gt 0 ] && SUMMARY="${SUMMARY}changed endpoints, "
           [ "$SCHEMA_CHANGES" -gt 0 ] && SUMMARY="${SUMMARY}schema changes, "
+          [ "$SCOPE_CHANGES" -gt 0 ] && SUMMARY="${SUMMARY}OAuth scope changes, "
           [ "$CODE_ISSUES" -gt 0 ] && SUMMARY="${SUMMARY}${CODE_ISSUES} code issues, "
 
           if [ -z "$SUMMARY" ]; then

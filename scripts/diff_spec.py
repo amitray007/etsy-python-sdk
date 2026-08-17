@@ -46,6 +46,33 @@ def get_schemas(spec: dict) -> Dict[str, dict]:
     return spec.get("components", {}).get("schemas", {})
 
 
+def get_oauth_scopes(spec: dict) -> Dict[str, str]:
+    """Extract OAuth scopes (name -> description) from every security scheme.
+
+    Scopes live under ``components.securitySchemes.<name>.flows.<flow>.scopes``,
+    which is outside both ``paths`` and ``components.schemas``. Etsy retires API
+    surface by dropping scopes here, so this is diffed as its own section.
+    """
+    scopes: Dict[str, str] = {}
+    schemes = spec.get("components", {}).get("securitySchemes", {})
+    if not isinstance(schemes, dict):
+        return scopes
+    for scheme in schemes.values():
+        if not isinstance(scheme, dict):
+            continue
+        flows = scheme.get("flows", {})
+        if not isinstance(flows, dict):
+            continue
+        for flow in flows.values():
+            if not isinstance(flow, dict):
+                continue
+            flow_scopes = flow.get("scopes", {})
+            if isinstance(flow_scopes, dict):
+                for name, description in flow_scopes.items():
+                    scopes[name] = description if isinstance(description, str) else ""
+    return scopes
+
+
 def diff_parameters(
     old_params: List[dict], new_params: List[dict]
 ) -> Dict[str, List[str]]:
@@ -300,6 +327,48 @@ def generate_report(baseline: dict, latest: dict) -> str:
 
     if not schema_changes:
         lines.append("No schema changes.\n")
+
+    # Security Scheme Changes
+    old_scopes = get_oauth_scopes(baseline)
+    new_scopes = get_oauth_scopes(latest)
+
+    lines.append("\n## Security Scheme Changes\n")
+    scope_changes = False
+
+    removed_scopes = sorted(set(old_scopes) - set(new_scopes))
+    if removed_scopes:
+        scope_changes = True
+        lines.append("### Removed OAuth Scopes\n")
+        for name in removed_scopes:
+            lines.append(f"- **{name}**: {old_scopes[name]}")
+        lines.append(
+            "\nRemoved scopes usually mean Etsy is retiring the API surface they "
+            "guard. Requests authorized with them will start failing; check whether "
+            "the SDK exposes any affected endpoints.\n"
+        )
+
+    added_scopes = sorted(set(new_scopes) - set(old_scopes))
+    if added_scopes:
+        scope_changes = True
+        lines.append("### New OAuth Scopes\n")
+        for name in added_scopes:
+            lines.append(f"- **{name}**: {new_scopes[name]}")
+        lines.append("")
+
+    changed_scopes = sorted(
+        name
+        for name in set(old_scopes) & set(new_scopes)
+        if old_scopes[name] != new_scopes[name]
+    )
+    if changed_scopes:
+        scope_changes = True
+        lines.append("### Changed OAuth Scope Descriptions\n")
+        for name in changed_scopes:
+            lines.append(f"- **{name}**: `{old_scopes[name]}` -> `{new_scopes[name]}`")
+        lines.append("")
+
+    if not scope_changes:
+        lines.append("No security scheme changes.\n")
 
     # Deprecations summary
     lines.append("\n## Deprecations\n")
