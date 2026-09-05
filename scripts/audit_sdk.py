@@ -520,7 +520,7 @@ def _norm_values(values: Any) -> Set[str]:
 
 # Finding types carrying a `values` set + `direction`, where an ignore may
 # suppress specific values and leave newly appeared ones active.
-_VALUED_FINDING_TYPES = frozenset({"enum_staleness", "param_drift"})
+_VALUED_FINDING_TYPES = frozenset({"enum_staleness", "param_drift", "body_drift"})
 
 
 def compute_enum_findings(
@@ -664,6 +664,80 @@ def compute_param_findings(
                         "values": values,
                         "sdk_method": mapping["sdk_method"],
                         "location": f"{sdk['file']}:{sdk['line']}",
+                    }
+                )
+    return findings
+
+
+def compute_body_findings(
+    spec: dict, implemented: Dict[str, dict], sdk_models: Dict[str, dict]
+) -> List[dict]:
+    """Compare OAS request body fields against SDK model/method fields.
+
+    Yields one finding per (operation, direction) whose field sets differ.
+    ``direction`` is ``"missing"`` (in the spec body, absent from the SDK) or
+    ``"extra"`` (in the SDK, absent from the spec body). ``values`` is a set of
+    field names, so an ignore listing specific names suppresses only those — a
+    newly drifted body field on an already-suppressed operation still surfaces.
+
+    Multipart-only endpoints are skipped: their ``FileRequest`` subclasses hold
+    fields in ``data``/``file`` dicts that this signature-level comparison
+    cannot resolve.
+    """
+    findings: List[dict] = []
+    for op_id, mapping in sorted(implemented.items()):
+        op = mapping["spec"]
+        sdk = mapping["sdk"]
+
+        spec_body_fields = get_request_body_fields(op, spec)
+        if not spec_body_fields:
+            continue
+
+        rb = op.get("requestBody", {})
+        content = rb.get("content", {}) if rb else {}
+        if "multipart/form-data" in content and "application/json" not in content:
+            continue
+
+        param_annotations = sdk.get("param_annotations", {})
+        model_class_name = None
+        for pname, ptype in param_annotations.items():
+            if ptype in sdk_models:
+                model_class_name = ptype
+                break
+
+        if model_class_name:
+            model_info = sdk_models[model_class_name]
+            # Normalize kwargs the SDK serializes under a different spec name
+            # (listing_type/profile_type -> type), so they aren't false drift.
+            sdk_fields = {
+                TYPE_FIELD_ALIASES.get(f, f) for f in model_info["init_params"]
+            }
+            location = (
+                f"model `{model_class_name}` in "
+                f"models/{model_info['file']}:{model_info['line']}"
+            )
+        else:
+            # Method has body fields but no model object - compare against params
+            sdk_fields = set(sdk["params"]) - {
+                p["name"] for p in op["parameters"]
+            } - PATH_PARAM_NAMES
+            location = (
+                f"`{mapping['sdk_method']}` in "
+                f"{sdk['file']}:{sdk['line']}, no model class"
+            )
+
+        spec_only = spec_body_fields - sdk_fields
+        sdk_only = sdk_fields - spec_body_fields
+
+        for direction, values in (("missing", spec_only), ("extra", sdk_only)):
+            if values:
+                findings.append(
+                    {
+                        "type": "body_drift",
+                        "key": op_id,
+                        "direction": direction,
+                        "values": values,
+                        "location": location,
                     }
                 )
     return findings
@@ -827,6 +901,7 @@ def generate_report(
         )
     findings.extend(compute_enum_findings(spec, sdk_enums))
     findings.extend(compute_param_findings(implemented, sdk_models))
+    findings.extend(compute_body_findings(spec, implemented, sdk_models))
     for issue in concat_issues:
         findings.append(
             {
@@ -841,6 +916,7 @@ def generate_report(
     active_enum = [f for f in active if f["type"] == "enum_staleness"]
     active_code = [f for f in active if f["type"] == "code_issue"]
     active_param = [f for f in active if f["type"] == "param_drift"]
+    active_body = [f for f in active if f["type"] == "body_drift"]
 
     lines.append("## Coverage Summary\n")
     lines.append(f"- Total OAS operations: {total_ops}")
@@ -943,82 +1019,24 @@ def generate_report(
     # --- Request Body Drift ---
     lines.append("\n## Request Body Drift\n")
     lines.append("Mismatches between OAS request body fields and SDK model class fields.\n")
-    any_body_drift = False
-    for op_id, mapping in sorted(implemented.items()):
-        op = mapping["spec"]
-        sdk = mapping["sdk"]
-
-        spec_body_fields = get_request_body_fields(op, spec)
-        if not spec_body_fields:
-            continue
-
-        # Skip multipart/form-data endpoints (FileRequest subclasses have different patterns)
-        rb = op.get("requestBody", {})
-        content = rb.get("content", {}) if rb else {}
-        if "multipart/form-data" in content and "application/json" not in content:
-            continue
-
-        param_annotations = sdk.get("param_annotations", {})
-
-        # Find the model class used by this method
-        model_class_name = None
-        for pname, ptype in param_annotations.items():
-            if ptype in sdk_models:
-                model_class_name = ptype
-                break
-
-        if model_class_name:
-            model_info = sdk_models[model_class_name]
-            model_fields = model_info["init_params"]
-            # Normalize known aliases (_type -> type mapping in todict)
-            normalized_model_fields = set()
-            for f in model_fields:
-                if f in TYPE_FIELD_ALIASES:
-                    normalized_model_fields.add(TYPE_FIELD_ALIASES[f])
-                else:
-                    normalized_model_fields.add(f)
-
-            body_spec_only = spec_body_fields - normalized_model_fields
-            body_sdk_only = normalized_model_fields - spec_body_fields
-
-            if body_spec_only or body_sdk_only:
-                any_body_drift = True
-                lines.append(
-                    f"### {op_id} (model `{model_class_name}` in models/{model_info['file']}:{model_info['line']})\n"
-                )
-                if body_spec_only:
-                    lines.append(
-                        f"- In spec but not model: {', '.join(sorted(body_spec_only))}"
-                    )
-                if body_sdk_only:
-                    lines.append(
-                        f"- In model but not spec: {', '.join(sorted(body_sdk_only))}"
-                    )
-                lines.append("")
-        else:
-            # Method has body fields but no model object - compare against method params
-            sdk_params = set(sdk["params"])
-            body_spec_only = spec_body_fields - sdk_params
-            body_sdk_only = sdk_params - spec_body_fields - {
-                p["name"] for p in op["parameters"]
-            } - PATH_PARAM_NAMES
-
-            if body_spec_only or body_sdk_only:
-                any_body_drift = True
-                lines.append(
-                    f"### {op_id} (`{mapping['sdk_method']}` in {sdk['file']}:{sdk['line']}, no model class)\n"
-                )
-                if body_spec_only:
-                    lines.append(
-                        f"- In spec but not SDK: {', '.join(sorted(body_spec_only))}"
-                    )
-                if body_sdk_only:
-                    lines.append(
-                        f"- In SDK but not spec: {', '.join(sorted(body_sdk_only))}"
-                    )
-                lines.append("")
-
-    if not any_body_drift:
+    # Grouped by operation so both directions render under one heading, using the
+    # post-suppression findings from partition_findings.
+    body_by_op: Dict[str, Dict[str, dict]] = {}
+    for f in active_body:
+        body_by_op.setdefault(f["key"], {})[f["direction"]] = f
+    if body_by_op:
+        for op_id in sorted(body_by_op):
+            directions = body_by_op[op_id]
+            any_f = next(iter(directions.values()))
+            lines.append(f"### {op_id} ({any_f['location']})\n")
+            if "missing" in directions:
+                names = ", ".join(sorted(directions["missing"]["values"]))
+                lines.append(f"- In spec but not model: {names}")
+            if "extra" in directions:
+                names = ", ".join(sorted(directions["extra"]["values"]))
+                lines.append(f"- In model but not spec: {names}")
+            lines.append("")
+    else:
         lines.append("No request body drift detected.\n")
 
     # --- Enum Staleness ---
@@ -1089,6 +1107,7 @@ def generate_report(
             "enum_staleness": "Enum Staleness",
             "code_issue": "Code Issues",
             "param_drift": "Query/Path Parameter Drift",
+            "body_drift": "Request Body Drift",
         }
         suppressed_by_type: Dict[str, List[dict]] = {}
         for f in suppressed:

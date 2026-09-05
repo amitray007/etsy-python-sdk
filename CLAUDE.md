@@ -200,8 +200,9 @@ Reviewed, accepted audit findings (deliberate deprecated aliases, intentionally
 partial enums, back-compat kwargs, etc.) live in `specs/audit-ignore.json` — never
 hard-coded in `audit_sdk.py`. Each run re-derives findings and **only suppresses an
 entry while its finding still occurs**; for the value-bearing types
-(`enum_staleness`, `param_drift`), only the listed `values` are hidden, so a newly
-added enum value or newly drifted parameter still surfaces. Entries matching nothing
+(`enum_staleness`, `param_drift`, `body_drift`), only the listed `values` are hidden,
+so a newly added enum value or newly drifted parameter or body field still surfaces.
+Entries matching nothing
 are reported under a **Stale Ignores** section so the list stays honest, and
 suppressed findings are listed (with reasons) under **Suppressed (Verified)**. To
 accept a finding, add an entry (`type` + `key`, plus `direction`/`values` for the
@@ -209,5 +210,5 @@ value-bearing types); to stop accepting it, delete the entry. A missing file mea
 "no suppressions".
 
 Supported `type` values: `extra_method`, `enum_staleness`, `param_drift`,
-`code_issue`. Prefer an explicit `values` list over `"*"` — a wildcard hides
-everything on that key, including drift nobody has reviewed.
+`body_drift`, `code_issue`. Prefer an explicit `values` list over `"*"` — a wildcard
+hides everything on that key, including drift nobody has reviewed.
