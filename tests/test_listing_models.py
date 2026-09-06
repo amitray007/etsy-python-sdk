@@ -346,6 +346,48 @@ class TestPersonalizationFieldsNotSerialized:
             UpdateListingRequest(is_personalizable=True)
         assert w[0].filename == __file__
 
+    def test_post_construction_assignment_still_works(self):
+        # The fields became properties; assignment must keep working for
+        # callers that set them after construction, and must still not
+        # serialize.
+        req = UpdateListingRequest(title="Updated")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            req.is_personalizable = True
+            req.personalization_is_required = True
+            req.personalization_char_count_max = 256
+            req.personalization_instructions = "Enter name"
+            deprecation_warnings = [
+                x for x in w if issubclass(x.category, DeprecationWarning)
+            ]
+        assert len(deprecation_warnings) == 4
+        assert req.is_personalizable is True
+        assert req.personalization_is_required is True
+        assert req.personalization_char_count_max == 256
+        assert req.personalization_instructions == "Enter name"
+        assert [key for key in req.get_dict() if "personaliz" in key] == []
+
+    def test_setter_warning_points_at_caller(self):
+        # The setter path is one frame shallower than the constructor path, so
+        # it passes its own stacklevel.
+        req = UpdateListingRequest(title="Updated")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            req.is_personalizable = True
+        assert w[0].filename == __file__
+
+    def test_setter_does_not_warn_on_falsy_value(self):
+        req = UpdateListingRequest(title="Updated")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            req.is_personalizable = False
+            req.personalization_char_count_max = 0
+            deprecation_warnings = [
+                x for x in w if issubclass(x.category, DeprecationWarning)
+            ]
+        assert len(deprecation_warnings) == 0
+        assert req.is_personalizable is False
+
     def test_defaults_to_none_when_not_passed(self):
         req = UpdateListingRequest(title="Updated")
         assert req.is_personalizable is None

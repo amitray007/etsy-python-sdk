@@ -705,6 +705,12 @@ def compute_body_findings(
                 model_class_name = ptype
                 break
 
+        # Names excluded from the "extra" direction only. A path/query param in
+        # the method signature is not an unexpected body field, but it may
+        # legitimately also be a body field (e.g. taxonomy_id), so it must stay
+        # in the set that answers "does the SDK accept this body field?".
+        non_body_names: Set[str] = set()
+
         if model_class_name:
             model_info = sdk_models[model_class_name]
             # Normalize kwargs the SDK serializes under a different spec name
@@ -718,16 +724,15 @@ def compute_body_findings(
             )
         else:
             # Method has body fields but no model object - compare against params
-            sdk_fields = set(sdk["params"]) - {
-                p["name"] for p in op["parameters"]
-            } - PATH_PARAM_NAMES
+            sdk_fields = set(sdk["params"])
+            non_body_names = {p["name"] for p in op["parameters"]} | PATH_PARAM_NAMES
             location = (
                 f"`{mapping['sdk_method']}` in "
                 f"{sdk['file']}:{sdk['line']}, no model class"
             )
 
         spec_only = spec_body_fields - sdk_fields
-        sdk_only = sdk_fields - spec_body_fields
+        sdk_only = sdk_fields - spec_body_fields - non_body_names
 
         for direction, values in (("missing", spec_only), ("extra", sdk_only)):
             if values:

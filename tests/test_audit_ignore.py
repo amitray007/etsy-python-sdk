@@ -779,6 +779,50 @@ class TestComputeBodyFindings:
         )
         assert audit_sdk.compute_body_findings({}, implemented, models) == []
 
+    def _no_model_implemented(self, body_fields, sdk_params, spec_params=()):
+        return {
+            "updateX": {
+                "spec": {
+                    "parameters": [{"name": n} for n in spec_params],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {f: {} for f in body_fields}
+                                }
+                            }
+                        }
+                    },
+                },
+                "sdk": {
+                    "params": list(sdk_params),
+                    "param_annotations": {},
+                    "file": "X.py",
+                    "line": 10,
+                },
+                "sdk_method": "update_x",
+            }
+        }
+
+    def test_body_field_sharing_a_path_param_name_is_not_false_drift(self):
+        # taxonomy_id is a body field here AND a known path-param name. It is
+        # accepted by the method, so it must not be reported as missing.
+        implemented = self._no_model_implemented(
+            ["taxonomy_id", "title"], ["taxonomy_id", "title"]
+        )
+        assert audit_sdk.compute_body_findings({}, implemented, {}) == []
+
+    def test_path_param_not_in_body_is_not_extra_drift(self):
+        # A path param in the signature is not an unexpected body field.
+        implemented = self._no_model_implemented(["title"], ["title", "shop_id"])
+        assert audit_sdk.compute_body_findings({}, implemented, {}) == []
+
+    def test_query_param_not_in_body_is_not_extra_drift(self):
+        implemented = self._no_model_implemented(
+            ["title"], ["title", "legacy"], spec_params=["legacy"]
+        )
+        assert audit_sdk.compute_body_findings({}, implemented, {}) == []
+
     def test_operation_without_body_skipped(self):
         implemented = {
             "getListing": {

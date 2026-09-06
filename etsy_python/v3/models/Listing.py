@@ -31,12 +31,18 @@ def _warn_if_personalization_used(
     personalization_is_required: Optional[bool],
     personalization_char_count_max: Optional[int],
     personalization_instructions: Optional[str],
+    stacklevel: int = 4,
 ) -> None:
     """Emit DeprecationWarning when a removed personalization field is actively set.
 
     Falsy values (False, 0, empty string, None) match the API's documented
     defaults and were no-ops even before the fields were removed, so they do
     not trigger the warning.
+
+    ``stacklevel`` counts the frames back to the caller. It defaults to the
+    constructor path (this function <- ``_store_personalization`` <- model
+    ``__init__`` <- caller); the property setters pass 3, being one frame
+    shallower.
     """
     if any([
         is_personalizable,
@@ -47,39 +53,60 @@ def _warn_if_personalization_used(
         warnings.warn(
             _PERSONALIZATION_DEPRECATION_MSG,
             DeprecationWarning,
-            # _warn_if_personalization_used <- _store_personalization <-
-            # model __init__ <- caller
-            stacklevel=4,
+            stacklevel=stacklevel,
         )
 
 
 class _PersonalizationFieldsMixin:
-    """Read-only access to the removed personalization fields.
+    """Accessors for the personalization fields Etsy removed from listings.
 
     Etsy dropped these four fields from the createDraftListing and
     updateListing request bodies (2026-09 spec). The constructor keyword
     arguments are kept so existing callers don't break, but the values are
     stored under underscore-prefixed names, which ``todict`` excludes from
-    serialization -- so they are never sent on the wire. The properties below
-    keep attribute reads working for callers that inspect the model. Remove
-    the keyword arguments and this mixin in the next major version.
+    serialization -- so they are never sent on the wire.
+
+    The properties below keep both attribute reads and writes working. A write
+    stores the value and warns, exactly like passing the keyword argument: it
+    never reaches the API either way. Remove the keyword arguments and this
+    mixin in the next major version.
     """
 
     @property
     def is_personalizable(self) -> Optional[bool]:
         return self._is_personalizable
 
+    @is_personalizable.setter
+    def is_personalizable(self, value: Optional[bool]) -> None:
+        self._is_personalizable = value
+        _warn_if_personalization_used(value, None, None, None, stacklevel=3)
+
     @property
     def personalization_is_required(self) -> Optional[bool]:
         return self._personalization_is_required
+
+    @personalization_is_required.setter
+    def personalization_is_required(self, value: Optional[bool]) -> None:
+        self._personalization_is_required = value
+        _warn_if_personalization_used(None, value, None, None, stacklevel=3)
 
     @property
     def personalization_char_count_max(self) -> Optional[int]:
         return self._personalization_char_count_max
 
+    @personalization_char_count_max.setter
+    def personalization_char_count_max(self, value: Optional[int]) -> None:
+        self._personalization_char_count_max = value
+        _warn_if_personalization_used(None, None, value, None, stacklevel=3)
+
     @property
     def personalization_instructions(self) -> Optional[str]:
         return self._personalization_instructions
+
+    @personalization_instructions.setter
+    def personalization_instructions(self, value: Optional[str]) -> None:
+        self._personalization_instructions = value
+        _warn_if_personalization_used(None, None, None, value, stacklevel=3)
 
     def _store_personalization(
         self,
