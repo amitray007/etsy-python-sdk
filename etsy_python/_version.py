@@ -1,3 +1,3 @@
 """Version information for etsy-python package."""
 
-__version__ = "1.1.14"
+__version__ = "1.2.0"
