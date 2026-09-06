@@ -196,7 +196,7 @@ class TestPersonalizationDeprecationWarnings:
             )
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             assert len(deprecation_warnings) == 1
-            assert "deprecated by the Etsy API" in str(deprecation_warnings[0].message)
+            assert "no longer sent" in str(deprecation_warnings[0].message)
             assert "personalization-migration" in str(deprecation_warnings[0].message)
 
     def test_update_no_warning_without_personalization(self):
@@ -274,6 +274,126 @@ class TestPersonalizationDeprecationWarnings:
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             assert len(deprecation_warnings) == 1
             assert "is_personalizable" in str(deprecation_warnings[0].message)
+
+
+class TestPersonalizationFieldsNotSerialized:
+    """Etsy removed the four personalization fields from createDraftListing and
+    updateListing (2026-09 spec). The kwargs are kept for source compatibility,
+    but the values must never reach the wire."""
+
+    PERSONALIZATION_KWARGS = dict(
+        is_personalizable=True,
+        personalization_is_required=True,
+        personalization_char_count_max=256,
+        personalization_instructions="Enter name",
+    )
+
+    def _make_create_kwargs(self):
+        return dict(
+            quantity=1,
+            title="Test",
+            description="A test",
+            price=25.00,
+            who_made=WhoMade.I_DID,
+            when_made=WhenMade.TWENTY_TWENTIES,
+            taxonomy_id=30303,
+        )
+
+    def test_create_omits_personalization_from_payload(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            req = CreateDraftListingRequest(
+                **self._make_create_kwargs(), **self.PERSONALIZATION_KWARGS
+            )
+        payload = req.get_dict()
+        assert [key for key in payload if "personaliz" in key] == []
+        # Non-removed fields still serialize normally.
+        assert payload["title"] == "Test"
+
+    def test_update_omits_personalization_from_payload(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            req = UpdateListingRequest(title="Updated", **self.PERSONALIZATION_KWARGS)
+        payload = req.get_dict()
+        assert [key for key in payload if "personaliz" in key] == []
+        assert payload["title"] == "Updated"
+
+    def test_create_keeps_personalization_readable(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            req = CreateDraftListingRequest(
+                **self._make_create_kwargs(), **self.PERSONALIZATION_KWARGS
+            )
+        assert req.is_personalizable is True
+        assert req.personalization_is_required is True
+        assert req.personalization_char_count_max == 256
+        assert req.personalization_instructions == "Enter name"
+
+    def test_update_keeps_personalization_readable(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            req = UpdateListingRequest(**self.PERSONALIZATION_KWARGS)
+        assert req.is_personalizable is True
+        assert req.personalization_is_required is True
+        assert req.personalization_char_count_max == 256
+        assert req.personalization_instructions == "Enter name"
+
+    def test_warning_points_at_caller(self):
+        # The warning is raised two frames below __init__, so stacklevel must
+        # be deep enough to blame the caller's line, not the SDK internals.
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            UpdateListingRequest(is_personalizable=True)
+        assert w[0].filename == __file__
+
+    def test_post_construction_assignment_still_works(self):
+        # The fields became properties; assignment must keep working for
+        # callers that set them after construction, and must still not
+        # serialize.
+        req = UpdateListingRequest(title="Updated")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            req.is_personalizable = True
+            req.personalization_is_required = True
+            req.personalization_char_count_max = 256
+            req.personalization_instructions = "Enter name"
+            deprecation_warnings = [
+                x for x in w if issubclass(x.category, DeprecationWarning)
+            ]
+        assert len(deprecation_warnings) == 4
+        assert req.is_personalizable is True
+        assert req.personalization_is_required is True
+        assert req.personalization_char_count_max == 256
+        assert req.personalization_instructions == "Enter name"
+        assert [key for key in req.get_dict() if "personaliz" in key] == []
+
+    def test_setter_warning_points_at_caller(self):
+        # The setter path is one frame shallower than the constructor path, so
+        # it passes its own stacklevel.
+        req = UpdateListingRequest(title="Updated")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            req.is_personalizable = True
+        assert w[0].filename == __file__
+
+    def test_setter_does_not_warn_on_falsy_value(self):
+        req = UpdateListingRequest(title="Updated")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            req.is_personalizable = False
+            req.personalization_char_count_max = 0
+            deprecation_warnings = [
+                x for x in w if issubclass(x.category, DeprecationWarning)
+            ]
+        assert len(deprecation_warnings) == 0
+        assert req.is_personalizable is False
+
+    def test_defaults_to_none_when_not_passed(self):
+        req = UpdateListingRequest(title="Updated")
+        assert req.is_personalizable is None
+        assert req.personalization_is_required is None
+        assert req.personalization_char_count_max is None
+        assert req.personalization_instructions is None
 
 
 class TestUpdateListingTranslationRequest:

@@ -490,23 +490,6 @@
                       "inches"
                     ]
                   },
-                  "is_personalizable": {
-                    "type": "boolean",
-                    "description": "[DEPRECATED] When true, this listing is personalizable. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
-                  },
-                  "personalization_is_required": {
-                    "type": "boolean",
-                    "description": "[DEPRECATED] When true, this listing requires personalization. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
-                  },
-                  "personalization_char_count_max": {
-                    "type": "integer",
-                    "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
-                    "format": "int64"
-                  },
-                  "personalization_instructions": {
-                    "type": "string",
-                    "description": "[DEPRECATED] A string representing instructions for the buyer to enter the personalization. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
-                  },
                   "production_partner_ids": {
                     "type": "array",
                     "description": "An array of unique IDs of production partner ids.",
@@ -4754,23 +4737,6 @@
                     "description": "The positive non-zero numeric position in the featured listings of the shop, with rank 1 listings appearing in the left-most position in featured listing on a shop's home page.",
                     "format": "int64",
                     "nullable": true
-                  },
-                  "is_personalizable": {
-                    "type": "boolean",
-                    "description": "[DEPRECATED] When true, this listing is personalizable. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
-                  },
-                  "personalization_is_required": {
-                    "type": "boolean",
-                    "description": "[DEPRECATED] When true, this listing requires personalization. The default value is false. NOTE: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
-                  },
-                  "personalization_char_count_max": {
-                    "type": "integer",
-                    "description": "[DEPRECATED] This is an integer value representing the maximum length for the personalization message entered by the buyer. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details.",
-                    "format": "int64"
-                  },
-                  "personalization_instructions": {
-                    "type": "string",
-                    "description": "[DEPRECATED] A string representing instructions for the buyer to enter the personalization. Will only change if is_personalizable is 'true'. Note: This field will be removed on Apr. 9th, 2026. See https://developers.etsy.com/documentation/tutorials/personalization-migration for migration details."
                   },
                   "state": {
                     "type": "string",

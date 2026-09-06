@@ -669,3 +669,230 @@ class TestShippedIgnoreFile:
         for ig in entries:
             assert ig["direction"] == "extra"
             assert ig["values"] == ["legacy"]
+
+    def test_no_wildcard_body_drift_ignores(self):
+        # "*" on a body_drift entry would hide unreviewed request-body drift on
+        # that operation, defeating the self-verifying property.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        for ig in audit_sdk.load_ignores(path):
+            if ig["type"] == "body_drift":
+                assert ig["values"] != "*", f"{ig['key']} uses a wildcard"
+
+    def test_shipped_personalization_body_ignores_are_value_scoped(self):
+        # Etsy removed the four personalization fields from the listing bodies.
+        # The kwargs are kept for source compatibility but never serialized, so
+        # the drift is suppressed by value — never "*".
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        entries = [
+            ig for ig in audit_sdk.load_ignores(path) if ig["type"] == "body_drift"
+        ]
+        assert {ig["key"] for ig in entries} == {"createDraftListing", "updateListing"}
+        for ig in entries:
+            assert ig["direction"] == "extra"
+            assert set(ig["values"]) == {
+                "is_personalizable",
+                "personalization_is_required",
+                "personalization_char_count_max",
+                "personalization_instructions",
+            }
+
+
+# --------------------------------------------------------------------------- #
+# compute_body_findings — request body drift
+# --------------------------------------------------------------------------- #
+class TestComputeBodyFindings:
+    def _spec(self, body_fields, content_type="application/json"):
+        return {
+            "components": {},
+            "_body_fields": body_fields,
+            "_content_type": content_type,
+        }
+
+    def _implemented(self, body_fields, model_params, content_type="application/json"):
+        return {
+            "updateListing": {
+                "spec": {
+                    "parameters": [],
+                    "requestBody": {
+                        "content": {
+                            content_type: {
+                                "schema": {
+                                    "properties": {f: {} for f in body_fields}
+                                }
+                            }
+                        }
+                    },
+                },
+                "sdk": {
+                    "params": ["listing"],
+                    "param_annotations": {"listing": "UpdateListingRequest"},
+                    "file": "Listing.py",
+                    "line": 20,
+                },
+                "sdk_method": "update_listing",
+            }
+        }, {
+            "UpdateListingRequest": {
+                "init_params": list(model_params),
+                "file": "Listing.py",
+                "line": 164,
+            }
+        }
+
+    def test_extra_model_field_detected(self):
+        implemented, models = self._implemented(["title"], ["title", "is_personalizable"])
+        findings = audit_sdk.compute_body_findings({}, implemented, models)
+        assert len(findings) == 1
+        assert findings[0]["type"] == "body_drift"
+        assert findings[0]["key"] == "updateListing"
+        assert findings[0]["direction"] == "extra"
+        assert findings[0]["values"] == {"is_personalizable"}
+        assert "models/Listing.py:164" in findings[0]["location"]
+
+    def test_missing_model_field_detected(self):
+        implemented, models = self._implemented(["title", "description"], ["title"])
+        findings = audit_sdk.compute_body_findings({}, implemented, models)
+        assert len(findings) == 1
+        assert findings[0]["direction"] == "missing"
+        assert findings[0]["values"] == {"description"}
+
+    def test_in_sync_yields_no_findings(self):
+        implemented, models = self._implemented(["title"], ["title"])
+        assert audit_sdk.compute_body_findings({}, implemented, models) == []
+
+    def test_both_directions_yield_separate_findings(self):
+        implemented, models = self._implemented(["title"], ["legacy_field"])
+        findings = audit_sdk.compute_body_findings({}, implemented, models)
+        assert {f["direction"] for f in findings} == {"missing", "extra"}
+
+    def test_type_alias_normalized(self):
+        # The `listing_type` kwarg is serialized as the spec's `type` field
+        # (see TYPE_FIELD_ALIASES), so it must not be reported as drift.
+        implemented, models = self._implemented(["type"], ["listing_type"])
+        assert audit_sdk.compute_body_findings({}, implemented, models) == []
+
+    def test_multipart_only_endpoint_skipped(self):
+        # FileRequest subclasses hold fields in data/file dicts that this
+        # signature-level comparison cannot resolve.
+        implemented, models = self._implemented(
+            ["image"], ["something_else"], content_type="multipart/form-data"
+        )
+        assert audit_sdk.compute_body_findings({}, implemented, models) == []
+
+    def _no_model_implemented(self, body_fields, sdk_params, spec_params=()):
+        return {
+            "updateX": {
+                "spec": {
+                    "parameters": [{"name": n} for n in spec_params],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {f: {} for f in body_fields}
+                                }
+                            }
+                        }
+                    },
+                },
+                "sdk": {
+                    "params": list(sdk_params),
+                    "param_annotations": {},
+                    "file": "X.py",
+                    "line": 10,
+                },
+                "sdk_method": "update_x",
+            }
+        }
+
+    def test_body_field_sharing_a_path_param_name_is_not_false_drift(self):
+        # taxonomy_id is a body field here AND a known path-param name. It is
+        # accepted by the method, so it must not be reported as missing.
+        implemented = self._no_model_implemented(
+            ["taxonomy_id", "title"], ["taxonomy_id", "title"]
+        )
+        assert audit_sdk.compute_body_findings({}, implemented, {}) == []
+
+    def test_path_param_not_in_body_is_not_extra_drift(self):
+        # A path param in the signature is not an unexpected body field.
+        implemented = self._no_model_implemented(["title"], ["title", "shop_id"])
+        assert audit_sdk.compute_body_findings({}, implemented, {}) == []
+
+    def test_query_param_not_in_body_is_not_extra_drift(self):
+        implemented = self._no_model_implemented(
+            ["title"], ["title", "legacy"], spec_params=["legacy"]
+        )
+        assert audit_sdk.compute_body_findings({}, implemented, {}) == []
+
+    def test_operation_without_body_skipped(self):
+        implemented = {
+            "getListing": {
+                "spec": {"parameters": [], "requestBody": None},
+                "sdk": {
+                    "params": [],
+                    "param_annotations": {},
+                    "file": "Listing.py",
+                    "line": 20,
+                },
+                "sdk_method": "get_listing",
+            }
+        }
+        assert audit_sdk.compute_body_findings({}, implemented, {}) == []
+
+
+# --------------------------------------------------------------------------- #
+# partition_findings — body_drift value verification
+# --------------------------------------------------------------------------- #
+class TestPartitionBodyDrift:
+    def _drift(self, values, direction="extra"):
+        return {
+            "type": "body_drift",
+            "key": "updateListing",
+            "direction": direction,
+            "values": set(values),
+            "location": "model `UpdateListingRequest` in models/Listing.py:164",
+        }
+
+    def _ignore(self, values, direction="extra"):
+        return {
+            "type": "body_drift",
+            "key": "updateListing",
+            "direction": direction,
+            "values": values,
+            "reason": "removed from spec; kwarg kept but never serialized",
+        }
+
+    def test_listed_field_suppressed(self):
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"is_personalizable"})], [self._ignore(["is_personalizable"])]
+        )
+        assert active == []
+        assert len(suppressed) == 1
+        assert stale == []
+
+    def test_newly_drifted_field_stays_active(self):
+        # The whole point of value-scoped suppression: a field nobody reviewed
+        # must still surface on an already-suppressed operation.
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"is_personalizable", "brand_new_field"})],
+            [self._ignore(["is_personalizable"])],
+        )
+        assert len(active) == 1
+        assert active[0]["values"] == {"brand_new_field"}
+        assert len(suppressed) == 1
+        assert suppressed[0]["values"] == {"is_personalizable"}
+
+    def test_ignore_matching_nothing_is_stale(self):
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [], [self._ignore(["is_personalizable"])]
+        )
+        assert active == []
+        assert suppressed == []
+        assert len(stale) == 1
+
+    def test_direction_must_match(self):
+        active, suppressed, stale = audit_sdk.partition_findings(
+            [self._drift({"description"}, direction="missing")],
+            [self._ignore(["description"], direction="extra")],
+        )
+        assert len(active) == 1
+        assert len(stale) == 1
