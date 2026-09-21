@@ -532,8 +532,9 @@ class TestECGTFields:
 
     def test_ecgt_does_not_warn(self):
         """ECGT fields are current, unlike the deprecated personalization ones."""
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
             CreateDraftListingRequest(
                 **self._create_kwargs(), ecgt_garan_brand="Acme"
             )
+        assert caught == []
