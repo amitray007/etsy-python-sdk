@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.models.Listing import UpdateListingVideoRequest
@@ -29,9 +29,22 @@ class ListingVideoResource:
         return self.session.make_request(endpoint)
 
     def upload_listing_video(
-        self, shop_id: int, listing_id: int, listing_video: UpdateListingVideoRequest
+        self,
+        shop_id: int,
+        listing_id: int,
+        listing_video: UpdateListingVideoRequest,
+        is_multi_video: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        """Upload a video to a listing.
+
+        Pass ``is_multi_video=True`` to keep existing videos on the listing.
+        Omitting it preserves the former single-video behaviour, where the
+        upload replaces any video already attached.
+        """
         endpoint = f"/shops/{shop_id}/listings/{listing_id}/videos"
         return self.session.make_request(
-            endpoint, method=Method.POST, payload=listing_video
+            endpoint,
+            method=Method.POST,
+            payload=listing_video,
+            query_params={"is_multi_video": is_multi_video},
         )

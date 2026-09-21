@@ -452,3 +452,89 @@ class TestUpdateListingVideoRequest:
         req = UpdateListingVideoRequest()
         assert req.file == {"video": None}
         assert req.data == {"video_id": None, "name": None}
+
+
+class TestECGTFields:
+    """EU commercial guarantee (ECGT/GPSR) fields on create and update."""
+
+    @staticmethod
+    def _create_kwargs():
+        return {
+            "quantity": 10,
+            "title": "Test Mug",
+            "description": "A test mug",
+            "price": 25.00,
+            "who_made": WhoMade.I_DID,
+            "when_made": WhenMade.TWENTY_TWENTIES,
+            "taxonomy_id": 30303,
+        }
+
+    def test_create_serializes_all_ecgt_fields(self):
+        req = CreateDraftListingRequest(
+            **self._create_kwargs(),
+            ecgt_garan_brand="Acme",
+            ecgt_garan_model="MUG-1",
+            ecgt_garan_years=3,
+            ecgt_garan_guarantee_details="Three year guarantee.",
+            ecgt_other_commercial_guarantee_details="Extended cover available.",
+            ecgt_after_sales_service_info="Contact support@example.com",
+            ecgt_software_update_details="Not applicable.",
+        )
+        result = req.get_dict()
+        assert result["ecgt_garan_brand"] == "Acme"
+        assert result["ecgt_garan_model"] == "MUG-1"
+        assert result["ecgt_garan_years"] == 3
+        assert result["ecgt_garan_guarantee_details"] == "Three year guarantee."
+        assert (
+            result["ecgt_other_commercial_guarantee_details"]
+            == "Extended cover available."
+        )
+        assert result["ecgt_after_sales_service_info"] == "Contact support@example.com"
+        assert result["ecgt_software_update_details"] == "Not applicable."
+
+    def test_update_serializes_all_ecgt_fields(self):
+        req = UpdateListingRequest(
+            ecgt_garan_brand="Acme",
+            ecgt_garan_model="MUG-1",
+            ecgt_garan_years=5,
+            ecgt_garan_guarantee_details="Five year guarantee.",
+            ecgt_other_commercial_guarantee_details="Extended cover available.",
+            ecgt_after_sales_service_info="Contact support@example.com",
+            ecgt_software_update_details="Not applicable.",
+        )
+        result = req.get_dict()
+        assert result["ecgt_garan_years"] == 5
+        assert result["ecgt_garan_brand"] == "Acme"
+        assert result["ecgt_software_update_details"] == "Not applicable."
+
+    def test_create_omits_unset_ecgt_fields(self):
+        req = CreateDraftListingRequest(**self._create_kwargs())
+        result = req.get_dict()
+        for field in (
+            "ecgt_garan_brand",
+            "ecgt_garan_model",
+            "ecgt_garan_years",
+            "ecgt_garan_guarantee_details",
+            "ecgt_other_commercial_guarantee_details",
+            "ecgt_after_sales_service_info",
+            "ecgt_software_update_details",
+        ):
+            assert field not in result
+
+    def test_update_omits_unset_ecgt_fields(self):
+        result = UpdateListingRequest(title="Just a title").get_dict()
+        assert not any(key.startswith("ecgt_") for key in result)
+
+    def test_ecgt_fields_are_nullable(self):
+        """An explicitly empty ECGT string clears the value rather than being dropped."""
+        req = UpdateListingRequest(ecgt_garan_brand="")
+        assert req.get_dict()["ecgt_garan_brand"] is None
+
+    def test_ecgt_does_not_warn(self):
+        """ECGT fields are current, unlike the deprecated personalization ones."""
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            CreateDraftListingRequest(
+                **self._create_kwargs(), ecgt_garan_brand="Acme"
+            )
+        assert caught == []

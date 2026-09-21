@@ -249,6 +249,21 @@ class TestListingVideoResource:
             f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}/videos",
             method=Method.POST,
             payload=payload,
+            query_params={"is_multi_video": None},
+        )
+
+    def test_upload_listing_video_multi(self, mock_session):
+        mock_session.make_request.return_value = Response(201, make_listing_video())
+        resource = ListingVideoResource(session=mock_session)
+        payload = MagicMock(spec=UpdateListingVideoRequest)
+        resource.upload_listing_video(
+            MOCK_SHOP_ID, MOCK_LISTING_ID, payload, is_multi_video=True
+        )
+        mock_session.make_request.assert_called_once_with(
+            f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}/videos",
+            method=Method.POST,
+            payload=payload,
+            query_params={"is_multi_video": True},
         )
 
     def test_delete_listing_video(self, mock_session):
