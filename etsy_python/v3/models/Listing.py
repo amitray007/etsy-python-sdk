@@ -127,7 +127,53 @@ class _PersonalizationFieldsMixin:
         )
 
 
-class CreateDraftListingRequest(_PersonalizationFieldsMixin, Request):
+#: EU commercial guarantee / GPSR fields (ECGT), shared by createDraftListing
+#: and updateListing. All are optional and nullable. Etsy silently ignores them
+#: for sellers who are not eligible EU traders. ``ecgt_software_update_details``
+#: is ignored for physical listings; the other six are ignored for digital ones.
+#: ``ecgt_garan_brand``, ``ecgt_garan_model``, ``ecgt_garan_years`` and
+#: ``ecgt_garan_guarantee_details`` are required *together* -- Etsy enforces
+#: that server-side and rejects a partial set.
+ECGT_FIELDS = (
+    "ecgt_garan_brand",
+    "ecgt_garan_model",
+    "ecgt_garan_years",
+    "ecgt_garan_guarantee_details",
+    "ecgt_other_commercial_guarantee_details",
+    "ecgt_after_sales_service_info",
+    "ecgt_software_update_details",
+)
+
+
+class _ECGTFieldsMixin:
+    """Storage for the EU commercial guarantee (ECGT) listing fields.
+
+    Both listing request models accept the same seven fields, so the
+    assignment lives here instead of being duplicated. See ``ECGT_FIELDS``.
+    """
+
+    def _store_ecgt(
+        self,
+        ecgt_garan_brand: Optional[str],
+        ecgt_garan_model: Optional[str],
+        ecgt_garan_years: Optional[int],
+        ecgt_garan_guarantee_details: Optional[str],
+        ecgt_other_commercial_guarantee_details: Optional[str],
+        ecgt_after_sales_service_info: Optional[str],
+        ecgt_software_update_details: Optional[str],
+    ) -> None:
+        self.ecgt_garan_brand = ecgt_garan_brand
+        self.ecgt_garan_model = ecgt_garan_model
+        self.ecgt_garan_years = ecgt_garan_years
+        self.ecgt_garan_guarantee_details = ecgt_garan_guarantee_details
+        self.ecgt_other_commercial_guarantee_details = (
+            ecgt_other_commercial_guarantee_details
+        )
+        self.ecgt_after_sales_service_info = ecgt_after_sales_service_info
+        self.ecgt_software_update_details = ecgt_software_update_details
+
+
+class CreateDraftListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Request):
     nullable = [
         "shipping_profile_id",
         "return_policy_id",
@@ -146,6 +192,7 @@ class CreateDraftListingRequest(_PersonalizationFieldsMixin, Request):
         "production_partner_ids",
         "image_ids",
         "readiness_state_id",
+        *ECGT_FIELDS,
     ]
     mandatory = [
         "quantity",
@@ -192,6 +239,13 @@ class CreateDraftListingRequest(_PersonalizationFieldsMixin, Request):
         is_taxable: Optional[bool] = None,
         listing_type: Optional[Type] = None,
         readiness_state_id: Optional[int] = None,
+        ecgt_garan_brand: Optional[str] = None,
+        ecgt_garan_model: Optional[str] = None,
+        ecgt_garan_years: Optional[int] = None,
+        ecgt_garan_guarantee_details: Optional[str] = None,
+        ecgt_other_commercial_guarantee_details: Optional[str] = None,
+        ecgt_after_sales_service_info: Optional[str] = None,
+        ecgt_software_update_details: Optional[str] = None,
     ):
         self.quantity = quantity
         self.title = title
@@ -228,13 +282,22 @@ class CreateDraftListingRequest(_PersonalizationFieldsMixin, Request):
         self.is_taxable = is_taxable
         self._type = listing_type
         self.readiness_state_id = readiness_state_id
+        self._store_ecgt(
+            ecgt_garan_brand,
+            ecgt_garan_model,
+            ecgt_garan_years,
+            ecgt_garan_guarantee_details,
+            ecgt_other_commercial_guarantee_details,
+            ecgt_after_sales_service_info,
+            ecgt_software_update_details,
+        )
         super().__init__(
             nullable=CreateDraftListingRequest.nullable,
             mandatory=CreateDraftListingRequest.mandatory,
         )
 
 
-class UpdateListingRequest(_PersonalizationFieldsMixin, Request):
+class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Request):
     nullable: List[str] = [
         "materials",
         "shipping_profile_id",
@@ -250,6 +313,7 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, Request):
         "featured_rank",
         "production_partner_ids",
         "_type",
+        *ECGT_FIELDS,
     ]
 
     mandatory: List[str] = []
@@ -284,6 +348,13 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, Request):
         is_supply: Optional[bool] = None,
         production_partner_ids: Optional[List[int]] = None,
         listing_type: Optional[Type] = None,
+        ecgt_garan_brand: Optional[str] = None,
+        ecgt_garan_model: Optional[str] = None,
+        ecgt_garan_years: Optional[int] = None,
+        ecgt_garan_guarantee_details: Optional[str] = None,
+        ecgt_other_commercial_guarantee_details: Optional[str] = None,
+        ecgt_after_sales_service_info: Optional[str] = None,
+        ecgt_software_update_details: Optional[str] = None,
     ):
         self.image_ids = image_ids
         self.title = title
@@ -315,6 +386,15 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, Request):
         self.is_supply = is_supply
         self.production_partner_ids = production_partner_ids
         self._type = listing_type
+        self._store_ecgt(
+            ecgt_garan_brand,
+            ecgt_garan_model,
+            ecgt_garan_years,
+            ecgt_garan_guarantee_details,
+            ecgt_other_commercial_guarantee_details,
+            ecgt_after_sales_service_info,
+            ecgt_software_update_details,
+        )
         super().__init__(
             nullable=UpdateListingRequest.nullable,
             mandatory=UpdateListingRequest.mandatory,
