@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Any, Dict, Optional, Union
 
 from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.resources.Response import Response
@@ -30,7 +30,14 @@ class SellerTaxonomyResource:
         return self.session.make_request(endpoint)
 
     def get_properties_by_taxonomy_id(
-        self, taxonomy_id: int
+        self,
+        taxonomy_id: int,
+        supports_variations: Optional[bool] = None,
+        supports_attributes: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         endpoint = f"/seller-taxonomy/nodes/{taxonomy_id}/properties"
-        return self.session.make_request(endpoint)
+        query_params: Dict[str, Any] = {
+            "supports_variations": supports_variations,
+            "supports_attributes": supports_attributes,
+        }
+        return self.session.make_request(endpoint, query_params=query_params)
