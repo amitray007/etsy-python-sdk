@@ -522,7 +522,21 @@ class TestSellerTaxonomyResource:
         resource = SellerTaxonomyResource(session=mock_session)
         resource.get_properties_by_taxonomy_id(MOCK_TAXONOMY_ID)
         mock_session.make_request.assert_called_once_with(
-            f"/seller-taxonomy/nodes/{MOCK_TAXONOMY_ID}/properties"
+            f"/seller-taxonomy/nodes/{MOCK_TAXONOMY_ID}/properties",
+            query_params={"supports_variations": None, "supports_attributes": None},
+        )
+
+    def test_get_properties_by_taxonomy_id_with_filters(self, mock_session):
+        mock_session.make_request.return_value = Response(
+            200, make_collection(make_taxonomy_property)
+        )
+        resource = SellerTaxonomyResource(session=mock_session)
+        resource.get_properties_by_taxonomy_id(
+            MOCK_TAXONOMY_ID, supports_variations=True, supports_attributes=False
+        )
+        mock_session.make_request.assert_called_once_with(
+            f"/seller-taxonomy/nodes/{MOCK_TAXONOMY_ID}/properties",
+            query_params={"supports_variations": True, "supports_attributes": False},
         )
 
 
