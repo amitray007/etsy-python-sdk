@@ -144,7 +144,7 @@ token_data = oauth.get_access_token()
 ### 2. Initialize Client Session
 
 ```python
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from etsy_python.v3.resources.Session import EtsyClient
 
 # Create client with tokens
@@ -152,7 +152,7 @@ client = EtsyClient(
     keystring="your_api_key",
     access_token=token_data["access_token"],
     refresh_token=token_data["refresh_token"],
-    expiry=datetime.utcnow() + timedelta(seconds=token_data["expires_in"])
+    expiry=datetime.now(tz=timezone.utc) + timedelta(seconds=token_data["expires_in"])
 )
 ```
 

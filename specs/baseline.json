@@ -2422,6 +2422,16 @@
                 "3"
               ]
             }
+          },
+          {
+            "name": "enable_scale_validation",
+            "in": "query",
+            "description": "This temporary parameter indicates whether scale validation should be enabled for the request. It will be removed in the near future, at which point scale validation will be mandatory for all requests.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "This temporary parameter indicates whether scale validation should be enabled for the request. It will be removed in the near future, at which point scale validation will be mandatory for all requests."
+            }
           }
         ],
         "requestBody": {
@@ -4769,12 +4779,6 @@
                       "before_1700"
                     ]
                   },
-                  "featured_rank": {
-                    "type": "integer",
-                    "description": "The positive non-zero numeric position in the featured listings of the shop, with rank 1 listings appearing in the left-most position in featured listing on a shop's home page.",
-                    "format": "int64",
-                    "nullable": true
-                  },
                   "state": {
                     "type": "string",
                     "description": "When _updating_ a listing, this value can be either `active` or `inactive`. Note: Setting a `draft` listing to `active` will also publish the listing on etsy.com and requires that the listing have an image set. Setting a `sold_out` listing to active will update the quantity to 1 and renew the listing on etsy.com.",
@@ -5458,7 +5462,7 @@
     "/v3/application/shops/{shop_id}/listings/{listing_id}/videos": {
       "post": {
         "operationId": "uploadListingVideo",
-        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nUploads a new video for a listing, or associates an existing video with a specific listing. You must either provide the `video_id` of an existing video, or the name and binary file data for a video to upload. If providing a `video_id`, the video must already be associated with the same shop as the listing, but it does not need to be currently associated with the listing. By default, the endpoint handles single video uploads, but setting `is_multi_video` to true enables to link up to 2 videos to the same listing.",
+        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nUploads a new video for a listing, or associates an existing video with a specific listing. You must either provide the `video_id` of an existing video, or the name and binary file data for a video to upload. If providing a `video_id`, the video must already be associated with the same shop as the listing, but it does not need to be currently associated with the listing. It's important to consider there is a rate limiting to perform 10 uploads per listing per day.",
         "tags": [
           "ShopListing Video"
         ],
@@ -5485,16 +5489,6 @@
               "description": "The numeric ID for the [listing](/documentation/reference#tag/ShopListing) associated to this transaction.",
               "format": "int64",
               "minimum": 1
-            }
-          },
-          {
-            "name": "is_multi_video",
-            "in": "query",
-            "description": "Indicates whether to handle multiple videos for the listing or maintain the former single video behavior.",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "Indicates whether to handle multiple videos for the listing or maintain the former single video behavior."
             }
           }
         ],
@@ -5578,6 +5572,16 @@
           },
           "409": {
             "description": "There was a request conflict with the current state of the target resource. See the error message for details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorSchema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The request exceeded the valid number of uploaded videos per listing per day. See the error message for details.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12354,70 +12358,6 @@
       }
     },
     "/v3/application/user/addresses/{user_address_id}": {
-      "delete": {
-        "operationId": "deleteUserAddress",
-        "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nOpen API V3 endpoint to delete a UserAddress for a User.",
-        "tags": [
-          "UserAddress"
-        ],
-        "parameters": [
-          {
-            "name": "user_address_id",
-            "in": "path",
-            "description": "The numeric ID of the user's address.",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "description": "The numeric ID of the user's address.",
-              "format": "int64",
-              "minimum": 1
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "The User Address resource was correctly deleted"
-          },
-          "400": {
-            "description": "There was a problem with the request data. See the error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "The request lacks valid authentication credentials. See the error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "The server encountered an internal error. See the error message for details.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorSchema"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "api_key": [],
-            "oauth2": [
-              "address_r"
-            ]
-          }
-        ]
-      },
       "get": {
         "operationId": "getUserAddress",
         "description": "<div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><span class=\"wt-badge wt-badge--notificationPrimary wt-bg-slime-tint wt-mr-xs-2\">General Release</span><a class=\"wt-text-link\" href=\"https://github.com/etsy/open-api/discussions\" target=\"_blank\" rel=\"noopener noreferrer\">Report bug</a></div><div class=\"wt-display-flex-xs wt-align-items-center wt-mt-xs-2 wt-mb-xs-3\"><p class=\"wt-text-body-01 banner-text\">This endpoint is ready for production use.</p></div>\n\nOpen API V3 endpoint to retrieve a UserAddress for a User.",

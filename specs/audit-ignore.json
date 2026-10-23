@@ -82,6 +82,16 @@
       "added": "2026-07-30"
     },
     {
+      "type": "param_drift",
+      "key": "uploadListingVideo",
+      "direction": "extra",
+      "values": [
+        "is_multi_video"
+      ],
+      "reason": "Etsy removed the 'is_multi_video' query param from uploadListingVideo (2026-10 spec). The kwarg is retained so existing callers don't break, but any explicit value emits a DeprecationWarning and is no longer sent. Remove the kwarg (and this entry) in the next major version.",
+      "added": "2026-10-23"
+    },
+    {
       "type": "extra_method",
       "key": "ListingResource.get_listings_by_listings_ids",
       "reason": "Intentional deprecated alias for get_listings_by_listing_ids; delegates and emits DeprecationWarning.",
@@ -104,6 +114,12 @@
       "key": "ShippingProfileResource.get_shop_shipping_profile_destination_by_shipping_profile",
       "reason": "Intentional deprecated alias for get_shop_shipping_profile_destinations_by_shipping_profile; delegates and emits DeprecationWarning.",
       "added": "2026-06-02"
+    },
+    {
+      "type": "extra_method",
+      "key": "UserAddressResource.delete_user_address",
+      "reason": "Etsy removed deleteUserAddress from the spec (2026-10). The method is kept so existing callers don't break, but it emits a DeprecationWarning because the request may fail. Remove the method (and this entry) in the next major version.",
+      "added": "2026-10-23"
     },
     {
       "type": "enum_staleness",
@@ -164,9 +180,10 @@
         "is_personalizable",
         "personalization_is_required",
         "personalization_char_count_max",
-        "personalization_instructions"
+        "personalization_instructions",
+        "featured_rank"
       ],
-      "reason": "Etsy removed is_personalizable, personalization_is_required, personalization_char_count_max and personalization_instructions from the createDraftListing and updateListing request bodies (2026-09 spec); personalization now lives on the dedicated personalization endpoints (update_listing_personalization). The constructor kwargs are retained so existing callers don't break, but the values are stored under underscore-prefixed names that todict excludes, so they are never sent on the wire, and setting one emits a DeprecationWarning. Remove the kwargs (and this entry) in the next major version.",
+      "reason": "Etsy removed is_personalizable, personalization_is_required, personalization_char_count_max and personalization_instructions from the createDraftListing and updateListing request bodies (2026-09 spec); personalization now lives on the dedicated personalization endpoints (update_listing_personalization). The constructor kwargs are retained so existing callers don't break, but the values are stored under underscore-prefixed names that todict excludes, so they are never sent on the wire, and setting one emits a DeprecationWarning. Remove the kwargs (and this entry) in the next major version. featured_rank was also removed from the updateListing body (2026-10 spec) and is handled the same way: stored as _featured_rank, never sent, and setting it emits a DeprecationWarning.",
       "added": "2026-09-06"
     }
   ]

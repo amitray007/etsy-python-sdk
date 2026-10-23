@@ -396,6 +396,41 @@ class TestPersonalizationFieldsNotSerialized:
         assert req.personalization_instructions is None
 
 
+class TestFeaturedRankRemoved:
+    """Etsy removed featured_rank from the updateListing body (2026-10 spec).
+    The kwarg is kept for source compatibility, but the value must never reach
+    the wire, and setting it warns."""
+
+    def test_no_warning_without_featured_rank(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            UpdateListingRequest(title="Updated")
+
+    def test_constructor_warns_and_omits_featured_rank(self):
+        with pytest.warns(DeprecationWarning, match=r"featured_rank was removed"):
+            req = UpdateListingRequest(title="Updated", featured_rank=1)
+        payload = req.get_dict()
+        assert "featured_rank" not in payload
+        assert payload["title"] == "Updated"
+        assert req.featured_rank == 1
+
+    def test_zero_featured_rank_is_quiet_and_omitted(self):
+        # 0 is the default a fetched listing reports; round-tripping it must
+        # not warn, and it is still never sent.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            req = UpdateListingRequest(title="Updated", featured_rank=0)
+        assert "featured_rank" not in req.get_dict()
+        assert req.featured_rank == 0
+
+    def test_setter_warns_and_omits_featured_rank(self):
+        req = UpdateListingRequest(title="Updated")
+        with pytest.warns(DeprecationWarning, match=r"featured_rank was removed"):
+            req.featured_rank = 2
+        assert req.featured_rank == 2
+        assert "featured_rank" not in req.get_dict()
+
+
 class TestUpdateListingTranslationRequest:
     def test_stores_fields(self):
         req = UpdateListingTranslationRequest(

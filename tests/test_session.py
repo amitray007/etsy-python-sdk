@@ -167,7 +167,9 @@ class TestMakeRequestDelete:
 
 
 class TestMakeRequestErrors:
-    @pytest.mark.parametrize("status_code", [400, 401, 403, 404, 409, 500, 503])
+    @pytest.mark.parametrize(
+        "status_code", [400, 401, 402, 403, 404, 405, 409, 422, 429, 500, 502, 503, 504]
+    )
     def test_error_codes_raise_request_exception(self, real_etsy_client, status_code):
         mock_resp = _make_mock_response(
             status_code, {"error": "Something went wrong"}
@@ -177,6 +179,47 @@ class TestMakeRequestErrors:
         with pytest.raises(RequestException) as exc_info:
             real_etsy_client.make_request("/shops/123")
         assert exc_info.value.code == status_code
+
+    @pytest.mark.parametrize("status_code", [200, 201, 302, 399])
+    def test_non_error_codes_return_response(self, real_etsy_client, status_code):
+        mock_resp = _make_mock_response(status_code, {"ok": True})
+        real_etsy_client._mock_http_session.get.return_value = mock_resp
+
+        result = real_etsy_client.make_request("/shops/123")
+        assert isinstance(result, Response)
+        assert result.code == status_code
+
+    def test_non_json_error_body_raises_request_exception(self, real_etsy_client):
+        mock_resp = _make_mock_response(405)
+        mock_resp.json.side_effect = ValueError("not JSON")
+        mock_resp.text = "<html>Method Not Allowed</html>"
+        real_etsy_client._mock_http_session.delete.return_value = mock_resp
+
+        with pytest.raises(RequestException) as exc_info:
+            real_etsy_client.make_request("/user/addresses/1", method=Method.DELETE)
+        assert exc_info.value.code == 405
+        assert exc_info.value.error == "<html>Method Not Allowed</html>"
+
+    def test_empty_error_body_uses_reason_phrase(self, real_etsy_client):
+        mock_resp = _make_mock_response(504)
+        mock_resp.json.side_effect = ValueError("not JSON")
+        mock_resp.text = ""
+        mock_resp.reason = "Gateway Timeout"
+        real_etsy_client._mock_http_session.get.return_value = mock_resp
+
+        with pytest.raises(RequestException) as exc_info:
+            real_etsy_client.make_request("/shops/123")
+        assert exc_info.value.error == "Gateway Timeout"
+
+    def test_non_json_success_body_returns_response(self, real_etsy_client):
+        mock_resp = _make_mock_response(202)
+        mock_resp.json.side_effect = ValueError("not JSON")
+        mock_resp.text = ""
+        real_etsy_client._mock_http_session.get.return_value = mock_resp
+
+        result = real_etsy_client.make_request("/shops/123")
+        assert result.code == 202
+        assert result.message == "OK"
 
     def test_error_with_description(self, real_etsy_client):
         mock_resp = _make_mock_response(
@@ -231,6 +274,34 @@ class TestRateLimits:
         assert result.rate_limits.remaining_this_second == "5"
         assert result.rate_limits.remaining_today == "9500"
 
+    def test_limit_per_second_read_from_its_own_header(self, real_etsy_client):
+        headers = {
+            "X-Limit-Per-Second": "10",
+            "X-Remaining-This-Second": "5",
+            "X-Limit-Per-Day": "10000",
+            "X-Remaining-Today": "9500",
+        }
+        mock_resp = _make_mock_response(200, {"shop_id": 123}, headers)
+        real_etsy_client._mock_http_session.get.return_value = mock_resp
+
+        result = real_etsy_client.make_request("/shops/123")
+        assert result.rate_limits.limit_per_second == "10"
+        assert result.rate_limits.limit_per_day == "10000"
+
+    def test_partial_rate_limit_headers_do_not_mask_error(self, real_etsy_client):
+        # A 429 that carries only the daily headers must still raise
+        # RequestException, not KeyError.
+        mock_resp = _make_mock_response(
+            429, {"error": "Too Many Requests"}, {"X-Limit-Per-Day": "10000"}
+        )
+        real_etsy_client._mock_http_session.get.return_value = mock_resp
+
+        with pytest.raises(RequestException) as exc_info:
+            real_etsy_client.make_request("/shops/123")
+        assert exc_info.value.code == 429
+        assert exc_info.value.rate_limits.limit_per_day == "10000"
+        assert exc_info.value.rate_limits.remaining_today is None
+
     def test_no_rate_limit_headers(self, real_etsy_client):
         mock_resp = _make_mock_response(200, {"shop_id": 123})
         real_etsy_client._mock_http_session.get.return_value = mock_resp
@@ -255,6 +326,116 @@ class TestRateLimits:
 
 
 class TestTokenRefresh:
+    @pytest.mark.parametrize(
+        "status_code, body",
+        [
+            (502, {"error": "Bad Gateway"}),
+            (200, {"error": "invalid_grant"}),
+            # Tokens present but expires_in missing or not numeric.
+            (200, {"access_token": "new-a", "refresh_token": "new-r"}),
+            (
+                200,
+                {"access_token": "new-a", "refresh_token": "new-r", "expires_in": "x"},
+            ),
+            (
+                200,
+                {"access_token": "new-a", "refresh_token": "new-r", "expires_in": True},
+            ),
+            (
+                200,
+                {
+                    "access_token": "new-a",
+                    "refresh_token": "new-r",
+                    "expires_in": float("nan"),
+                },
+            ),
+            (
+                200,
+                {"access_token": "new-a", "refresh_token": "new-r", "expires_in": 10**20},
+            ),
+        ],
+    )
+    def test_failed_refresh_keeps_authorization(
+        self, real_etsy_client, status_code, body
+    ):
+        old_expiry = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        real_etsy_client.expiry = old_expiry
+        real_etsy_client.sync_refresh = MagicMock()
+        real_etsy_client._mock_http_session.post.return_value = _make_mock_response(
+            status_code, body
+        )
+
+        with pytest.raises(RequestException):
+            real_etsy_client.make_request("/shops/123")
+        # A failed refresh changes nothing: header, tokens, expiry, callback.
+        assert real_etsy_client._mock_http_session.headers["Authorization"] == (
+            f"Bearer {MOCK_ACCESS_TOKEN}"
+        )
+        assert real_etsy_client.access_token == MOCK_ACCESS_TOKEN
+        assert real_etsy_client.refresh_token == MOCK_REFRESH_TOKEN
+        assert real_etsy_client.expiry == old_expiry
+        real_etsy_client.sync_refresh.assert_not_called()
+        real_etsy_client._mock_http_session.get.assert_not_called()
+
+    def test_invalid_expires_in_is_named_in_error(self, real_etsy_client):
+        real_etsy_client.expiry = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        real_etsy_client._mock_http_session.post.return_value = _make_mock_response(
+            200, {"access_token": "new-a", "refresh_token": "new-r"}
+        )
+
+        with pytest.raises(RequestException) as exc_info:
+            real_etsy_client.make_request("/shops/123")
+        assert exc_info.value.error_description == (
+            "Token refresh response has missing or invalid: expires_in"
+        )
+
+    def test_none_header_is_stripped_by_requests(self):
+        # update_token relies on requests dropping a session header that a
+        # call overrides with None.
+        import requests
+
+        session = requests.Session()
+        session.headers["Authorization"] = "Bearer old"
+        prepared = session.prepare_request(
+            requests.Request(
+                "POST", "https://example.com/token", headers={"Authorization": None}
+            )
+        )
+        assert "Authorization" not in prepared.headers
+
+    def test_non_json_refresh_raises_request_exception(self, real_etsy_client):
+        real_etsy_client.expiry = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        refresh_resp = _make_mock_response(200)
+        refresh_resp.json.side_effect = ValueError("not JSON")
+        refresh_resp.text = "<html>Gateway</html>"
+        real_etsy_client._mock_http_session.post.return_value = refresh_resp
+
+        with pytest.raises(RequestException, match="non-JSON"):
+            real_etsy_client.make_request("/shops/123")
+        assert real_etsy_client._mock_http_session.headers["Authorization"] == (
+            f"Bearer {MOCK_ACCESS_TOKEN}"
+        )
+
+    def test_refresh_drops_authorization_for_that_call_only(self, real_etsy_client):
+        real_etsy_client.expiry = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        real_etsy_client._mock_http_session.post.return_value = _make_mock_response(
+            200,
+            {"access_token": "new-a", "refresh_token": "new-r", "expires_in": 3600},
+        )
+        real_etsy_client._mock_http_session.get.return_value = _make_mock_response(
+            200, {"shop_id": 123}
+        )
+
+        real_etsy_client.make_request("/shops/123")
+        post_kwargs = real_etsy_client._mock_http_session.post.call_args.kwargs
+        assert post_kwargs["headers"] == {"Authorization": None}
+        assert real_etsy_client._mock_http_session.headers["Authorization"] == (
+            "Bearer new-a"
+        )
+        assert real_etsy_client.expiry.tzinfo is not None
+        remaining = real_etsy_client.expiry - datetime.now(tz=timezone.utc)
+        assert timedelta(seconds=3590) < remaining <= timedelta(seconds=3600)
+
     def test_expired_token_triggers_refresh(self, real_etsy_client):
         real_etsy_client.expiry = datetime.now(tz=timezone.utc) - timedelta(hours=1)
 

@@ -1,4 +1,6 @@
 NO_RESPONSE_CODES = {204}
+# Kept for import compatibility only: EtsyClient treats every status >= 400 as
+# an error, not just these codes.
 ERROR_CODES = {400, 401, 403, 404, 409, 500, 503}
 
 DEFAULT_RESPONSE_MESSAGES = {

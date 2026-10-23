@@ -35,6 +35,7 @@ class ListingInventoryResource:
         self, listing_id: int, listing_inventory: UpdateListingInventoryRequest,
         legacy: Optional[bool] = None,
         max_variations_supported: Optional[MaxVariationsSupported] = None,
+        enable_scale_validation: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
         if legacy is not None:
             warn_removed_legacy_param("updateListingInventory")
@@ -43,6 +44,7 @@ class ListingInventoryResource:
             "max_variations_supported": max_variations_supported.value
             if max_variations_supported is not None
             else None,
+            "enable_scale_validation": enable_scale_validation,
         }
         return self.session.make_request(
             endpoint, method=Method.PUT, payload=listing_inventory,
