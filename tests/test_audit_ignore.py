@@ -656,19 +656,36 @@ class TestShippedIgnoreFile:
             if ig["type"] == "param_drift":
                 assert ig["values"] != "*", f"{ig['key']} uses a wildcard"
 
-    def test_shipped_legacy_param_ignores_are_value_scoped(self):
-        # The 8 listing-endpoint `legacy` suppressions must name the value
-        # explicitly, never "*", so future drift on those operations surfaces.
+    def test_shipped_param_drift_ignores_are_value_scoped(self):
+        # Every param_drift suppression must name its values explicitly, never
+        # "*", so future drift on those operations surfaces: the 8 listing-
+        # endpoint `legacy` entries plus uploadListingVideo's is_multi_video.
         path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
         entries = [
             ig
             for ig in audit_sdk.load_ignores(path)
             if ig["type"] == "param_drift"
         ]
-        assert len(entries) == 8
+        assert len(entries) == 9
         for ig in entries:
             assert ig["direction"] == "extra"
-            assert ig["values"] == ["legacy"]
+            expected = (
+                ["is_multi_video"] if ig["key"] == "uploadListingVideo" else ["legacy"]
+            )
+            assert ig["values"] == expected
+
+    def test_shipped_2026_10_removal_ignores_are_pinned(self):
+        # Etsy removed is_multi_video from uploadListingVideo and the
+        # deleteUserAddress endpoint. Pin both entries so a widened or deleted
+        # suppression fails here instead of silently hiding drift.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        by_key = {
+            (ig["type"], ig["key"]): ig for ig in audit_sdk.load_ignores(path)
+        }
+        video = by_key[("param_drift", "uploadListingVideo")]
+        assert video["direction"] == "extra"
+        assert video["values"] == ["is_multi_video"]
+        assert ("extra_method", "UserAddressResource.delete_user_address") in by_key
 
     def test_no_wildcard_body_drift_ignores(self):
         # "*" on a body_drift entry would hide unreviewed request-body drift on
@@ -679,22 +696,28 @@ class TestShippedIgnoreFile:
                 assert ig["values"] != "*", f"{ig['key']} uses a wildcard"
 
     def test_shipped_personalization_body_ignores_are_value_scoped(self):
-        # Etsy removed the four personalization fields from the listing bodies.
-        # The kwargs are kept for source compatibility but never serialized, so
-        # the drift is suppressed by value — never "*".
+        # Etsy removed the four personalization fields from the listing bodies,
+        # and featured_rank from the updateListing body. The kwargs are kept
+        # for source compatibility but never serialized, so the drift is
+        # suppressed by value - never "*".
         path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
         entries = [
             ig for ig in audit_sdk.load_ignores(path) if ig["type"] == "body_drift"
         ]
         assert {ig["key"] for ig in entries} == {"createDraftListing", "updateListing"}
+        personalization = {
+            "is_personalizable",
+            "personalization_is_required",
+            "personalization_char_count_max",
+            "personalization_instructions",
+        }
+        expected = {
+            "createDraftListing": personalization,
+            "updateListing": personalization | {"featured_rank"},
+        }
         for ig in entries:
             assert ig["direction"] == "extra"
-            assert set(ig["values"]) == {
-                "is_personalizable",
-                "personalization_is_required",
-                "personalization_char_count_max",
-                "personalization_instructions",
-            }
+            assert set(ig["values"]) == expected[ig["key"]]
 
 
 # --------------------------------------------------------------------------- #

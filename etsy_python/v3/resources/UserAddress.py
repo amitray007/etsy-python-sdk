@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from typing import Union, Dict, Any
 
@@ -14,6 +15,14 @@ class UserAddressResource:
     def delete_user_address(
         self, user_address_id: int
     ) -> Union[Response, RequestException]:
+        """Deprecated: Etsy removed deleteUserAddress from the Open API v3 spec."""
+        warnings.warn(
+            "delete_user_address is deprecated: Etsy removed deleteUserAddress "
+            "from the Open API v3 spec, so the request may fail. It will be "
+            "removed in a future major version.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         endpoint = f"/user/addresses/{user_address_id}"
         return self.session.make_request(endpoint, method=Method.DELETE)
 

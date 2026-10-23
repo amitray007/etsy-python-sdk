@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -37,14 +38,22 @@ class ListingVideoResource:
     ) -> Union[Response, RequestException]:
         """Upload a video to a listing.
 
-        Pass ``is_multi_video=True`` to keep existing videos on the listing.
-        Omitting it preserves the former single-video behaviour, where the
-        upload replaces any video already attached.
+        ``is_multi_video`` is deprecated: Etsy removed it from
+        uploadListingVideo, so any value is discarded and not sent, and Etsy
+        no longer documents whether an upload replaces an existing video. To
+        replace one, remove it with ``delete_listing_video`` before uploading
+        the new video. Etsy limits uploads to 10 per listing per day.
         """
+        if is_multi_video is not None:
+            warnings.warn(
+                "'is_multi_video' was removed from uploadListingVideo by Etsy "
+                "and is no longer sent; to replace a video, remove it with "
+                "delete_listing_video first. The argument will be dropped from "
+                "this method in a future major version.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         endpoint = f"/shops/{shop_id}/listings/{listing_id}/videos"
         return self.session.make_request(
-            endpoint,
-            method=Method.POST,
-            payload=listing_video,
-            query_params={"is_multi_video": is_multi_video},
+            endpoint, method=Method.POST, payload=listing_video
         )

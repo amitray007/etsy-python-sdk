@@ -57,6 +57,28 @@ def _warn_if_personalization_used(
         )
 
 
+_FEATURED_RANK_DEPRECATION_MSG = (
+    "featured_rank was removed from updateListing by the Etsy API and is no "
+    "longer sent; it will be dropped from UpdateListingRequest in a future "
+    "major version."
+)
+
+
+def _warn_if_featured_rank_used(featured_rank: Optional[int]) -> None:
+    """Emit DeprecationWarning when the removed featured_rank field is set.
+
+    ``0`` does not warn: it is the default a fetched listing reports, so
+    callers that round-trip a listing into an update would otherwise warn on
+    every call. This matches the personalization fields, which skip falsy
+    values. ``stacklevel=3`` points at the caller of the model ``__init__`` or
+    the ``featured_rank`` setter.
+    """
+    if featured_rank:
+        warnings.warn(
+            _FEATURED_RANK_DEPRECATION_MSG, DeprecationWarning, stacklevel=3
+        )
+
+
 class _PersonalizationFieldsMixin:
     """Accessors for the personalization fields Etsy removed from listings.
 
@@ -310,7 +332,6 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Reques
         "item_weight_unit",
         "item_dimensions_unit",
         "tags",
-        "featured_rank",
         "production_partner_ids",
         "_type",
         *ECGT_FIELDS,
@@ -375,7 +396,10 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Reques
         self.tags = tags
         self.who_made = who_made
         self.when_made = when_made
-        self.featured_rank = featured_rank
+        # Removed from the updateListing body by Etsy: stored under an
+        # underscore name so todict never sends it.
+        self._featured_rank = featured_rank
+        _warn_if_featured_rank_used(featured_rank)
         self._store_personalization(
             is_personalizable,
             personalization_is_required,
@@ -399,6 +423,15 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Reques
             nullable=UpdateListingRequest.nullable,
             mandatory=UpdateListingRequest.mandatory,
         )
+
+    @property
+    def featured_rank(self) -> Optional[int]:
+        return self._featured_rank
+
+    @featured_rank.setter
+    def featured_rank(self, value: Optional[int]) -> None:
+        self._featured_rank = value
+        _warn_if_featured_rank_used(value)
 
 
 class UpdateListingInventoryRequest(Request):

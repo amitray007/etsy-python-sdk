@@ -1,3 +1,4 @@
+import warnings
 from unittest.mock import MagicMock
 
 import pytest
@@ -160,7 +161,10 @@ class TestListingInventoryResource:
             f"/listings/{MOCK_LISTING_ID}/inventory",
             method=Method.PUT,
             payload=payload,
-            query_params={"max_variations_supported": None},
+            query_params={
+                "max_variations_supported": None,
+                "enable_scale_validation": None,
+            },
         )
 
     def test_update_listing_inventory_with_max_variations(self, mock_session):
@@ -178,7 +182,32 @@ class TestListingInventoryResource:
             f"/listings/{MOCK_LISTING_ID}/inventory",
             method=Method.PUT,
             payload=payload,
-            query_params={"max_variations_supported": "3"},
+            query_params={
+                "max_variations_supported": "3",
+                "enable_scale_validation": None,
+            },
+        )
+
+    @pytest.mark.parametrize("scale_validation", [True, False])
+    def test_update_listing_inventory_with_scale_validation(
+        self, mock_session, scale_validation
+    ):
+        mock_session.make_request.return_value = Response(
+            200, make_listing_inventory()
+        )
+        resource = ListingInventoryResource(session=mock_session)
+        payload = MagicMock(spec=UpdateListingInventoryRequest)
+        resource.update_listing_inventory(
+            MOCK_LISTING_ID, payload, enable_scale_validation=scale_validation
+        )
+        mock_session.make_request.assert_called_once_with(
+            f"/listings/{MOCK_LISTING_ID}/inventory",
+            method=Method.PUT,
+            payload=payload,
+            query_params={
+                "max_variations_supported": None,
+                "enable_scale_validation": scale_validation,
+            },
         )
 
     @pytest.mark.parametrize("legacy_value", [True, False])
@@ -244,26 +273,34 @@ class TestListingVideoResource:
         mock_session.make_request.return_value = Response(201, make_listing_video())
         resource = ListingVideoResource(session=mock_session)
         payload = MagicMock(spec=UpdateListingVideoRequest)
-        resource.upload_listing_video(MOCK_SHOP_ID, MOCK_LISTING_ID, payload)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            resource.upload_listing_video(MOCK_SHOP_ID, MOCK_LISTING_ID, payload)
         mock_session.make_request.assert_called_once_with(
             f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}/videos",
             method=Method.POST,
             payload=payload,
-            query_params={"is_multi_video": None},
         )
 
-    def test_upload_listing_video_multi(self, mock_session):
+    @pytest.mark.parametrize("multi_value", [True, False])
+    def test_upload_listing_video_multi_warns_and_is_not_sent(
+        self, mock_session, multi_value
+    ):
+        # Etsy removed is_multi_video from uploadListingVideo; any explicit
+        # value warns and is dropped.
         mock_session.make_request.return_value = Response(201, make_listing_video())
         resource = ListingVideoResource(session=mock_session)
         payload = MagicMock(spec=UpdateListingVideoRequest)
-        resource.upload_listing_video(
-            MOCK_SHOP_ID, MOCK_LISTING_ID, payload, is_multi_video=True
-        )
+        with pytest.warns(
+            DeprecationWarning, match=r"from uploadListingVideo by Etsy"
+        ):
+            resource.upload_listing_video(
+                MOCK_SHOP_ID, MOCK_LISTING_ID, payload, is_multi_video=multi_value
+            )
         mock_session.make_request.assert_called_once_with(
             f"/shops/{MOCK_SHOP_ID}/listings/{MOCK_LISTING_ID}/videos",
             method=Method.POST,
             payload=payload,
-            query_params={"is_multi_video": True},
         )
 
     def test_delete_listing_video(self, mock_session):
@@ -702,7 +739,8 @@ class TestUserAddressResource:
     def test_delete_user_address(self, mock_session):
         mock_session.make_request.return_value = Response(204, "OK")
         resource = UserAddressResource(session=mock_session)
-        resource.delete_user_address(MOCK_USER_ADDRESS_ID)
+        with pytest.warns(DeprecationWarning, match=r"removed deleteUserAddress"):
+            resource.delete_user_address(MOCK_USER_ADDRESS_ID)
         mock_session.make_request.assert_called_once_with(
             f"/user/addresses/{MOCK_USER_ADDRESS_ID}", method=Method.DELETE
         )
