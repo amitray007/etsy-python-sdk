@@ -583,16 +583,14 @@ class TestGetListingsByShopSectionId:
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert qp["shop_section_ids"] == "111,222"
 
-    def test_without_section_ids(self, mock_session):
-        mock_session.make_request.return_value = Response(
-            200, make_shop_listing_collection()
-        )
+    def test_section_ids_required(self, mock_session):
+        """Etsy marks shop_section_ids as required, so omitting it is a TypeError."""
         resource = ListingResource(session=mock_session)
 
-        resource.get_listings_by_shop_section_id(MOCK_SHOP_ID)
+        with pytest.raises(TypeError):
+            resource.get_listings_by_shop_section_id(MOCK_SHOP_ID)
 
-        qp = mock_session.make_request.call_args[1]["query_params"]
-        assert qp["shop_section_ids"] is None
+        mock_session.make_request.assert_not_called()
 
 
 class TestErrorPropagation:

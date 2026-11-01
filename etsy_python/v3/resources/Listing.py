@@ -260,7 +260,7 @@ class ListingResource:
     def get_listings_by_shop_section_id(
         self,
         shop_id: int,
-        shop_section_ids: Optional[List[int]] = None,
+        shop_section_ids: List[int],
         limit: int = 25,
         offset: int = 0,
         sort_on: SortOn = SortOn.CREATED,
@@ -269,9 +269,7 @@ class ListingResource:
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/shop-sections/listings"
         query_params: Dict[str, Any] = {
-            "shop_section_ids": ",".join(list(map(str, shop_section_ids)))
-            if shop_section_ids is not None
-            else None,
+            "shop_section_ids": ",".join(map(str, shop_section_ids)),
             "limit": limit,
             "offset": offset,
             "sort_on": sort_on.value,
