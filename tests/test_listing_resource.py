@@ -592,6 +592,16 @@ class TestGetListingsByShopSectionId:
 
         mock_session.make_request.assert_not_called()
 
+    @pytest.mark.parametrize("section_ids", [None, []])
+    def test_section_ids_none_or_empty_raises(self, mock_session, section_ids):
+        """None or [] would send an invalid request, so reject it before calling Etsy."""
+        resource = ListingResource(session=mock_session)
+
+        with pytest.raises(ValueError, match="shop_section_ids"):
+            resource.get_listings_by_shop_section_id(MOCK_SHOP_ID, section_ids)
+
+        mock_session.make_request.assert_not_called()
+
 
 class TestErrorPropagation:
     def test_request_exception_propagates(self, mock_session):

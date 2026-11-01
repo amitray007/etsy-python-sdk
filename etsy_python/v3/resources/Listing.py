@@ -267,6 +267,10 @@ class ListingResource:
         sort_order: SortOrder = SortOrder.DESC,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        if not shop_section_ids:
+            raise ValueError(
+                "shop_section_ids is required and must contain at least one ID"
+            )
         endpoint = f"/shops/{shop_id}/shop-sections/listings"
         query_params: Dict[str, Any] = {
             "shop_section_ids": ",".join(map(str, shop_section_ids)),
