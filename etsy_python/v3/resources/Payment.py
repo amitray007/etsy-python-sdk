@@ -2,6 +2,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Union, Dict, Any, List
 
+from etsy_python.v3.common.Utils import join_ids
 from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.resources.Session import EtsyClient
 from etsy_python.v3.resources.Response import Response
@@ -16,7 +17,7 @@ class PaymentResource:
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/payment-account/ledger-entries/payments"
         query_params: Dict[str, Any] = {
-            "ledger_entry_ids": ",".join(list(map(str, ledger_entry_ids)))
+            "ledger_entry_ids": join_ids("ledger_entry_ids", ledger_entry_ids)
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
@@ -42,5 +43,5 @@ class PaymentResource:
         self, shop_id: int, payment_ids: List[int]
     ) -> Union[Response, RequestException]:
         endpoint = f"/shops/{shop_id}/payments"
-        query_params: Dict[str, Any] = {"payment_ids": ",".join(list(map(str, payment_ids)))}
+        query_params: Dict[str, Any] = {"payment_ids": join_ids("payment_ids", payment_ids)}
         return self.session.make_request(endpoint, query_params=query_params)

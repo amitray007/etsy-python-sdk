@@ -602,6 +602,32 @@ class TestGetListingsByShopSectionId:
 
         mock_session.make_request.assert_not_called()
 
+    def test_string_section_ids_raises(self, mock_session):
+        """A string would be split into characters and sent as bogus IDs."""
+        resource = ListingResource(session=mock_session)
+
+        with pytest.raises(TypeError, match="shop_section_ids"):
+            resource.get_listings_by_shop_section_id(MOCK_SHOP_ID, "111,222")
+
+        mock_session.make_request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        "get_listings_by_listing_ids",
+        "get_listings_inventory_by_listing_ids",
+        "get_listings_shipping_by_listing_ids",
+    ],
+)
+def test_batch_listing_methods_reject_empty_ids(mock_session, method):
+    resource = ListingResource(session=mock_session)
+
+    with pytest.raises(ValueError, match="listing_ids"):
+        getattr(resource, method)([])
+
+    mock_session.make_request.assert_not_called()
+
 
 class TestErrorPropagation:
     def test_request_exception_propagates(self, mock_session):

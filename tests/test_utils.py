@@ -1,10 +1,30 @@
 from enum import Enum
 
+import pytest
+
 from etsy_python.v3.common.Utils import (
     generate_bytes_from_file,
     generate_get_uri,
+    join_ids,
     todict,
 )
+
+
+class TestJoinIds:
+    @pytest.mark.parametrize("ids", [[1, 2, 3], (1, 2, 3), (i for i in (1, 2, 3))])
+    def test_joins_any_iterable(self, ids):
+        assert join_ids("ids", ids) == "1,2,3"
+
+    @pytest.mark.parametrize("ids", [None, [], (), iter([])])
+    def test_empty_raises_value_error(self, ids):
+        with pytest.raises(ValueError, match="ids is required"):
+            join_ids("ids", ids)
+
+    @pytest.mark.parametrize("ids", ["111,222", b"111"])
+    def test_string_raises_type_error(self, ids):
+        # Iterating a string would send "1,1,1,,,2,2,2".
+        with pytest.raises(TypeError, match="not a string"):
+            join_ids("ids", ids)
 
 
 class TestGenerateGetUri:

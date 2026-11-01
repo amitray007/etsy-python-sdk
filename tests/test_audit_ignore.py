@@ -333,13 +333,20 @@ class TestComputeEnumFindings:
 # compute_param_findings — query/path parameter drift
 # --------------------------------------------------------------------------- #
 class TestComputeParamFindings:
-    def _implemented(self, spec_params, sdk_params, annotations=None):
+    def _implemented(
+        self, spec_params, sdk_params, annotations=None, required=(), none_defaults=()
+    ):
         return {
             "getX": {
-                "spec": {"parameters": [{"name": n} for n in spec_params]},
+                "spec": {
+                    "parameters": [
+                        {"name": n, "required": n in required} for n in spec_params
+                    ]
+                },
                 "sdk": {
                     "params": list(sdk_params),
                     "param_annotations": annotations or {},
+                    "none_defaults": set(none_defaults),
                     "file": "X.py",
                     "line": 10,
                 },
@@ -395,6 +402,35 @@ class TestComputeParamFindings:
             self._implemented(["limit"], ["limit", "shop_id"]), {}
         )
         assert findings == []
+
+    def test_required_param_defaulting_to_none_detected(self):
+        findings = audit_sdk.compute_param_findings(
+            self._implemented(
+                ["ids", "limit"],
+                ["ids", "limit"],
+                required={"ids"},
+                none_defaults={"ids", "limit"},
+            ),
+            {},
+        )
+        assert len(findings) == 1
+        assert findings[0]["direction"] == "optional"
+        assert findings[0]["values"] == {"ids"}
+
+    def test_required_param_without_default_not_flagged(self):
+        findings = audit_sdk.compute_param_findings(
+            self._implemented(["ids"], ["ids"], required={"ids"}), {}
+        )
+        assert findings == []
+
+    def test_scan_records_none_defaults(self, tmp_path):
+        (tmp_path / "X.py").write_text(
+            "class R:\n"
+            "    def get_x(self, a: int, b=None, c: int = 0, d=None):\n"
+            "        pass\n"
+        )
+        info = audit_sdk.scan_resource_methods(tmp_path)["X"]["get_x"]
+        assert info["none_defaults"] == {"b", "d"}
 
 
 # --------------------------------------------------------------------------- #

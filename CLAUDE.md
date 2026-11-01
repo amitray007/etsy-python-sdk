@@ -123,6 +123,7 @@ All code lives under `etsy_python/v3/`:
 Every resource is a `@dataclass` with `session: EtsyClient`. Methods return `Union[Response, RequestException]`.
 
 - **GET/DELETE**: Parameters passed as `**kwargs`, built into query string via `generate_get_uri()`
+- **Required ID-list params** (`listing_ids`, `payment_ids`, `shop_section_ids`, ...): join with `join_ids(name, ids)` from `common/Utils.py`. It raises `ValueError` for an empty list and `TypeError` for a string, locally and before any request, so these methods can raise those in addition to `RequestException`
 - **POST/PUT/PATCH**: Payload is a `Request` model, serialized via `.get_dict()` to JSON
 - **File uploads**: Payload is a `FileRequest`, sent as multipart form data
 - **Enums**: Always use `.value` to extract the API string (e.g., `State.ACTIVE.value` -> `"active"`)
@@ -130,6 +131,7 @@ Every resource is a `@dataclass` with `session: EtsyClient`. Methods return `Uni
 ### Utility Functions (`common/Utils.py`)
 
 - `generate_get_uri(uri, **kwargs)` -- builds query string from kwargs dict
+- `join_ids(name, ids)` -- validates and comma-joins a required ID list (raises `ValueError` if empty, `TypeError` if a string)
 - `todict(obj)` -- recursive serializer handling Enums, nested objects, nullable fields
 - `generate_bytes_from_file(file)` -- reads file bytes for uploads
 
@@ -210,5 +212,6 @@ value-bearing types); to stop accepting it, delete the entry. A missing file mea
 "no suppressions".
 
 Supported `type` values: `extra_method`, `enum_staleness`, `param_drift`,
-`body_drift`, `code_issue`. Prefer an explicit `values` list over `"*"` — a wildcard
+`body_drift`, `code_issue`. `param_drift` directions are `missing`, `extra`, and `optional`
+(required in the spec but defaulted to `None` in the SDK). Prefer an explicit `values` list over `"*"` — a wildcard
 hides everything on that key, including drift nobody has reviewed.

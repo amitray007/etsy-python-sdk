@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 
 def warn_removed_legacy_param(operation_id: str) -> None:
@@ -23,6 +23,21 @@ def warn_removed_legacy_param(operation_id: str) -> None:
         DeprecationWarning,
         stacklevel=3,
     )
+
+
+def join_ids(name: str, ids: Iterable[Any]) -> str:
+    """Join a required list of IDs into Etsy's comma-separated query value.
+
+    Raises ``TypeError`` for a string (iterating it would split the ID into
+    characters) and ``ValueError`` when no IDs are given, so a request Etsy
+    would reject is caught before it is sent.
+    """
+    if isinstance(ids, (str, bytes)):
+        raise TypeError(f"{name} must be a list of IDs, not a string")
+    joined = ",".join(map(str, ids)) if ids is not None else ""
+    if not joined:
+        raise ValueError(f"{name} is required and must contain at least one ID")
+    return joined
 
 
 def generate_get_uri(uri: str, params: Optional[Dict[str, Any]] = None) -> str:
