@@ -192,6 +192,16 @@ def scan_resource_methods(resources_dir: Path) -> Dict[str, Dict[str, dict]]:
                                 if arg.annotation and isinstance(arg.annotation, ast.Name):
                                     param_annotations[arg.arg] = arg.annotation.id
 
+                        # Params whose default is the literal None (defaults
+                        # align with the tail of the positional args).
+                        args = item.args.args
+                        defaults = item.args.defaults
+                        none_defaults = {
+                            arg.arg
+                            for arg, default in zip(args[len(args) - len(defaults):], defaults)
+                            if isinstance(default, ast.Constant) and default.value is None
+                        }
+
                         # Detect NotImplementedError stubs
                         is_not_implemented = False
                         if len(item.body) == 1:
@@ -211,6 +221,7 @@ def scan_resource_methods(resources_dir: Path) -> Dict[str, Dict[str, dict]]:
                         file_methods[item.name] = {
                             "params": params,
                             "param_annotations": param_annotations,
+                            "none_defaults": none_defaults,
                             "class": node.name,
                             "file": py_file.name,
                             "line": item.lineno,
@@ -629,7 +640,9 @@ def compute_param_findings(
 
     Yields one finding per (operation, direction) whose parameter sets differ.
     ``direction`` is ``"missing"`` (in the spec, absent from the SDK signature)
-    or ``"extra"`` (in the SDK signature, absent from the spec). ``values`` is a
+    or ``"extra"`` (in the SDK signature, absent from the spec) or
+    ``"optional"`` (required in the spec, but the SDK defaults it to ``None``,
+    so omitting it silently sends a request Etsy rejects). ``values`` is a
     set of parameter names, so an ignore listing specific names suppresses only
     those — a newly drifted parameter on an already-suppressed operation still
     surfaces. Model-object and path params are excluded from the comparison.
@@ -653,8 +666,15 @@ def compute_param_findings(
         non_model_sdk_params = sdk_params - model_param_names
         spec_only = spec_params - non_model_sdk_params
         sdk_only = non_model_sdk_params - spec_params - PATH_PARAM_NAMES
+        required_but_optional = {
+            p["name"] for p in op["parameters"] if p.get("required")
+        } & set(sdk.get("none_defaults", ()))
 
-        for direction, values in (("missing", spec_only), ("extra", sdk_only)):
+        for direction, values in (
+            ("missing", spec_only),
+            ("extra", sdk_only),
+            ("optional", required_but_optional),
+        ):
             if values:
                 findings.append(
                     {
@@ -1017,6 +1037,9 @@ def generate_report(
             if "extra" in directions:
                 names = ", ".join(sorted(directions["extra"]["values"]))
                 lines.append(f"- In SDK but not spec: {names}")
+            if "optional" in directions:
+                names = ", ".join(sorted(directions["optional"]["values"]))
+                lines.append(f"- Required in spec but defaults to None in SDK: {names}")
             lines.append("")
     else:
         lines.append("No query/path parameter drift detected.\n")

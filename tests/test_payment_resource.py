@@ -1,3 +1,5 @@
+import pytest
+
 from etsy_python.v3.resources.Payment import PaymentResource
 from etsy_python.v3.resources.Response import Response
 
@@ -32,6 +34,14 @@ class TestGetPayments:
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert qp["payment_ids"] == f"{MOCK_PAYMENT_ID},20202"
 
+    def test_empty_payment_ids_raises(self, mock_session):
+        resource = PaymentResource(session=mock_session)
+
+        with pytest.raises(ValueError, match="payment_ids"):
+            resource.get_payments(MOCK_SHOP_ID, [])
+
+        mock_session.make_request.assert_not_called()
+
 
 class TestGetShopPaymentAccountLedgerEntryPayments:
     def test_ledger_entry_ids_joined(self, mock_session):
@@ -50,3 +60,11 @@ class TestGetShopPaymentAccountLedgerEntryPayments:
             == f"/shops/{MOCK_SHOP_ID}/payment-account/ledger-entries/payments"
         )
         assert call_args[1]["query_params"]["ledger_entry_ids"] == f"{MOCK_LEDGER_ENTRY_ID},30303"
+
+    def test_empty_ledger_entry_ids_raises(self, mock_session):
+        resource = PaymentResource(session=mock_session)
+
+        with pytest.raises(ValueError, match="ledger_entry_ids"):
+            resource.get_payment_account_ledger_entry_payments(MOCK_SHOP_ID, [])
+
+        mock_session.make_request.assert_not_called()

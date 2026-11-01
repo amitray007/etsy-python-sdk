@@ -2,7 +2,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Union
 
-from etsy_python.v3.common.Utils import warn_removed_legacy_param
+from etsy_python.v3.common.Utils import join_ids, warn_removed_legacy_param
 from etsy_python.v3.enums.Listing import Includes, State, SortOn, SortOrder
 from etsy_python.v3.exceptions.RequestException import RequestException
 from etsy_python.v3.models.Listing import (
@@ -150,7 +150,7 @@ class ListingResource:
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/batch"
         query_params: Dict[str, Any] = {
-            "listing_ids": ",".join(list(map(str, listing_ids))),
+            "listing_ids": join_ids("listing_ids", listing_ids),
             "includes": ",".join(list(map(lambda inc: inc.value, includes)))
             if includes is not None
             else None,
@@ -179,7 +179,7 @@ class ListingResource:
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/batch/inventory"
         query_params: Dict[str, Any] = {
-            "listing_ids": ",".join(list(map(str, listing_ids))),
+            "listing_ids": join_ids("listing_ids", listing_ids),
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
@@ -188,7 +188,7 @@ class ListingResource:
     ) -> Union[Response, RequestException]:
         endpoint = "/listings/batch/shipping"
         query_params: Dict[str, Any] = {
-            "listing_ids": ",".join(list(map(str, listing_ids))),
+            "listing_ids": join_ids("listing_ids", listing_ids),
         }
         return self.session.make_request(endpoint, query_params=query_params)
 
@@ -260,18 +260,21 @@ class ListingResource:
     def get_listings_by_shop_section_id(
         self,
         shop_id: int,
-        shop_section_ids: Optional[List[int]] = None,
+        shop_section_ids: List[int],
         limit: int = 25,
         offset: int = 0,
         sort_on: SortOn = SortOn.CREATED,
         sort_order: SortOrder = SortOrder.DESC,
         legacy: Optional[bool] = None,
     ) -> Union[Response, RequestException]:
+        """Get listings in the given shop sections.
+
+        Raises ``ValueError`` if ``shop_section_ids`` is empty and
+        ``TypeError`` if it is a string, before any request is sent.
+        """
         endpoint = f"/shops/{shop_id}/shop-sections/listings"
         query_params: Dict[str, Any] = {
-            "shop_section_ids": ",".join(list(map(str, shop_section_ids)))
-            if shop_section_ids is not None
-            else None,
+            "shop_section_ids": join_ids("shop_section_ids", shop_section_ids),
             "limit": limit,
             "offset": offset,
             "sort_on": sort_on.value,

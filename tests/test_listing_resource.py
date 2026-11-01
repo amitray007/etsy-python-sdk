@@ -583,16 +583,50 @@ class TestGetListingsByShopSectionId:
         qp = mock_session.make_request.call_args[1]["query_params"]
         assert qp["shop_section_ids"] == "111,222"
 
-    def test_without_section_ids(self, mock_session):
-        mock_session.make_request.return_value = Response(
-            200, make_shop_listing_collection()
-        )
+    def test_section_ids_required(self, mock_session):
+        """Etsy marks shop_section_ids as required, so omitting it is a TypeError."""
         resource = ListingResource(session=mock_session)
 
-        resource.get_listings_by_shop_section_id(MOCK_SHOP_ID)
+        with pytest.raises(TypeError):
+            resource.get_listings_by_shop_section_id(MOCK_SHOP_ID)
 
-        qp = mock_session.make_request.call_args[1]["query_params"]
-        assert qp["shop_section_ids"] is None
+        mock_session.make_request.assert_not_called()
+
+    @pytest.mark.parametrize("section_ids", [None, []])
+    def test_section_ids_none_or_empty_raises(self, mock_session, section_ids):
+        """None or [] would send an invalid request, so reject it before calling Etsy."""
+        resource = ListingResource(session=mock_session)
+
+        with pytest.raises(ValueError, match="shop_section_ids"):
+            resource.get_listings_by_shop_section_id(MOCK_SHOP_ID, section_ids)
+
+        mock_session.make_request.assert_not_called()
+
+    def test_string_section_ids_raises(self, mock_session):
+        """A string would be split into characters and sent as bogus IDs."""
+        resource = ListingResource(session=mock_session)
+
+        with pytest.raises(TypeError, match="shop_section_ids"):
+            resource.get_listings_by_shop_section_id(MOCK_SHOP_ID, "111,222")
+
+        mock_session.make_request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        "get_listings_by_listing_ids",
+        "get_listings_inventory_by_listing_ids",
+        "get_listings_shipping_by_listing_ids",
+    ],
+)
+def test_batch_listing_methods_reject_empty_ids(mock_session, method):
+    resource = ListingResource(session=mock_session)
+
+    with pytest.raises(ValueError, match="listing_ids"):
+        getattr(resource, method)([])
+
+    mock_session.make_request.assert_not_called()
 
 
 class TestErrorPropagation:
