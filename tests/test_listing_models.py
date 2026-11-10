@@ -2,8 +2,9 @@ import warnings
 
 import pytest
 
-from etsy_python.v3.enums.Listing import WhenMade, WhoMade
+from etsy_python.v3.enums.Listing import GPSROperatorType, WhenMade, WhoMade
 from etsy_python.v3.models.Listing import (
+    GPSR_FIELDS,
     CreateDraftListingRequest,
     CreateListingTranslationRequest,
     UpdateListingRequest,
@@ -573,3 +574,55 @@ class TestECGTFields:
                 **self._create_kwargs(), ecgt_garan_brand="Acme"
             )
         assert caught == []
+
+
+class TestGPSRFields:
+    """GPSR economic operator fields on create and update."""
+
+    @staticmethod
+    def _gpsr_kwargs():
+        return {
+            "gpsr_manufacturer_type": GPSROperatorType.ECONOMIC_OPERATOR,
+            "gpsr_manufacturer_id": 12121,
+            "gpsr_responsible_person_type": GPSROperatorType.SELLER,
+            "gpsr_responsible_person_id": None,
+            "gpsr_serial_number": "LOT-42",
+            "gpsr_safety_warnings": "Not for children under 3.",
+        }
+
+    @staticmethod
+    def _expected_wire():
+        return {
+            "gpsr_manufacturer_type": "economic_operator",
+            "gpsr_manufacturer_id": 12121,
+            "gpsr_responsible_person_type": "seller",
+            "gpsr_serial_number": "LOT-42",
+            "gpsr_safety_warnings": "Not for children under 3.",
+        }
+
+    def test_create_serializes_gpsr_fields(self):
+        result = CreateDraftListingRequest(
+            **TestECGTFields._create_kwargs(), **self._gpsr_kwargs()
+        ).get_dict()
+        for field, value in self._expected_wire().items():
+            assert result[field] == value
+        assert "gpsr_responsible_person_id" not in result
+
+    def test_update_serializes_gpsr_fields(self):
+        result = UpdateListingRequest(**self._gpsr_kwargs()).get_dict()
+        assert result == self._expected_wire()
+
+    def test_unset_gpsr_fields_are_omitted(self):
+        result = UpdateListingRequest(title="Just a title").get_dict()
+        assert not any(field.startswith("gpsr_") for field in result)
+
+    def test_empty_values_clear_gpsr_fields(self):
+        result = UpdateListingRequest(
+            gpsr_manufacturer_type="",
+            gpsr_manufacturer_id=0,
+            gpsr_responsible_person_type="",
+            gpsr_responsible_person_id=0,
+            gpsr_serial_number="",
+            gpsr_safety_warnings="",
+        ).get_dict()
+        assert result == {field: None for field in GPSR_FIELDS}

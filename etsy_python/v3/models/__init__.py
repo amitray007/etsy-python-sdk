@@ -24,6 +24,10 @@ from .ShippingProfile import (
     UpdateShopShippingProfileUpgradeRequest,
 )
 from .Shop import CreateShopSectionRequest, UpdateShopSectionRequest, UpdateShopRequest
+from .ShopEconomicOperator import (
+    CreateShopEconomicOperatorRequest,
+    UpdateShopEconomicOperatorRequest,
+)
 from .ShopReturnPolicy import (
     ConsolidateShopReturnPoliciesRequest,
     CreateShopReturnPolicyRequest,

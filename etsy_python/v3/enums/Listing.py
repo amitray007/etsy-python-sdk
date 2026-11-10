@@ -46,6 +46,11 @@ class ItemDimensionsUnit(Enum):
     INCHES = "inches"
 
 
+class GPSROperatorType(Enum):
+    SELLER = "seller"
+    ECONOMIC_OPERATOR = "economic_operator"
+
+
 class Type(Enum):
     PHYSICAL = "physical"
     DOWNLOAD = "download"

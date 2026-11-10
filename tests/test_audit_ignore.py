@@ -723,6 +723,12 @@ class TestShippedIgnoreFile:
         assert video["values"] == ["is_multi_video"]
         assert ("extra_method", "UserAddressResource.delete_user_address") in by_key
 
+    def test_shipped_2026_11_removal_ignore_is_pinned(self):
+        # Etsy removed getListingOffering; the method stays as a warning shim.
+        path = SCRIPTS_DIR.parent / "specs" / "audit-ignore.json"
+        keys = {(ig["type"], ig["key"]) for ig in audit_sdk.load_ignores(path)}
+        assert ("extra_method", "ListingOfferingResource.get_listing_offering") in keys
+
     def test_no_wildcard_body_drift_ignores(self):
         # "*" on a body_drift entry would hide unreviewed request-body drift on
         # that operation, defeating the self-verifying property.

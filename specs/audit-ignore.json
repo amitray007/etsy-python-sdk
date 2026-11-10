@@ -185,6 +185,12 @@
       ],
       "reason": "Etsy removed is_personalizable, personalization_is_required, personalization_char_count_max and personalization_instructions from the createDraftListing and updateListing request bodies (2026-09 spec); personalization now lives on the dedicated personalization endpoints (update_listing_personalization). The constructor kwargs are retained so existing callers don't break, but the values are stored under underscore-prefixed names that todict excludes, so they are never sent on the wire, and setting one emits a DeprecationWarning. Remove the kwargs (and this entry) in the next major version. featured_rank was also removed from the updateListing body (2026-10 spec) and is handled the same way: stored as _featured_rank, never sent, and setting it emits a DeprecationWarning.",
       "added": "2026-09-06"
+    },
+    {
+      "type": "extra_method",
+      "key": "ListingOfferingResource.get_listing_offering",
+      "reason": "Etsy removed getListingOffering from the spec (2026-11). The method is kept so existing callers don't break, but it emits a DeprecationWarning because the request may fail. Remove the method, ListingOfferingResource, and this entry in the next major version.",
+      "added": "2026-11-10"
     }
   ]
 }

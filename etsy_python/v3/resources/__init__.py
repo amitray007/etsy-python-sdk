@@ -21,6 +21,7 @@ from .Review import ReviewResource
 from .Session import EtsyClient
 from .ShippingProfile import ShippingProfileResource
 from .Shop import ShopResource
+from .ShopEconomicOperator import ShopEconomicOperatorResource
 from .ShopProductionPartner import ShopProductionPartnerResource
 from .ShopReturnPolicy import ShopReturnPolicyResource
 from .ShopSection import ShopSectionResource

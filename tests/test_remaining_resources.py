@@ -792,7 +792,10 @@ class TestListingOfferingResource:
     def test_get_listing_offering(self, mock_session):
         mock_session.make_request.return_value = Response(200, make_listing_offering())
         resource = ListingOfferingResource(session=mock_session)
-        resource.get_listing_offering(MOCK_LISTING_ID, MOCK_PRODUCT_ID, MOCK_OFFERING_ID)
+        with pytest.warns(DeprecationWarning, match=r"removed getListingOffering"):
+            resource.get_listing_offering(
+                MOCK_LISTING_ID, MOCK_PRODUCT_ID, MOCK_OFFERING_ID
+            )
         mock_session.make_request.assert_called_once_with(
             f"/listings/{MOCK_LISTING_ID}/products/{MOCK_PRODUCT_ID}/offerings/{MOCK_OFFERING_ID}",
             query_params={"legacy": None},
