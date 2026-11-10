@@ -1,3 +1,4 @@
+from etsy_python.v3.common.Utils import CLEAR, Clear
 from .FileRequest import FileRequest
 from .Listing import (
     CreateDraftListingRequest,

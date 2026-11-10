@@ -2,6 +2,7 @@ import warnings
 
 import pytest
 
+from etsy_python.v3.common.Utils import CLEAR
 from etsy_python.v3.enums.Listing import GPSROperatorType, WhenMade, WhoMade
 from etsy_python.v3.models.Listing import (
     GPSR_FIELDS,
@@ -490,24 +491,24 @@ class TestUpdateListingVideoRequest:
         assert req.data == {"video_id": None, "name": None}
 
 
+def _draft_listing_kwargs():
+    return {
+        "quantity": 10,
+        "title": "Test Mug",
+        "description": "A test mug",
+        "price": 25.00,
+        "who_made": WhoMade.I_DID,
+        "when_made": WhenMade.TWENTY_TWENTIES,
+        "taxonomy_id": 30303,
+    }
+
+
 class TestECGTFields:
     """EU commercial guarantee (ECGT/GPSR) fields on create and update."""
 
-    @staticmethod
-    def _create_kwargs():
-        return {
-            "quantity": 10,
-            "title": "Test Mug",
-            "description": "A test mug",
-            "price": 25.00,
-            "who_made": WhoMade.I_DID,
-            "when_made": WhenMade.TWENTY_TWENTIES,
-            "taxonomy_id": 30303,
-        }
-
     def test_create_serializes_all_ecgt_fields(self):
         req = CreateDraftListingRequest(
-            **self._create_kwargs(),
+            **_draft_listing_kwargs(),
             ecgt_garan_brand="Acme",
             ecgt_garan_model="MUG-1",
             ecgt_garan_years=3,
@@ -544,7 +545,7 @@ class TestECGTFields:
         assert result["ecgt_software_update_details"] == "Not applicable."
 
     def test_create_omits_unset_ecgt_fields(self):
-        req = CreateDraftListingRequest(**self._create_kwargs())
+        req = CreateDraftListingRequest(**_draft_listing_kwargs())
         result = req.get_dict()
         for field in (
             "ecgt_garan_brand",
@@ -571,7 +572,7 @@ class TestECGTFields:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             CreateDraftListingRequest(
-                **self._create_kwargs(), ecgt_garan_brand="Acme"
+                **_draft_listing_kwargs(), ecgt_garan_brand="Acme"
             )
         assert caught == []
 
@@ -602,7 +603,7 @@ class TestGPSRFields:
 
     def test_create_serializes_gpsr_fields(self):
         result = CreateDraftListingRequest(
-            **TestECGTFields._create_kwargs(), **self._gpsr_kwargs()
+            **_draft_listing_kwargs(), **self._gpsr_kwargs()
         ).get_dict()
         for field, value in self._expected_wire().items():
             assert result[field] == value
@@ -616,7 +617,17 @@ class TestGPSRFields:
         result = UpdateListingRequest(title="Just a title").get_dict()
         assert not any(field.startswith("gpsr_") for field in result)
 
-    def test_empty_values_clear_gpsr_fields(self):
+    def test_clear_sends_null_for_gpsr_fields(self):
+        result = UpdateListingRequest(
+            **{field: CLEAR for field in GPSR_FIELDS}
+        ).get_dict()
+        assert result == {field: None for field in GPSR_FIELDS}
+
+    def test_clear_on_non_nullable_field_raises(self):
+        with pytest.raises(ValueError, match="title"):
+            UpdateListingRequest(title=CLEAR)
+
+    def test_legacy_empty_values_clear_gpsr_fields(self):
         result = UpdateListingRequest(
             gpsr_manufacturer_type="",
             gpsr_manufacturer_id=0,

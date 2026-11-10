@@ -11,6 +11,15 @@ from etsy_python.v3.resources.Response import Response
 class ListingOfferingResource:
     session: EtsyClient
 
+    def __post_init__(self) -> None:
+        warnings.warn(
+            "ListingOfferingResource is deprecated: Etsy removed its only "
+            "endpoint, getListingOffering, from the Open API v3 spec. It will "
+            "be removed in a future major version.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
     def get_listing_offering(
         self, listing_id: int, product_id: int, product_offering_id: int,
         legacy: Optional[bool] = None,

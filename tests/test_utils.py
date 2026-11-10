@@ -3,8 +3,10 @@ from enum import Enum
 import pytest
 
 from etsy_python.v3.common.Utils import (
+    CLEAR,
     generate_bytes_from_file,
     generate_get_uri,
+    is_null_value,
     join_ids,
     todict,
 )
@@ -211,3 +213,16 @@ class TestGenerateBytesFromFile:
         path = tmp_path / "empty.bin"
         path.write_bytes(b"")
         assert generate_bytes_from_file(str(path)) == b""
+
+
+class TestClearSentinel:
+    @pytest.mark.parametrize("value", [CLEAR, "", [], 0, 0.0])
+    def test_null_values(self, value):
+        assert is_null_value(value)
+
+    @pytest.mark.parametrize("value", [False, True, None, "x", [1], 1])
+    def test_non_null_values(self, value):
+        assert not is_null_value(value)
+
+    def test_repr(self):
+        assert repr(CLEAR) == "CLEAR"

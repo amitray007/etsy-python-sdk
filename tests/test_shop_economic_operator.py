@@ -1,5 +1,6 @@
 import pytest
 
+from etsy_python.v3.common.Utils import CLEAR
 from etsy_python.v3.models.ShopEconomicOperator import (
     CreateShopEconomicOperatorRequest,
     UpdateShopEconomicOperatorRequest,
@@ -51,14 +52,25 @@ class TestCreateShopEconomicOperatorRequest:
             CreateShopEconomicOperatorRequest(**kwargs)
 
 
+    @pytest.mark.parametrize("blank", ["", "   "])
+    def test_blank_required_field_raises(self, blank):
+        with pytest.raises(ValueError, match="operator_name"):
+            CreateShopEconomicOperatorRequest(
+                **{**_create_kwargs(), "operator_name": blank}
+            )
+
+
 class TestUpdateShopEconomicOperatorRequest:
     def test_sends_only_set_fields(self):
         result = UpdateShopEconomicOperatorRequest(email="new@example.com").get_dict()
         assert result == {"email": "new@example.com"}
 
-    def test_empty_string_clears_nullable_fields(self):
+    def test_clear_sends_null_for_nullable_fields(self):
         result = UpdateShopEconomicOperatorRequest(
-            second_line="", state="", phone_country_iso="", trademark_name=""
+            second_line=CLEAR,
+            state=CLEAR,
+            phone_country_iso=CLEAR,
+            trademark_name=CLEAR,
         ).get_dict()
         assert result == {
             "second_line": None,
@@ -66,6 +78,14 @@ class TestUpdateShopEconomicOperatorRequest:
             "phone_country_iso": None,
             "trademark_name": None,
         }
+
+    def test_blank_non_nullable_field_raises(self):
+        with pytest.raises(ValueError, match="phone"):
+            UpdateShopEconomicOperatorRequest(phone="")
+
+    def test_clear_on_non_nullable_field_raises(self):
+        with pytest.raises(ValueError, match="city"):
+            UpdateShopEconomicOperatorRequest(city=CLEAR)
 
 
 class TestShopEconomicOperatorResource:
@@ -108,3 +128,4 @@ class TestShopEconomicOperatorResource:
             method=Method.PATCH,
             payload=payload,
         )
+

@@ -3,6 +3,29 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional
 
 
+class Clear:
+    """Type of ``CLEAR``. Use the ``CLEAR`` instance, not this class."""
+
+    def __repr__(self) -> str:
+        return "CLEAR"
+
+
+#: Pass as the value of a nullable request field to send ``null`` and clear the
+#: stored value. ``""``, ``[]`` and ``0`` (but not ``False``) do the same for
+#: backward compatibility; ``CLEAR`` states the intent and fits the type hints.
+CLEAR = Clear()
+
+
+def is_null_value(value: Any) -> bool:
+    """True for the values a nullable request field sends as JSON ``null``."""
+    return (
+        value is CLEAR
+        or value == []
+        or value == ""
+        or (value == 0 and not isinstance(value, bool))
+    )
+
+
 def warn_removed_legacy_param(operation_id: str) -> None:
     """Warn that `legacy` was removed from an operation and is no longer sent.
 
@@ -72,8 +95,7 @@ def todict(
             [
                 # _type -> "type": avoids shadowing Python's builtin in model attrs
                 ("type" if key == "_type" else key, todict(value, classkey))
-                if key not in nullable
-                or (value != [] and value != "" and (value != 0 or isinstance(value, bool)))
+                if key not in nullable or not is_null_value(value)
                 else (key, None)
                 for key, value in obj.__dict__.items()
                 if not callable(value)

@@ -107,3 +107,16 @@ class TestGetDict:
         req = ConcreteRequest(name="test", value=42)
         result = req.get_dict()
         assert "optional_field" not in result
+
+
+class TestAssignFields:
+    def test_sets_each_named_field(self):
+        req = Request.__new__(Request)
+        req._assign_fields(("a", "b"), {"a": 1, "b": None})
+        assert (req.a, req.b) == (1, None)
+
+    @pytest.mark.parametrize("values", [{"a": 1}, {"a": 1, "b": 2, "c": 3}])
+    def test_mismatched_fields_raise(self, values):
+        req = Request.__new__(Request)
+        with pytest.raises(TypeError):
+            req._assign_fields(("a", "b"), values)

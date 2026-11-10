@@ -1,10 +1,51 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 
+from etsy_python.v3.common.Utils import Clear
 from etsy_python.v3.models.Request import Request
 
+#: Every body field of createShopEconomicOperator and updateShopEconomicOperator.
+OPERATOR_FIELDS = (
+    "operator_name",
+    "email",
+    "first_line",
+    "second_line",
+    "city",
+    "state",
+    "zip",
+    "country_iso",
+    "phone",
+    "phone_country_iso",
+    "trademark_name",
+)
 
-class CreateShopEconomicOperatorRequest(Request):
+#: Required on create. Etsy rejects a blank value for these on create and update.
+NON_BLANK_FIELDS = (
+    "operator_name",
+    "email",
+    "first_line",
+    "city",
+    "zip",
+    "country_iso",
+    "phone",
+)
+
+
+class _ShopEconomicOperatorRequest(Request):
+    def _store_operator_fields(self, values: Dict[str, Any]) -> None:
+        self._assign_fields(OPERATOR_FIELDS, values)
+        blank = [
+            name
+            for name in NON_BLANK_FIELDS
+            if isinstance(values[name], str) and not values[name].strip()
+        ]
+        if blank:
+            raise ValueError("cannot be blank: " + ", ".join(blank))
+
+
+class CreateShopEconomicOperatorRequest(_ShopEconomicOperatorRequest):
     nullable: List[str] = ["phone_country_iso"]
+    # A literal list, not list(NON_BLANK_FIELDS): scripts/audit_sdk.py reads it
+    # from the source.
     mandatory: List[str] = [
         "operator_name",
         "email",
@@ -29,28 +70,31 @@ class CreateShopEconomicOperatorRequest(Request):
         phone_country_iso: Optional[str] = None,
         trademark_name: Optional[str] = None,
     ) -> None:
-        self.operator_name = operator_name
-        self.email = email
-        self.first_line = first_line
-        self.city = city
-        self.zip = zip
-        self.country_iso = country_iso
-        self.phone = phone
-        self.second_line = second_line
         # Etsy requires state for some countries (e.g. US, CA, AU) and rejects
         # the request server-side when it is missing.
-        self.state = state
-        self.phone_country_iso = phone_country_iso
-        self.trademark_name = trademark_name
-
+        self._store_operator_fields(
+            {
+                "operator_name": operator_name,
+                "email": email,
+                "first_line": first_line,
+                "second_line": second_line,
+                "city": city,
+                "state": state,
+                "zip": zip,
+                "country_iso": country_iso,
+                "phone": phone,
+                "phone_country_iso": phone_country_iso,
+                "trademark_name": trademark_name,
+            }
+        )
         super().__init__(
             nullable=CreateShopEconomicOperatorRequest.nullable,
             mandatory=CreateShopEconomicOperatorRequest.mandatory,
         )
 
 
-class UpdateShopEconomicOperatorRequest(Request):
-    # Pass "" for one of these to send null and clear the stored value.
+class UpdateShopEconomicOperatorRequest(_ShopEconomicOperatorRequest):
+    # Pass CLEAR for one of these to send null and clear the stored value.
     nullable: List[str] = [
         "second_line",
         "state",
@@ -64,27 +108,30 @@ class UpdateShopEconomicOperatorRequest(Request):
         operator_name: Optional[str] = None,
         email: Optional[str] = None,
         first_line: Optional[str] = None,
-        second_line: Optional[str] = None,
+        second_line: Union[str, Clear, None] = None,
         city: Optional[str] = None,
-        state: Optional[str] = None,
+        state: Union[str, Clear, None] = None,
         zip: Optional[str] = None,
         country_iso: Optional[str] = None,
         phone: Optional[str] = None,
-        phone_country_iso: Optional[str] = None,
-        trademark_name: Optional[str] = None,
+        phone_country_iso: Union[str, Clear, None] = None,
+        trademark_name: Union[str, Clear, None] = None,
     ) -> None:
-        self.operator_name = operator_name
-        self.email = email
-        self.first_line = first_line
-        self.second_line = second_line
-        self.city = city
-        self.state = state
-        self.zip = zip
-        self.country_iso = country_iso
-        self.phone = phone
-        self.phone_country_iso = phone_country_iso
-        self.trademark_name = trademark_name
-
+        self._store_operator_fields(
+            {
+                "operator_name": operator_name,
+                "email": email,
+                "first_line": first_line,
+                "second_line": second_line,
+                "city": city,
+                "state": state,
+                "zip": zip,
+                "country_iso": country_iso,
+                "phone": phone,
+                "phone_country_iso": phone_country_iso,
+                "trademark_name": trademark_name,
+            }
+        )
         super().__init__(
             nullable=UpdateShopEconomicOperatorRequest.nullable,
             mandatory=UpdateShopEconomicOperatorRequest.mandatory,
