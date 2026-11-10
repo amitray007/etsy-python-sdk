@@ -1,3 +1,4 @@
+import copy
 import warnings
 
 import pytest
@@ -637,3 +638,46 @@ class TestGPSRFields:
             gpsr_safety_warnings="",
         ).get_dict()
         assert result == {field: None for field in GPSR_FIELDS}
+
+    def test_deep_copied_request_still_sends_null(self):
+        req = copy.deepcopy(UpdateListingRequest(gpsr_serial_number=CLEAR))
+        assert req.get_dict() == {"gpsr_serial_number": None}
+
+    def test_clear_set_after_construction_on_non_nullable_field_raises(self):
+        req = UpdateListingRequest()
+        req.title = CLEAR
+        with pytest.raises(ValueError, match="title"):
+            req.get_dict()
+
+
+class TestGPSROperatorIdPairing:
+    MANUFACTURER = GPSROperatorType.ECONOMIC_OPERATOR
+
+    def test_create_requires_id_for_economic_operator(self):
+        with pytest.raises(ValueError, match="gpsr_manufacturer_id is required"):
+            CreateDraftListingRequest(
+                **_draft_listing_kwargs(), gpsr_manufacturer_type=self.MANUFACTURER
+            )
+
+    def test_create_rejects_id_without_type(self):
+        with pytest.raises(ValueError, match="gpsr_responsible_person_id"):
+            CreateDraftListingRequest(
+                **_draft_listing_kwargs(), gpsr_responsible_person_id=5
+            )
+
+    @pytest.mark.parametrize("kind", [GPSROperatorType.SELLER, CLEAR])
+    def test_update_rejects_id_with_non_operator_type(self, kind):
+        with pytest.raises(ValueError, match="only valid"):
+            UpdateListingRequest(
+                gpsr_manufacturer_type=kind, gpsr_manufacturer_id=5
+            )
+
+    def test_update_allows_operator_type_without_id(self):
+        result = UpdateListingRequest(
+            gpsr_manufacturer_type=self.MANUFACTURER
+        ).get_dict()
+        assert result == {"gpsr_manufacturer_type": "economic_operator"}
+
+    def test_update_allows_id_without_type(self):
+        result = UpdateListingRequest(gpsr_manufacturer_id=5).get_dict()
+        assert result == {"gpsr_manufacturer_id": 5}

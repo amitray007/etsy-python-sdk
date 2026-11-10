@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence
 
-from etsy_python.v3.common.Utils import CLEAR, is_null_value, todict
+from etsy_python.v3.common.Utils import Clear, is_null_value, todict
 
 
 class Request:
@@ -30,7 +30,7 @@ class Request:
         misplaced = [
             key
             for key, value in self.__dict__.items()
-            if value is CLEAR and key not in self._nullable
+            if isinstance(value, Clear) and key not in self._nullable
         ]
         if misplaced:
             raise ValueError(
@@ -54,5 +54,7 @@ class Request:
         ]
 
     def get_dict(self) -> Any:
+        # Repeated here because a field can be set to CLEAR after construction.
+        self._reject_clear_on_non_nullable()
         nulled = self.get_nulled()
         return todict(self, nullable=nulled)

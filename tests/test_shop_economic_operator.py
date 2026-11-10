@@ -2,6 +2,7 @@ import pytest
 
 from etsy_python.v3.common.Utils import CLEAR
 from etsy_python.v3.models.ShopEconomicOperator import (
+    NON_BLANK_FIELDS,
     CreateShopEconomicOperatorRequest,
     UpdateShopEconomicOperatorRequest,
 )
@@ -58,6 +59,15 @@ class TestCreateShopEconomicOperatorRequest:
             CreateShopEconomicOperatorRequest(
                 **{**_create_kwargs(), "operator_name": blank}
             )
+
+
+    @pytest.mark.parametrize("value", ["", CLEAR])
+    def test_optional_field_cannot_be_blank_or_cleared(self, value):
+        with pytest.raises(ValueError, match="state"):
+            CreateShopEconomicOperatorRequest(**_create_kwargs(), state=value)
+
+    def test_mandatory_matches_non_blank_fields(self):
+        assert CreateShopEconomicOperatorRequest.mandatory == list(NON_BLANK_FIELDS)
 
 
 class TestUpdateShopEconomicOperatorRequest:

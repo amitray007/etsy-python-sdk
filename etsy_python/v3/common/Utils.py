@@ -9,6 +9,17 @@ class Clear:
     def __repr__(self) -> str:
         return "CLEAR"
 
+    # Copies and pickle round trips (task queues, multiprocessing) must stay
+    # the module singleton; an identity check would miss a fresh instance.
+    def __copy__(self) -> "Clear":
+        return self
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> "Clear":
+        return self
+
+    def __reduce__(self) -> str:
+        return "CLEAR"
+
 
 #: Pass as the value of a nullable request field to send ``null`` and clear the
 #: stored value. ``""``, ``[]`` and ``0`` (but not ``False``) do the same for
@@ -19,7 +30,7 @@ CLEAR = Clear()
 def is_null_value(value: Any) -> bool:
     """True for the values a nullable request field sends as JSON ``null``."""
     return (
-        value is CLEAR
+        isinstance(value, Clear)
         or value == []
         or value == ""
         or (value == 0 and not isinstance(value, bool))
@@ -86,6 +97,8 @@ def todict(
         return data
     elif Enum in obj.__class__.__mro__:
         return todict(obj.value)
+    elif isinstance(obj, Clear):
+        return None
     elif hasattr(obj, "_ast"):
         return todict(obj._ast())
     elif hasattr(obj, "__iter__") and not isinstance(obj, str):

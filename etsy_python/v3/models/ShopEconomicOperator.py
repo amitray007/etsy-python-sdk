@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from etsy_python.v3.common.Utils import Clear
 from etsy_python.v3.models.Request import Request
@@ -18,7 +18,7 @@ OPERATOR_FIELDS = (
     "trademark_name",
 )
 
-#: Required on create. Etsy rejects a blank value for these on create and update.
+#: Required on create, and never blank: Etsy rejects a blank value on update too.
 NON_BLANK_FIELDS = (
     "operator_name",
     "email",
@@ -31,11 +31,13 @@ NON_BLANK_FIELDS = (
 
 
 class _ShopEconomicOperatorRequest(Request):
-    def _store_operator_fields(self, values: Dict[str, Any]) -> None:
+    def _store_operator_fields(
+        self, values: Dict[str, Any], non_blank: Sequence[str]
+    ) -> None:
         self._assign_fields(OPERATOR_FIELDS, values)
         blank = [
             name
-            for name in NON_BLANK_FIELDS
+            for name in non_blank
             if isinstance(values[name], str) and not values[name].strip()
         ]
         if blank:
@@ -43,7 +45,8 @@ class _ShopEconomicOperatorRequest(Request):
 
 
 class CreateShopEconomicOperatorRequest(_ShopEconomicOperatorRequest):
-    nullable: List[str] = ["phone_country_iso"]
+    # A new record has nothing to clear, so every field rejects a blank value.
+    nullable: List[str] = []
     # A literal list, not list(NON_BLANK_FIELDS): scripts/audit_sdk.py reads it
     # from the source.
     mandatory: List[str] = [
@@ -85,7 +88,8 @@ class CreateShopEconomicOperatorRequest(_ShopEconomicOperatorRequest):
                 "phone": phone,
                 "phone_country_iso": phone_country_iso,
                 "trademark_name": trademark_name,
-            }
+            },
+            non_blank=OPERATOR_FIELDS,
         )
         super().__init__(
             nullable=CreateShopEconomicOperatorRequest.nullable,
@@ -130,7 +134,8 @@ class UpdateShopEconomicOperatorRequest(_ShopEconomicOperatorRequest):
                 "phone": phone,
                 "phone_country_iso": phone_country_iso,
                 "trademark_name": trademark_name,
-            }
+            },
+            non_blank=NON_BLANK_FIELDS,
         )
         super().__init__(
             nullable=UpdateShopEconomicOperatorRequest.nullable,

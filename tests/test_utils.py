@@ -1,3 +1,5 @@
+import copy
+import pickle
 from enum import Enum
 
 import pytest
@@ -226,3 +228,11 @@ class TestClearSentinel:
 
     def test_repr(self):
         assert repr(CLEAR) == "CLEAR"
+
+    def test_copies_stay_the_singleton(self):
+        assert copy.copy(CLEAR) is CLEAR
+        assert copy.deepcopy(CLEAR) is CLEAR
+        assert pickle.loads(pickle.dumps(CLEAR)) is CLEAR
+
+    def test_nested_clear_serializes_as_null(self):
+        assert todict({"a": CLEAR, "b": [CLEAR]}) == {"a": None, "b": [None]}

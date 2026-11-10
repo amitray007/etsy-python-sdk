@@ -1,7 +1,7 @@
 import warnings
 from typing import List, Optional, Dict, Any, Union
 
-from etsy_python.v3.common.Utils import Clear
+from etsy_python.v3.common.Utils import Clear, is_null_value
 from etsy_python.v3.enums.Listing import (
     GPSROperatorType,
     WhoMade,
@@ -212,6 +212,32 @@ GPSR_FIELDS = (
 )
 
 
+def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
+    """Raise ValueError for a GPSR type/id pair that Etsy would reject.
+
+    An id is valid only with type ``economic_operator``, which in turn needs an
+    id on create. On update an unset type is skipped: Etsy checks the id
+    against the type already stored on the listing.
+    """
+    for role in ("gpsr_manufacturer", "gpsr_responsible_person"):
+        kind = values[f"{role}_type"]
+        operator_id = values[f"{role}_id"]
+        if kind is None and not creating:
+            continue
+        has_id = operator_id is not None and not is_null_value(operator_id)
+        is_operator = (
+            getattr(kind, "value", kind) == GPSROperatorType.ECONOMIC_OPERATOR.value
+        )
+        if is_operator and creating and not has_id:
+            raise ValueError(
+                f"{role}_id is required when {role}_type is economic_operator"
+            )
+        if has_id and not is_operator:
+            raise ValueError(
+                f"{role}_id is only valid when {role}_type is economic_operator"
+            )
+
+
 class CreateDraftListingRequest(
     _PersonalizationFieldsMixin, _ECGTFieldsMixin, Request
 ):
@@ -339,17 +365,16 @@ class CreateDraftListingRequest(
             ecgt_after_sales_service_info,
             ecgt_software_update_details,
         )
-        self._assign_fields(
-            GPSR_FIELDS,
-            {
-                "gpsr_manufacturer_type": gpsr_manufacturer_type,
-                "gpsr_manufacturer_id": gpsr_manufacturer_id,
-                "gpsr_responsible_person_type": gpsr_responsible_person_type,
-                "gpsr_responsible_person_id": gpsr_responsible_person_id,
-                "gpsr_serial_number": gpsr_serial_number,
-                "gpsr_safety_warnings": gpsr_safety_warnings,
-            },
-        )
+        gpsr_fields = {
+            "gpsr_manufacturer_type": gpsr_manufacturer_type,
+            "gpsr_manufacturer_id": gpsr_manufacturer_id,
+            "gpsr_responsible_person_type": gpsr_responsible_person_type,
+            "gpsr_responsible_person_id": gpsr_responsible_person_id,
+            "gpsr_serial_number": gpsr_serial_number,
+            "gpsr_safety_warnings": gpsr_safety_warnings,
+        }
+        _check_gpsr_operator_ids(gpsr_fields, creating=True)
+        self._assign_fields(GPSR_FIELDS, gpsr_fields)
         super().__init__(
             nullable=CreateDraftListingRequest.nullable,
             mandatory=CreateDraftListingRequest.mandatory,
@@ -465,17 +490,16 @@ class UpdateListingRequest(
             ecgt_after_sales_service_info,
             ecgt_software_update_details,
         )
-        self._assign_fields(
-            GPSR_FIELDS,
-            {
-                "gpsr_manufacturer_type": gpsr_manufacturer_type,
-                "gpsr_manufacturer_id": gpsr_manufacturer_id,
-                "gpsr_responsible_person_type": gpsr_responsible_person_type,
-                "gpsr_responsible_person_id": gpsr_responsible_person_id,
-                "gpsr_serial_number": gpsr_serial_number,
-                "gpsr_safety_warnings": gpsr_safety_warnings,
-            },
-        )
+        gpsr_fields = {
+            "gpsr_manufacturer_type": gpsr_manufacturer_type,
+            "gpsr_manufacturer_id": gpsr_manufacturer_id,
+            "gpsr_responsible_person_type": gpsr_responsible_person_type,
+            "gpsr_responsible_person_id": gpsr_responsible_person_id,
+            "gpsr_serial_number": gpsr_serial_number,
+            "gpsr_safety_warnings": gpsr_safety_warnings,
+        }
+        _check_gpsr_operator_ids(gpsr_fields, creating=False)
+        self._assign_fields(GPSR_FIELDS, gpsr_fields)
         super().__init__(
             nullable=UpdateListingRequest.nullable,
             mandatory=UpdateListingRequest.mandatory,
