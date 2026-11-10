@@ -215,9 +215,9 @@ GPSR_FIELDS = (
 def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
     """Raise ValueError for a GPSR type/id pair that Etsy would reject.
 
-    An id is valid only with type ``economic_operator``, and that type needs an
-    id. On update an id sent without a type is not checked here: Etsy checks it
-    against the type already stored on the listing.
+    An id is valid only with type ``economic_operator``, which needs an id on
+    create. On update the listing may already store the other half of the pair,
+    so a type without an id, or an id without a type, is left to Etsy.
     """
     for role in ("gpsr_manufacturer", "gpsr_responsible_person"):
         kind = values[f"{role}_type"]
@@ -228,7 +228,7 @@ def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
         is_operator = (
             getattr(kind, "value", kind) == GPSROperatorType.ECONOMIC_OPERATOR.value
         )
-        if is_operator and not has_id:
+        if is_operator and creating and not has_id:
             raise ValueError(
                 f"{role}_id is required when {role}_type is economic_operator"
             )
@@ -249,8 +249,8 @@ class _GPSRFieldsMixin:
     def _store_gpsr(self, **values: Any) -> None:
         self._assign_fields(GPSR_FIELDS, values)
 
-    def validate(self) -> None:
-        super().validate()
+    def _validate(self) -> None:
+        super()._validate()
         _check_gpsr_operator_ids(vars(self), creating=self._gpsr_creating)
 
 

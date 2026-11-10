@@ -36,8 +36,8 @@ class _ShopEconomicOperatorRequest(Request):
     def _store_operator_fields(self, **values: Any) -> None:
         self._assign_fields(OPERATOR_FIELDS, values)
 
-    def validate(self) -> None:
-        super().validate()
+    def _validate(self) -> None:
+        super()._validate()
         blank = [
             name
             for name in OPERATOR_FIELDS
@@ -107,8 +107,8 @@ class UpdateShopEconomicOperatorRequest(_ShopEconomicOperatorRequest):
     ]
     mandatory: List[str] = []
 
-    def validate(self) -> None:
-        super().validate()
+    def _validate(self) -> None:
+        super()._validate()
         if all(getattr(self, name) is None for name in OPERATOR_FIELDS):
             raise ValueError("set at least one field to update")
 
