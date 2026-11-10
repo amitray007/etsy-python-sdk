@@ -216,8 +216,9 @@ def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
     """Raise ValueError for a GPSR type/id pair that Etsy would reject.
 
     An id is valid only with type ``economic_operator``, which needs an id on
-    create. On update the listing may already store the other half of the pair,
-    so a type without an id, or an id without a type, is left to Etsy.
+    create and can never be sent with a cleared id. On update the listing may
+    already store the other half of the pair, so a type without an id, or an id
+    without a type, is left to Etsy.
     """
     for role in ("gpsr_manufacturer", "gpsr_responsible_person"):
         kind = values[f"{role}_type"]
@@ -228,7 +229,8 @@ def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
         is_operator = (
             getattr(kind, "value", kind) == GPSROperatorType.ECONOMIC_OPERATOR.value
         )
-        if is_operator and creating and not has_id:
+        clears_id = operator_id is not None and not has_id
+        if is_operator and (clears_id or (creating and not has_id)):
             raise ValueError(
                 f"{role}_id is required when {role}_type is economic_operator"
             )

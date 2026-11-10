@@ -693,6 +693,14 @@ class TestGPSROperatorIdPairing:
             with pytest.raises(ValueError, match=r"fields: featured_rank$"):
                 UpdateListingRequest(featured_rank=CLEAR)
 
+    @pytest.mark.parametrize("cleared", [CLEAR, 0])
+    def test_update_rejects_operator_type_with_cleared_id(self, cleared):
+        with pytest.raises(ValueError, match="gpsr_manufacturer_id is required"):
+            UpdateListingRequest(
+                gpsr_manufacturer_type=self.MANUFACTURER,
+                gpsr_manufacturer_id=cleared,
+            )
+
     def test_update_allows_id_without_type(self):
         result = UpdateListingRequest(gpsr_manufacturer_id=5).get_dict()
         assert result == {"gpsr_manufacturer_id": 5}

@@ -89,10 +89,11 @@ def generate_get_uri(uri: str, params: Optional[Dict[str, Any]] = None) -> str:
 def todict(
     obj: Any, classkey: Optional[str] = None, nullable: Optional[List[str]] = None
 ) -> Any:
-    """Serialize ``obj`` for the API. Keys in ``nullable`` are sent as ``null``.
+    """Serialize ``obj`` for the API.
 
-    ``Request.get_dict`` passes ``get_nulled()`` as ``nullable``, so the null
-    rule (``is_null_value``) is applied once, there.
+    A key in ``nullable`` is sent as ``null`` only when its value is a null
+    value (``is_null_value``); a real value is kept. External callers may pass a
+    model's full nullable list, so this check must stay value-safe.
     """
     if nullable is None:
         nullable = []
@@ -115,7 +116,9 @@ def todict(
                 # _type -> "type": avoids shadowing Python's builtin in model attrs
                 (
                     "type" if key == "_type" else key,
-                    None if key in nullable else todict(value, classkey),
+                    None
+                    if key in nullable and is_null_value(value)
+                    else todict(value, classkey),
                 )
                 for key, value in obj.__dict__.items()
                 if not callable(value)

@@ -117,6 +117,10 @@ class TestTodict:
         result = todict(obj)
         assert result == {"y": "hello"}
 
+    def test_nullable_keeps_real_values(self):
+        obj = SimpleObj(123, "")
+        assert todict(obj, nullable=["x", "y"]) == {"x": 123, "y": None}
+
     def test_nullable_fields(self):
         obj = SimpleObj("", "hello")
         result = todict(obj, nullable=["x"])
