@@ -13,7 +13,7 @@ class Request:
         self._mandatory = mandatory if mandatory is not None else []
         if not self.check_mandatory():
             raise ValueError
-        self._reject_clear_on_non_nullable()
+        self.validate()
 
     def check_mandatory(self) -> bool:
         # Keys must match the attribute name (e.g. "_type", not "type").
@@ -26,9 +26,17 @@ class Request:
                     return False
         return True
 
+    def validate(self) -> None:
+        """Raise ValueError for field values Etsy would reject.
+
+        Runs on construction and again in ``get_dict``, because fields can be
+        reassigned in between. Subclasses extend it and call ``super()``.
+        """
+        self._reject_clear_on_non_nullable()
+
     def _reject_clear_on_non_nullable(self) -> None:
         misplaced = [
-            key
+            key.lstrip("_")
             for key, value in self.__dict__.items()
             if isinstance(value, Clear) and key not in self._nullable
         ]
@@ -54,7 +62,6 @@ class Request:
         ]
 
     def get_dict(self) -> Any:
-        # Repeated here because a field can be set to CLEAR after construction.
-        self._reject_clear_on_non_nullable()
+        self.validate()
         nulled = self.get_nulled()
         return todict(self, nullable=nulled)

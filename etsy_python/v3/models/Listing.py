@@ -215,8 +215,8 @@ GPSR_FIELDS = (
 def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
     """Raise ValueError for a GPSR type/id pair that Etsy would reject.
 
-    An id is valid only with type ``economic_operator``, which in turn needs an
-    id on create. On update an unset type is skipped: Etsy checks the id
+    An id is valid only with type ``economic_operator``, and that type needs an
+    id. On update an id sent without a type is not checked here: Etsy checks it
     against the type already stored on the listing.
     """
     for role in ("gpsr_manufacturer", "gpsr_responsible_person"):
@@ -228,7 +228,7 @@ def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
         is_operator = (
             getattr(kind, "value", kind) == GPSROperatorType.ECONOMIC_OPERATOR.value
         )
-        if is_operator and creating and not has_id:
+        if is_operator and not has_id:
             raise ValueError(
                 f"{role}_id is required when {role}_type is economic_operator"
             )
@@ -238,9 +238,27 @@ def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
             )
 
 
+class _GPSRFieldsMixin:
+    """Storage and type/id validation for the GPSR listing fields.
+
+    Each model sets ``_gpsr_creating``. See ``GPSR_FIELDS``.
+    """
+
+    _gpsr_creating: bool
+
+    def _store_gpsr(self, **values: Any) -> None:
+        self._assign_fields(GPSR_FIELDS, values)
+
+    def validate(self) -> None:
+        super().validate()
+        _check_gpsr_operator_ids(vars(self), creating=self._gpsr_creating)
+
+
 class CreateDraftListingRequest(
-    _PersonalizationFieldsMixin, _ECGTFieldsMixin, Request
+    _PersonalizationFieldsMixin, _ECGTFieldsMixin, _GPSRFieldsMixin, Request
 ):
+    _gpsr_creating = True
+
     nullable = [
         "shipping_profile_id",
         "return_policy_id",
@@ -365,16 +383,14 @@ class CreateDraftListingRequest(
             ecgt_after_sales_service_info,
             ecgt_software_update_details,
         )
-        gpsr_fields = {
-            "gpsr_manufacturer_type": gpsr_manufacturer_type,
-            "gpsr_manufacturer_id": gpsr_manufacturer_id,
-            "gpsr_responsible_person_type": gpsr_responsible_person_type,
-            "gpsr_responsible_person_id": gpsr_responsible_person_id,
-            "gpsr_serial_number": gpsr_serial_number,
-            "gpsr_safety_warnings": gpsr_safety_warnings,
-        }
-        _check_gpsr_operator_ids(gpsr_fields, creating=True)
-        self._assign_fields(GPSR_FIELDS, gpsr_fields)
+        self._store_gpsr(
+            gpsr_manufacturer_type=gpsr_manufacturer_type,
+            gpsr_manufacturer_id=gpsr_manufacturer_id,
+            gpsr_responsible_person_type=gpsr_responsible_person_type,
+            gpsr_responsible_person_id=gpsr_responsible_person_id,
+            gpsr_serial_number=gpsr_serial_number,
+            gpsr_safety_warnings=gpsr_safety_warnings,
+        )
         super().__init__(
             nullable=CreateDraftListingRequest.nullable,
             mandatory=CreateDraftListingRequest.mandatory,
@@ -382,8 +398,10 @@ class CreateDraftListingRequest(
 
 
 class UpdateListingRequest(
-    _PersonalizationFieldsMixin, _ECGTFieldsMixin, Request
+    _PersonalizationFieldsMixin, _ECGTFieldsMixin, _GPSRFieldsMixin, Request
 ):
+    _gpsr_creating = False
+
     nullable: List[str] = [
         "materials",
         "shipping_profile_id",
@@ -490,16 +508,14 @@ class UpdateListingRequest(
             ecgt_after_sales_service_info,
             ecgt_software_update_details,
         )
-        gpsr_fields = {
-            "gpsr_manufacturer_type": gpsr_manufacturer_type,
-            "gpsr_manufacturer_id": gpsr_manufacturer_id,
-            "gpsr_responsible_person_type": gpsr_responsible_person_type,
-            "gpsr_responsible_person_id": gpsr_responsible_person_id,
-            "gpsr_serial_number": gpsr_serial_number,
-            "gpsr_safety_warnings": gpsr_safety_warnings,
-        }
-        _check_gpsr_operator_ids(gpsr_fields, creating=False)
-        self._assign_fields(GPSR_FIELDS, gpsr_fields)
+        self._store_gpsr(
+            gpsr_manufacturer_type=gpsr_manufacturer_type,
+            gpsr_manufacturer_id=gpsr_manufacturer_id,
+            gpsr_responsible_person_type=gpsr_responsible_person_type,
+            gpsr_responsible_person_id=gpsr_responsible_person_id,
+            gpsr_serial_number=gpsr_serial_number,
+            gpsr_safety_warnings=gpsr_safety_warnings,
+        )
         super().__init__(
             nullable=UpdateListingRequest.nullable,
             mandatory=UpdateListingRequest.mandatory,

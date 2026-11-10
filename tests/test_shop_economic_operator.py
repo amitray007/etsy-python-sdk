@@ -2,7 +2,7 @@ import pytest
 
 from etsy_python.v3.common.Utils import CLEAR
 from etsy_python.v3.models.ShopEconomicOperator import (
-    NON_BLANK_FIELDS,
+    REQUIRED_FIELDS,
     CreateShopEconomicOperatorRequest,
     UpdateShopEconomicOperatorRequest,
 )
@@ -67,7 +67,7 @@ class TestCreateShopEconomicOperatorRequest:
             CreateShopEconomicOperatorRequest(**_create_kwargs(), state=value)
 
     def test_mandatory_matches_non_blank_fields(self):
-        assert CreateShopEconomicOperatorRequest.mandatory == list(NON_BLANK_FIELDS)
+        assert CreateShopEconomicOperatorRequest.mandatory == list(REQUIRED_FIELDS)
 
 
 class TestUpdateShopEconomicOperatorRequest:
@@ -139,3 +139,21 @@ class TestShopEconomicOperatorResource:
             payload=payload,
         )
 
+
+
+class TestShopEconomicOperatorValidation:
+    @pytest.mark.parametrize("field", ["state", "phone"])
+    @pytest.mark.parametrize("blank", ["", "  "])
+    def test_update_rejects_blank_values(self, field, blank):
+        with pytest.raises(ValueError, match=field):
+            UpdateShopEconomicOperatorRequest(**{field: blank})
+
+    def test_update_requires_a_field(self):
+        with pytest.raises(ValueError, match="at least one field"):
+            UpdateShopEconomicOperatorRequest()
+
+    def test_blank_set_after_construction_raises_on_serialize(self):
+        req = UpdateShopEconomicOperatorRequest(city="Berlin")
+        req.city = ""
+        with pytest.raises(ValueError, match="city"):
+            req.get_dict()

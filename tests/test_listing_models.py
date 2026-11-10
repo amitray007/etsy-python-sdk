@@ -672,11 +672,24 @@ class TestGPSROperatorIdPairing:
                 gpsr_manufacturer_type=kind, gpsr_manufacturer_id=5
             )
 
-    def test_update_allows_operator_type_without_id(self):
-        result = UpdateListingRequest(
-            gpsr_manufacturer_type=self.MANUFACTURER
-        ).get_dict()
-        assert result == {"gpsr_manufacturer_type": "economic_operator"}
+    def test_update_requires_id_for_economic_operator(self):
+        with pytest.raises(ValueError, match="gpsr_manufacturer_id is required"):
+            UpdateListingRequest(gpsr_manufacturer_type=self.MANUFACTURER)
+
+    def test_pair_reassigned_after_construction_raises_on_serialize(self):
+        req = UpdateListingRequest(gpsr_manufacturer_type=GPSROperatorType.SELLER)
+        req.gpsr_manufacturer_id = 7
+        with pytest.raises(ValueError, match="only valid"):
+            req.get_dict()
+
+    def test_clearing_listing_type_sends_type_key(self):
+        result = UpdateListingRequest(listing_type=CLEAR).get_dict()
+        assert result == {"type": None}
+
+    def test_clear_error_names_the_field_without_underscore(self):
+        with pytest.warns(DeprecationWarning, match="featured_rank"):
+            with pytest.raises(ValueError, match=r"fields: featured_rank$"):
+                UpdateListingRequest(featured_rank=CLEAR)
 
     def test_update_allows_id_without_type(self):
         result = UpdateListingRequest(gpsr_manufacturer_id=5).get_dict()

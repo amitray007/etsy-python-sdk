@@ -22,8 +22,9 @@ class Clear:
 
 
 #: Pass as the value of a nullable request field to send ``null`` and clear the
-#: stored value. ``""``, ``[]`` and ``0`` (but not ``False``) do the same for
-#: backward compatibility; ``CLEAR`` states the intent and fits the type hints.
+#: stored value. On most older models ``""``, ``[]`` and ``0`` (but not
+#: ``False``) do the same for backward compatibility, and their type hints do
+#: not list ``Clear`` yet. Fields added since ``CLEAR`` accept it in their hints.
 CLEAR = Clear()
 
 
@@ -88,6 +89,11 @@ def generate_get_uri(uri: str, params: Optional[Dict[str, Any]] = None) -> str:
 def todict(
     obj: Any, classkey: Optional[str] = None, nullable: Optional[List[str]] = None
 ) -> Any:
+    """Serialize ``obj`` for the API. Keys in ``nullable`` are sent as ``null``.
+
+    ``Request.get_dict`` passes ``get_nulled()`` as ``nullable``, so the null
+    rule (``is_null_value``) is applied once, there.
+    """
     if nullable is None:
         nullable = []
     if isinstance(obj, dict):
@@ -107,9 +113,10 @@ def todict(
         data = dict(
             [
                 # _type -> "type": avoids shadowing Python's builtin in model attrs
-                ("type" if key == "_type" else key, todict(value, classkey))
-                if key not in nullable or not is_null_value(value)
-                else (key, None)
+                (
+                    "type" if key == "_type" else key,
+                    None if key in nullable else todict(value, classkey),
+                )
                 for key, value in obj.__dict__.items()
                 if not callable(value)
                 and (not key.startswith("_") or key == "_type")
