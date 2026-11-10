@@ -108,7 +108,7 @@ All code lives under `etsy_python/v3/`:
 
 **`_type` field mapping**: Python's `type` is a builtin, so model attributes that map to the API's `type` field are stored as `_type`. `todict()` in `Utils.py` maps `_type` → `"type"` during serialization. The mandatory list in Request models must use `"_type"` (the attribute name), not `"type"`.
 
-**Boolean False vs nullable**: `get_nulled()` in `Request.py` treats empty strings, empty lists, and zero as null for nullable fields — but explicitly excludes `bool` values. `False` is a valid distinct value from null and serializes as `False`, not `None`. The `todict()` function in `Utils.py` has the same guard: `(value != 0 or isinstance(value, bool))`.
+**Boolean False vs nullable**: `get_nulled()` in `Request.py` treats empty strings, empty lists, and zero as null for nullable fields — but explicitly excludes `bool` values. `False` is a valid distinct value from null and serializes as `False`, not `None`. Both share one rule, `is_null_value()` in `Utils.py`. The `CLEAR` sentinel (`from etsy_python.v3.common.Utils import CLEAR`) is the explicit way to send `null` for a nullable field; `Request` raises `ValueError` when `CLEAR` is set on a non-nullable field. That check lives in `Request._validate()`, which runs on construction and again in `get_dict()`; models extend it (calling `super()`) for checks such as blank strings or GPSR type/id pairs.
 
 ### Request Flow
 

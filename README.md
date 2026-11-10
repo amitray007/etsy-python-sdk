@@ -322,7 +322,7 @@ The SDK provides comprehensive coverage of Etsy API v3 resources:
 ### Commerce Resources
 
 - **ListingInventory** - Stock and SKU management
-- **ListingOffering** - Product offering details
+- **ListingOffering** - Product offering details (deprecated: Etsy removed the endpoint)
 - **ListingProduct** - Product variant management
 - **Payment** - Payment processing
 - **PaymentLedgerEntry** - Payment ledger entries
@@ -332,6 +332,7 @@ The SDK provides comprehensive coverage of Etsy API v3 resources:
 
 - **ShopSection** - Organize listings into sections
 - **ShopReturnPolicy** - Define return policies
+- **ShopEconomicOperator** - Manage GPSR manufacturer and EU responsible person records
 - **ShopProductionPartner** - Manage production partners
 - **HolidayPreferences** - Shop holiday schedule
 - **ProcessingProfile** - Processing time profiles

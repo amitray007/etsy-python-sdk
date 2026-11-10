@@ -1,9 +1,12 @@
+import copy
 import warnings
 
 import pytest
 
-from etsy_python.v3.enums.Listing import WhenMade, WhoMade
+from etsy_python.v3.common.Utils import CLEAR
+from etsy_python.v3.enums.Listing import GPSROperatorType, WhenMade, WhoMade
 from etsy_python.v3.models.Listing import (
+    GPSR_FIELDS,
     CreateDraftListingRequest,
     CreateListingTranslationRequest,
     UpdateListingRequest,
@@ -489,24 +492,24 @@ class TestUpdateListingVideoRequest:
         assert req.data == {"video_id": None, "name": None}
 
 
+def _draft_listing_kwargs():
+    return {
+        "quantity": 10,
+        "title": "Test Mug",
+        "description": "A test mug",
+        "price": 25.00,
+        "who_made": WhoMade.I_DID,
+        "when_made": WhenMade.TWENTY_TWENTIES,
+        "taxonomy_id": 30303,
+    }
+
+
 class TestECGTFields:
     """EU commercial guarantee (ECGT/GPSR) fields on create and update."""
 
-    @staticmethod
-    def _create_kwargs():
-        return {
-            "quantity": 10,
-            "title": "Test Mug",
-            "description": "A test mug",
-            "price": 25.00,
-            "who_made": WhoMade.I_DID,
-            "when_made": WhenMade.TWENTY_TWENTIES,
-            "taxonomy_id": 30303,
-        }
-
     def test_create_serializes_all_ecgt_fields(self):
         req = CreateDraftListingRequest(
-            **self._create_kwargs(),
+            **_draft_listing_kwargs(),
             ecgt_garan_brand="Acme",
             ecgt_garan_model="MUG-1",
             ecgt_garan_years=3,
@@ -543,7 +546,7 @@ class TestECGTFields:
         assert result["ecgt_software_update_details"] == "Not applicable."
 
     def test_create_omits_unset_ecgt_fields(self):
-        req = CreateDraftListingRequest(**self._create_kwargs())
+        req = CreateDraftListingRequest(**_draft_listing_kwargs())
         result = req.get_dict()
         for field in (
             "ecgt_garan_brand",
@@ -570,6 +573,134 @@ class TestECGTFields:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             CreateDraftListingRequest(
-                **self._create_kwargs(), ecgt_garan_brand="Acme"
+                **_draft_listing_kwargs(), ecgt_garan_brand="Acme"
             )
         assert caught == []
+
+
+class TestGPSRFields:
+    """GPSR economic operator fields on create and update."""
+
+    @staticmethod
+    def _gpsr_kwargs():
+        return {
+            "gpsr_manufacturer_type": GPSROperatorType.ECONOMIC_OPERATOR,
+            "gpsr_manufacturer_id": 12121,
+            "gpsr_responsible_person_type": GPSROperatorType.SELLER,
+            "gpsr_responsible_person_id": None,
+            "gpsr_serial_number": "LOT-42",
+            "gpsr_safety_warnings": "Not for children under 3.",
+        }
+
+    @staticmethod
+    def _expected_wire():
+        return {
+            "gpsr_manufacturer_type": "economic_operator",
+            "gpsr_manufacturer_id": 12121,
+            "gpsr_responsible_person_type": "seller",
+            "gpsr_serial_number": "LOT-42",
+            "gpsr_safety_warnings": "Not for children under 3.",
+        }
+
+    def test_create_serializes_gpsr_fields(self):
+        result = CreateDraftListingRequest(
+            **_draft_listing_kwargs(), **self._gpsr_kwargs()
+        ).get_dict()
+        for field, value in self._expected_wire().items():
+            assert result[field] == value
+        assert "gpsr_responsible_person_id" not in result
+
+    def test_update_serializes_gpsr_fields(self):
+        result = UpdateListingRequest(**self._gpsr_kwargs()).get_dict()
+        assert result == self._expected_wire()
+
+    def test_unset_gpsr_fields_are_omitted(self):
+        result = UpdateListingRequest(title="Just a title").get_dict()
+        assert not any(field.startswith("gpsr_") for field in result)
+
+    def test_clear_sends_null_for_gpsr_fields(self):
+        result = UpdateListingRequest(
+            **{field: CLEAR for field in GPSR_FIELDS}
+        ).get_dict()
+        assert result == {field: None for field in GPSR_FIELDS}
+
+    def test_clear_on_non_nullable_field_raises(self):
+        with pytest.raises(ValueError, match="title"):
+            UpdateListingRequest(title=CLEAR)
+
+    def test_legacy_empty_values_clear_gpsr_fields(self):
+        result = UpdateListingRequest(
+            gpsr_manufacturer_type="",
+            gpsr_manufacturer_id=0,
+            gpsr_responsible_person_type="",
+            gpsr_responsible_person_id=0,
+            gpsr_serial_number="",
+            gpsr_safety_warnings="",
+        ).get_dict()
+        assert result == {field: None for field in GPSR_FIELDS}
+
+    def test_deep_copied_request_still_sends_null(self):
+        req = copy.deepcopy(UpdateListingRequest(gpsr_serial_number=CLEAR))
+        assert req.get_dict() == {"gpsr_serial_number": None}
+
+    def test_clear_set_after_construction_on_non_nullable_field_raises(self):
+        req = UpdateListingRequest()
+        req.title = CLEAR
+        with pytest.raises(ValueError, match="title"):
+            req.get_dict()
+
+
+class TestGPSROperatorIdPairing:
+    MANUFACTURER = GPSROperatorType.ECONOMIC_OPERATOR
+
+    def test_create_requires_id_for_economic_operator(self):
+        with pytest.raises(ValueError, match="gpsr_manufacturer_id is required"):
+            CreateDraftListingRequest(
+                **_draft_listing_kwargs(), gpsr_manufacturer_type=self.MANUFACTURER
+            )
+
+    def test_create_rejects_id_without_type(self):
+        with pytest.raises(ValueError, match="gpsr_responsible_person_id"):
+            CreateDraftListingRequest(
+                **_draft_listing_kwargs(), gpsr_responsible_person_id=5
+            )
+
+    @pytest.mark.parametrize("kind", [GPSROperatorType.SELLER, CLEAR])
+    def test_update_rejects_id_with_non_operator_type(self, kind):
+        with pytest.raises(ValueError, match="only valid"):
+            UpdateListingRequest(
+                gpsr_manufacturer_type=kind, gpsr_manufacturer_id=5
+            )
+
+    def test_update_allows_operator_type_without_id(self):
+        result = UpdateListingRequest(
+            gpsr_manufacturer_type=self.MANUFACTURER
+        ).get_dict()
+        assert result == {"gpsr_manufacturer_type": "economic_operator"}
+
+    def test_pair_reassigned_after_construction_raises_on_serialize(self):
+        req = UpdateListingRequest(gpsr_manufacturer_type=GPSROperatorType.SELLER)
+        req.gpsr_manufacturer_id = 7
+        with pytest.raises(ValueError, match="only valid"):
+            req.get_dict()
+
+    def test_clearing_listing_type_sends_type_key(self):
+        result = UpdateListingRequest(listing_type=CLEAR).get_dict()
+        assert result == {"type": None}
+
+    def test_clear_error_names_the_field_without_underscore(self):
+        with pytest.warns(DeprecationWarning, match="featured_rank"):
+            with pytest.raises(ValueError, match=r"fields: featured_rank$"):
+                UpdateListingRequest(featured_rank=CLEAR)
+
+    @pytest.mark.parametrize("cleared", [CLEAR, 0])
+    def test_update_rejects_operator_type_with_cleared_id(self, cleared):
+        with pytest.raises(ValueError, match="gpsr_manufacturer_id is required"):
+            UpdateListingRequest(
+                gpsr_manufacturer_type=self.MANUFACTURER,
+                gpsr_manufacturer_id=cleared,
+            )
+
+    def test_update_allows_id_without_type(self):
+        result = UpdateListingRequest(gpsr_manufacturer_id=5).get_dict()
+        assert result == {"gpsr_manufacturer_id": 5}

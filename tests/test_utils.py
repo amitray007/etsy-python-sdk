@@ -1,10 +1,14 @@
+import copy
+import pickle
 from enum import Enum
 
 import pytest
 
 from etsy_python.v3.common.Utils import (
+    CLEAR,
     generate_bytes_from_file,
     generate_get_uri,
+    is_null_value,
     join_ids,
     todict,
 )
@@ -113,6 +117,10 @@ class TestTodict:
         result = todict(obj)
         assert result == {"y": "hello"}
 
+    def test_nullable_keeps_real_values(self):
+        obj = SimpleObj(123, "")
+        assert todict(obj, nullable=["x", "y"]) == {"x": 123, "y": None}
+
     def test_nullable_fields(self):
         obj = SimpleObj("", "hello")
         result = todict(obj, nullable=["x"])
@@ -211,3 +219,24 @@ class TestGenerateBytesFromFile:
         path = tmp_path / "empty.bin"
         path.write_bytes(b"")
         assert generate_bytes_from_file(str(path)) == b""
+
+
+class TestClearSentinel:
+    @pytest.mark.parametrize("value", [CLEAR, "", [], 0, 0.0])
+    def test_null_values(self, value):
+        assert is_null_value(value)
+
+    @pytest.mark.parametrize("value", [False, True, None, "x", [1], 1])
+    def test_non_null_values(self, value):
+        assert not is_null_value(value)
+
+    def test_repr(self):
+        assert repr(CLEAR) == "CLEAR"
+
+    def test_copies_stay_the_singleton(self):
+        assert copy.copy(CLEAR) is CLEAR
+        assert copy.deepcopy(CLEAR) is CLEAR
+        assert pickle.loads(pickle.dumps(CLEAR)) is CLEAR
+
+    def test_nested_clear_serializes_as_null(self):
+        assert todict({"a": CLEAR, "b": [CLEAR]}) == {"a": None, "b": [None]}

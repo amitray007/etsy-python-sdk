@@ -3,6 +3,41 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional
 
 
+class Clear:
+    """Type of ``CLEAR``. Use the ``CLEAR`` instance, not this class."""
+
+    def __repr__(self) -> str:
+        return "CLEAR"
+
+    # Copies and pickle round trips (task queues, multiprocessing) must stay
+    # the module singleton; an identity check would miss a fresh instance.
+    def __copy__(self) -> "Clear":
+        return self
+
+    def __deepcopy__(self, memo: Dict[int, Any]) -> "Clear":
+        return self
+
+    def __reduce__(self) -> str:
+        return "CLEAR"
+
+
+#: Pass as the value of a nullable request field to send ``null`` and clear the
+#: stored value. On most older models ``""``, ``[]`` and ``0`` (but not
+#: ``False``) do the same for backward compatibility, and their type hints do
+#: not list ``Clear`` yet. Fields added since ``CLEAR`` accept it in their hints.
+CLEAR = Clear()
+
+
+def is_null_value(value: Any) -> bool:
+    """True for the values a nullable request field sends as JSON ``null``."""
+    return (
+        isinstance(value, Clear)
+        or value == []
+        or value == ""
+        or (value == 0 and not isinstance(value, bool))
+    )
+
+
 def warn_removed_legacy_param(operation_id: str) -> None:
     """Warn that `legacy` was removed from an operation and is no longer sent.
 
@@ -54,6 +89,12 @@ def generate_get_uri(uri: str, params: Optional[Dict[str, Any]] = None) -> str:
 def todict(
     obj: Any, classkey: Optional[str] = None, nullable: Optional[List[str]] = None
 ) -> Any:
+    """Serialize ``obj`` for the API.
+
+    A key in ``nullable`` is sent as ``null`` only when its value is a null
+    value (``is_null_value``); a real value is kept. External callers may pass a
+    model's full nullable list, so this check must stay value-safe.
+    """
     if nullable is None:
         nullable = []
     if isinstance(obj, dict):
@@ -63,6 +104,8 @@ def todict(
         return data
     elif Enum in obj.__class__.__mro__:
         return todict(obj.value)
+    elif isinstance(obj, Clear):
+        return None
     elif hasattr(obj, "_ast"):
         return todict(obj._ast())
     elif hasattr(obj, "__iter__") and not isinstance(obj, str):
@@ -71,10 +114,12 @@ def todict(
         data = dict(
             [
                 # _type -> "type": avoids shadowing Python's builtin in model attrs
-                ("type" if key == "_type" else key, todict(value, classkey))
-                if key not in nullable
-                or (value != [] and value != "" and (value != 0 or isinstance(value, bool)))
-                else (key, None)
+                (
+                    "type" if key == "_type" else key,
+                    None
+                    if key in nullable and is_null_value(value)
+                    else todict(value, classkey),
+                )
                 for key, value in obj.__dict__.items()
                 if not callable(value)
                 and (not key.startswith("_") or key == "_type")

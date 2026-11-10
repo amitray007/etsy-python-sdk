@@ -1,3 +1,4 @@
+from etsy_python.v3.common.Utils import CLEAR, Clear
 from .FileRequest import FileRequest
 from .Listing import (
     CreateDraftListingRequest,
@@ -24,6 +25,10 @@ from .ShippingProfile import (
     UpdateShopShippingProfileUpgradeRequest,
 )
 from .Shop import CreateShopSectionRequest, UpdateShopSectionRequest, UpdateShopRequest
+from .ShopEconomicOperator import (
+    CreateShopEconomicOperatorRequest,
+    UpdateShopEconomicOperatorRequest,
+)
 from .ShopReturnPolicy import (
     ConsolidateShopReturnPoliciesRequest,
     CreateShopReturnPolicyRequest,

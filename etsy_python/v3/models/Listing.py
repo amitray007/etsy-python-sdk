@@ -1,7 +1,9 @@
 import warnings
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 
+from etsy_python.v3.common.Utils import Clear, is_null_value
 from etsy_python.v3.enums.Listing import (
+    GPSROperatorType,
     WhoMade,
     WhenMade,
     ItemWeightUnit,
@@ -195,7 +197,70 @@ class _ECGTFieldsMixin:
         self.ecgt_software_update_details = ecgt_software_update_details
 
 
-class CreateDraftListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Request):
+#: GPSR economic operator fields, shared by createDraftListing and updateListing.
+#: All are optional and nullable: pass ``CLEAR`` to send ``null`` and clear the
+#: stored value. Each ``*_id`` is an ``economic_operator_id`` from
+#: ``ShopEconomicOperatorResource``; Etsy requires it when the matching
+#: ``*_type`` is ``GPSROperatorType.ECONOMIC_OPERATOR`` and rejects it otherwise.
+GPSR_FIELDS = (
+    "gpsr_manufacturer_type",
+    "gpsr_manufacturer_id",
+    "gpsr_responsible_person_type",
+    "gpsr_responsible_person_id",
+    "gpsr_serial_number",
+    "gpsr_safety_warnings",
+)
+
+
+def _check_gpsr_operator_ids(values: Dict[str, Any], creating: bool) -> None:
+    """Raise ValueError for a GPSR type/id pair that Etsy would reject.
+
+    An id is valid only with type ``economic_operator``, which needs an id on
+    create and can never be sent with a cleared id. On update the listing may
+    already store the other half of the pair, so a type without an id, or an id
+    without a type, is left to Etsy.
+    """
+    for role in ("gpsr_manufacturer", "gpsr_responsible_person"):
+        kind = values[f"{role}_type"]
+        operator_id = values[f"{role}_id"]
+        if kind is None and not creating:
+            continue
+        has_id = operator_id is not None and not is_null_value(operator_id)
+        is_operator = (
+            getattr(kind, "value", kind) == GPSROperatorType.ECONOMIC_OPERATOR.value
+        )
+        clears_id = operator_id is not None and not has_id
+        if is_operator and (clears_id or (creating and not has_id)):
+            raise ValueError(
+                f"{role}_id is required when {role}_type is economic_operator"
+            )
+        if has_id and not is_operator:
+            raise ValueError(
+                f"{role}_id is only valid when {role}_type is economic_operator"
+            )
+
+
+class _GPSRFieldsMixin:
+    """Storage and type/id validation for the GPSR listing fields.
+
+    Each model sets ``_gpsr_creating``. See ``GPSR_FIELDS``.
+    """
+
+    _gpsr_creating: bool
+
+    def _store_gpsr(self, **values: Any) -> None:
+        self._assign_fields(GPSR_FIELDS, values)
+
+    def _validate(self) -> None:
+        super()._validate()
+        _check_gpsr_operator_ids(vars(self), creating=self._gpsr_creating)
+
+
+class CreateDraftListingRequest(
+    _PersonalizationFieldsMixin, _ECGTFieldsMixin, _GPSRFieldsMixin, Request
+):
+    _gpsr_creating = True
+
     nullable = [
         "shipping_profile_id",
         "return_policy_id",
@@ -215,6 +280,7 @@ class CreateDraftListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, R
         "image_ids",
         "readiness_state_id",
         *ECGT_FIELDS,
+        *GPSR_FIELDS,
     ]
     mandatory = [
         "quantity",
@@ -268,6 +334,12 @@ class CreateDraftListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, R
         ecgt_other_commercial_guarantee_details: Optional[str] = None,
         ecgt_after_sales_service_info: Optional[str] = None,
         ecgt_software_update_details: Optional[str] = None,
+        gpsr_manufacturer_type: Union[GPSROperatorType, Clear, None] = None,
+        gpsr_manufacturer_id: Union[int, Clear, None] = None,
+        gpsr_responsible_person_type: Union[GPSROperatorType, Clear, None] = None,
+        gpsr_responsible_person_id: Union[int, Clear, None] = None,
+        gpsr_serial_number: Union[str, Clear, None] = None,
+        gpsr_safety_warnings: Union[str, Clear, None] = None,
     ):
         self.quantity = quantity
         self.title = title
@@ -313,13 +385,25 @@ class CreateDraftListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, R
             ecgt_after_sales_service_info,
             ecgt_software_update_details,
         )
+        self._store_gpsr(
+            gpsr_manufacturer_type=gpsr_manufacturer_type,
+            gpsr_manufacturer_id=gpsr_manufacturer_id,
+            gpsr_responsible_person_type=gpsr_responsible_person_type,
+            gpsr_responsible_person_id=gpsr_responsible_person_id,
+            gpsr_serial_number=gpsr_serial_number,
+            gpsr_safety_warnings=gpsr_safety_warnings,
+        )
         super().__init__(
             nullable=CreateDraftListingRequest.nullable,
             mandatory=CreateDraftListingRequest.mandatory,
         )
 
 
-class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Request):
+class UpdateListingRequest(
+    _PersonalizationFieldsMixin, _ECGTFieldsMixin, _GPSRFieldsMixin, Request
+):
+    _gpsr_creating = False
+
     nullable: List[str] = [
         "materials",
         "shipping_profile_id",
@@ -335,6 +419,7 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Reques
         "production_partner_ids",
         "_type",
         *ECGT_FIELDS,
+        *GPSR_FIELDS,
     ]
 
     mandatory: List[str] = []
@@ -376,6 +461,12 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Reques
         ecgt_other_commercial_guarantee_details: Optional[str] = None,
         ecgt_after_sales_service_info: Optional[str] = None,
         ecgt_software_update_details: Optional[str] = None,
+        gpsr_manufacturer_type: Union[GPSROperatorType, Clear, None] = None,
+        gpsr_manufacturer_id: Union[int, Clear, None] = None,
+        gpsr_responsible_person_type: Union[GPSROperatorType, Clear, None] = None,
+        gpsr_responsible_person_id: Union[int, Clear, None] = None,
+        gpsr_serial_number: Union[str, Clear, None] = None,
+        gpsr_safety_warnings: Union[str, Clear, None] = None,
     ):
         self.image_ids = image_ids
         self.title = title
@@ -418,6 +509,14 @@ class UpdateListingRequest(_PersonalizationFieldsMixin, _ECGTFieldsMixin, Reques
             ecgt_other_commercial_guarantee_details,
             ecgt_after_sales_service_info,
             ecgt_software_update_details,
+        )
+        self._store_gpsr(
+            gpsr_manufacturer_type=gpsr_manufacturer_type,
+            gpsr_manufacturer_id=gpsr_manufacturer_id,
+            gpsr_responsible_person_type=gpsr_responsible_person_type,
+            gpsr_responsible_person_id=gpsr_responsible_person_id,
+            gpsr_serial_number=gpsr_serial_number,
+            gpsr_safety_warnings=gpsr_safety_warnings,
         )
         super().__init__(
             nullable=UpdateListingRequest.nullable,
